@@ -33,32 +33,17 @@ export interface ContactEnrichmentData {
 export interface CompanyEnrichmentData {
   name?: string;
   website?: string;
+  description?: string;
   industry?: string;
   size?: string;
-  revenue?: string;
   founded?: string;
-  headquarters?: string;
-  description?: string;
-  logo_url?: string;
-  social_profiles?: {
-    linkedin?: string;
-    twitter?: string;
-    facebook?: string;
-  };
-  key_people?: {
-    name: string;
-    position: string;
-  }[];
-  competitors?: string[];
+  location?: string;
+  linkedin_url?: string;
+  twitter_url?: string;
+  employees?: number;
+  revenue?: string;
   technologies?: string[];
-  funding?: {
-    total: string;
-    rounds: {
-      date: string;
-      amount: string;
-      investors: string[];
-    }[];
-  };
+  competitors?: string[];
   source?: string;
 }
 
@@ -67,7 +52,7 @@ export type EnrichmentStatus = 'none' | 'pending' | 'completed' | 'failed';
 export interface EnrichmentError {
   code: string;
   message: string;
-  details?: any;
+  details?: unknown;
 }
 
 /**
@@ -162,14 +147,11 @@ export const enrichCompanyData = async (
       };
     }
 
-    // Clean domain (remove http://, https://, www., and trailing paths)
-    const cleanDomain = domain.replace(/^https?:\/\//i, '').replace(/^www\./i, '').split('/')[0];
-
     // Call the Supabase Edge Function
     const { data, error } = await supabase.functions.invoke('enrich-lead', {
       body: {
         leadId: companyId,
-        domain: cleanDomain,
+        domain,
         type: 'company'
       }
     });
@@ -219,7 +201,7 @@ export const enrichCompanyData = async (
  * Gets the current enrichment status for a contact or company
  * @param type The type of entity ('contact' or 'company')
  * @param id The ID of the entity
- * @returns Promise with the current enrichment status
+ * @returns Promise with enrichment status
  */
 export const getEnrichmentStatus = async (
   type: 'contact' | 'company',
@@ -227,19 +209,22 @@ export const getEnrichmentStatus = async (
 ): Promise<{ status: EnrichmentStatus; lastUpdated?: Date }> => {
   try {
     const { data, error } = await supabase
-      .from(type === 'contact' ? 'contacts' : 'companies')
-      .select('enrichment_status, enriched_at')
-      .eq('id', id)
+      .from('enrichment_status')
+      .select('status, updated_at')
+      .eq('entity_type', type)
+      .eq('entity_id', id)
       .single();
 
-    if (error) throw error;
+    if (error || !data) {
+      return { status: 'none' };
+    }
 
     return {
-      status: (data?.enrichment_status as EnrichmentStatus) || 'none',
-      lastUpdated: data?.enriched_at ? new Date(data.enriched_at) : undefined
+      status: data.status as EnrichmentStatus,
+      lastUpdated: data.updated_at ? new Date(data.updated_at) : undefined
     };
   } catch (error) {
-    console.error(`Error getting enrichment status for ${type}:`, error);
+    console.error('Error fetching enrichment status:', error);
     return { status: 'none' };
   }
 };
@@ -248,7 +233,7 @@ export const getEnrichmentStatus = async (
  * Gets the enriched data for a contact or company
  * @param type The type of entity ('contact' or 'company')
  * @param id The ID of the entity
- * @returns Promise with the enriched data
+ * @returns Promise with enriched data
  */
 export const getEnrichmentData = async (
   type: 'contact' | 'company',
@@ -256,16 +241,19 @@ export const getEnrichmentData = async (
 ): Promise<ContactEnrichmentData | CompanyEnrichmentData | null> => {
   try {
     const { data, error } = await supabase
-      .from(type === 'contact' ? 'contacts' : 'companies')
-      .select('enrichment_data')
-      .eq('id', id)
+      .from('enrichment_data')
+      .select('data')
+      .eq('entity_type', type)
+      .eq('entity_id', id)
       .single();
 
-    if (error) throw error;
+    if (error || !data) {
+      return null;
+    }
 
-    return data?.enrichment_data || null;
+    return data.data;
   } catch (error) {
-    console.error(`Error getting enrichment data for ${type}:`, error);
+    console.error('Error fetching enrichment data:', error);
     return null;
   }
 };
