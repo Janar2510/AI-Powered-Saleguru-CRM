@@ -53,9 +53,9 @@ npm install
 cp .env.example .env
 
 # Edit .env file with your credentials
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-```
+   VITE_SUPABASE_URL=your_supabase_url
+   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   ```
 
 ### 4. Start Development Server
 
