@@ -1,45 +1,16 @@
 import { createClient } from '@supabase/supabase-js';
-import { config, validateEnvironment, isSupabaseConfigured } from '../utils/config';
 
-// Validate environment variables on import
-if (typeof window !== 'undefined') {
-  try {
-    validateEnvironment();
-  } catch (error) {
-    console.warn('Environment validation failed:', error);
-  }
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables. Please check your .env file.');
 }
 
-// Create Supabase client with fallback for missing configuration
-export const supabase = isSupabaseConfigured()
-  ? createClient(config.supabase.url, config.supabase.anonKey, {
-      auth: {
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: true,
-      },
-      realtime: {
-        params: {
-          eventsPerSecond: 10,
-        },
-      },
-    })
-  : null;
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Helper function to check if Supabase is available
-export const isSupabaseAvailable = (): boolean => {
-  return supabase !== null;
-};
-
-// Helper function to get Supabase client with error handling
-export const getSupabaseClient = () => {
-  if (!supabase) {
-    throw new Error(
-      'Supabase is not configured. Please check your environment variables.'
-    );
-  }
-  return supabase;
-};
+export const getSupabaseClient = () => supabase;
+export const isSupabaseAvailable = () => !!supabase;
 
 // Type for Supabase client
 export type SupabaseClient = NonNullable<typeof supabase>; 

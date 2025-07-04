@@ -1,10 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from '../lib/supabase';
 
-// Initialize Supabase client
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL || '',
-  import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-);
+// Get the centralized Supabase client
+const supabase = getSupabaseClient();
 
 // Types for enrichment data
 export interface ContactEnrichmentData {

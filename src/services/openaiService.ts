@@ -1,18 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from '../lib/supabase';
 
-// Get environment variables with fallbacks
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-// Check if required environment variables are present
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing required Supabase environment variables. Please check your .env file.');
-  console.error('Required variables: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY');
-  throw new Error('Supabase configuration is incomplete. Please set up your environment variables.');
-}
-
-// Initialize Supabase client
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Get the centralized Supabase client
+const supabase = getSupabaseClient();
 
 // Remove exposed API key - this will be stored securely on the server
 export const OPENAI_API_KEY = '';

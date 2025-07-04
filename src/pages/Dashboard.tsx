@@ -22,33 +22,16 @@ import Badge from '../components/ui/Badge';
 import { useGuru } from '../contexts/GuruContext';
 import { useToastContext } from '../contexts/ToastContext';
 import { useNavigate } from 'react-router-dom';
-import { createClient } from '@supabase/supabase-js';
 import Container from '../components/layout/Container';
 import Spline from '@splinetool/react-spline';
 import GuruInsightsWidget from '../components/dashboard/GuruInsightsWidget';
 import TaskSummaryWidget from '../components/dashboard/TaskSummaryWidget';
 import PipelineWidget from '../components/dashboard/PipelineWidget';
 import DashboardAnalytics from '../components/dashboard/DashboardAnalytics';
+import { getSupabaseClient, isSupabaseAvailable } from '../lib/supabase';
 
-// Initialize Supabase client with error handling
-const createSupabaseClient = () => {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  
-  if (!supabaseUrl || !supabaseKey) {
-    console.warn('Supabase environment variables not configured. Using demo mode.');
-    return null;
-  }
-  
-  try {
-    return createClient(supabaseUrl, supabaseKey);
-  } catch (error) {
-    console.error('Failed to initialize Supabase client:', error);
-    return null;
-  }
-};
-
-const supabase = createSupabaseClient();
+// Get the centralized Supabase client
+const supabase = isSupabaseAvailable() ? getSupabaseClient() : null;
 
 const Dashboard: React.FC = () => {
   const { openGuru, sendMessage } = useGuru();
