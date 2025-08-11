@@ -1,15 +1,35 @@
 import React, { useState } from 'react';
 import { X, ArrowRight, Users, Target, Calendar, DollarSign, CheckCircle, AlertTriangle } from 'lucide-react';
 import Badge from '../ui/Badge';
+import { supabase } from '../../services/supabase';
+import { useToastContext } from '../../contexts/ToastContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface Lead {
   id: string;
-  name: string;
+  first_name: string;
+  last_name: string;
   email: string;
   company: string;
-  score: number;
+  title?: string;
+  phone?: string;
+  source: 'website' | 'linkedin' | 'referral' | 'cold-email' | 'demo-request' | 'import' | 'manual';
+  lead_score: number;
+  status: 'new' | 'contacted' | 'qualified' | 'disqualified' | 'converted' | 'archived';
+  created_at: Date;
+  last_contacted_at?: Date;
+  converted_at?: Date;
+  enriched_at?: Date;
+  enrichment_status?: 'pending' | 'completed' | 'failed' | 'none';
+  tags?: string[];
+  notes?: string;
   deal_value_estimate?: number;
-  source: string;
+  industry?: string;
+  company_size?: string;
+  linkedin_url?: string;
+  website?: string;
+  ai_insight?: string;
+  owner_id?: string;
 }
 
 interface BulkConversionModalProps {
@@ -29,7 +49,7 @@ const BulkConversionModal: React.FC<BulkConversionModalProps> = ({
 }) => {
   const [conversionSettings, setConversionSettings] = useState({
     pipeline: 'sales-pipeline',
-    stage: 'qualified',
+    stage: 2, // Use bigint ID for 'Qualified' stage
     owner: 'current-user',
     priority: 'medium' as 'low' | 'medium' | 'high',
     expectedCloseDate: '',
@@ -48,10 +68,12 @@ const BulkConversionModal: React.FC<BulkConversionModalProps> = ({
   ];
 
   const stages = [
-    { id: 'lead', name: 'Lead In', probability: 10 },
-    { id: 'qualified', name: 'Qualified', probability: 25 },
-    { id: 'proposal', name: 'Proposal', probability: 50 },
-    { id: 'negotiation', name: 'Negotiation', probability: 75 }
+    { id: 1, name: 'Lead In', probability: 10 },
+    { id: 2, name: 'Qualified', probability: 25 },
+    { id: 3, name: 'Proposal', probability: 50 },
+    { id: 4, name: 'Negotiation', probability: 75 },
+    { id: 5, name: 'Closed Won', probability: 100 },
+    { id: 6, name: 'Closed Lost', probability: 0 }
   ];
 
   const teamMembers = [
@@ -63,7 +85,10 @@ const BulkConversionModal: React.FC<BulkConversionModalProps> = ({
   ];
 
   const totalValue = leads.reduce((sum, lead) => sum + (lead.deal_value_estimate || 50000), 0);
-  const avgScore = Math.round(leads.reduce((sum, lead) => sum + lead.score, 0) / leads.length);
+  const avgScore = Math.round(leads.reduce((sum, lead) => sum + lead.lead_score, 0) / leads.length);
+
+  const { showToast } = useToastContext();
+  const { user } = useAuth();
 
   const handleInputChange = (field: string, value: any) => {
     setConversionSettings(prev => ({ ...prev, [field]: value }));
@@ -89,58 +114,79 @@ const BulkConversionModal: React.FC<BulkConversionModalProps> = ({
     setConversionProgress(0);
 
     try {
+      // Use the user from AuthContext instead of getting from Supabase
+      if (!user) throw new Error('No authenticated user');
+
+      // For development, use a default owner_id since we don't have a users table
+      const ownerId = 1; // Default owner ID for demo
+
       const dealIds: string[] = [];
       const totalLeads = leads.length;
 
       for (let i = 0; i < leads.length; i++) {
         const lead = leads[i];
-        const dealId = generateDealId();
 
-        // Simulate conversion process for each lead
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // 1. Find or create company
+        let companyId = null;
+        if (lead.company) {
+          const { data: company } = await supabase.from('companies').select('id').eq('name', lead.company).maybeSingle();
+          if (company?.id) {
+            companyId = company.id;
+          } else {
+            const { data: newCompany } = await supabase.from('companies').insert({ name: lead.company }).select().single();
+            companyId = newCompany?.id;
+          }
+        }
 
-        // Create deal data
-        const dealData = {
-          id: Date.now().toString() + i,
-          deal_id: dealId,
-          title: `${lead.company} - ${lead.name}`,
+        // 2. Find or create contact
+        let contactId = null;
+        if (lead.email) {
+          const { data: contact } = await supabase.from('contacts').select('id').eq('email', lead.email).maybeSingle();
+          if (contact?.id) {
+            contactId = contact.id;
+          } else {
+            const { data: newContact } = await supabase.from('contacts').insert({
+              first_name: lead.first_name,
+              last_name: lead.last_name,
+              email: lead.email,
+              company_id: companyId
+            }).select().single();
+            contactId = newContact?.id;
+          }
+        }
+
+        // 3. Get correct stage id (bigint) for selected pipeline/stage
+        let stageId = null;
+        const { data: stage } = await supabase.from('stages').select('id').eq('id', conversionSettings.stage).maybeSingle();
+        if (stage?.id) stageId = stage.id;
+        if (!stageId) throw new Error('Could not find stage');
+
+        // 4. Insert deal
+        const { data: deal, error } = await supabase.from('deals').insert({
+          title: `${lead.company || ''} - ${lead.first_name || ''} ${lead.last_name || ''}`.trim(),
+          description: `Converted from lead: ${lead.first_name || ''} ${lead.last_name || ''} (${lead.email || ''})\nSource: ${lead.source || ''}`,
           value: lead.deal_value_estimate || 50000,
-          pipeline_id: conversionSettings.pipeline,
-          stage_id: conversionSettings.stage,
-          owner_id: conversionSettings.owner,
-          priority: conversionSettings.priority,
-          expected_close_date: conversionSettings.expectedCloseDate,
-          team_members: conversionSettings.teamMembers,
-          contact_data: {
-            name: lead.name,
-            email: lead.email
-          },
-          company_data: {
-            name: lead.company
-          },
-          lead_source: lead.source,
-          lead_score: lead.score,
-          converted_from_lead_id: lead.id,
-          created_at: new Date()
-        };
-
-        console.log('Creating deal from lead:', dealData);
-        dealIds.push(dealId);
-
-        // Update progress
+          stage_id: stageId,
+          probability: 10,
+          expected_close_date: conversionSettings.expectedCloseDate || null,
+          company_id: companyId,
+          contact_id: contactId,
+          lead_id: parseInt(lead.id) || null,
+          owner_id: ownerId
+        }).select().single();
+        if (error) {
+          showToast({ type: 'error', title: 'Deal Creation Failed', description: error.message });
+          continue;
+        }
+        dealIds.push(deal.id);
         setConversionProgress(Math.round(((i + 1) / totalLeads) * 100));
       }
-
-      // Simulate final processing
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
       onConverted(dealIds);
-
-    } catch (error) {
-      console.error('Bulk conversion failed:', error);
+      showToast({ type: 'success', title: 'Bulk Conversion Complete', description: `${dealIds.length} deals added to deals` });
+    } catch (err: any) {
+      showToast({ type: 'error', title: 'Bulk Conversion Failed', description: err.message });
     } finally {
       setIsConverting(false);
-      setConversionProgress(0);
     }
   };
 
@@ -212,16 +258,16 @@ const BulkConversionModal: React.FC<BulkConversionModalProps> = ({
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
                       <span className="text-white text-xs font-medium">
-                        {lead.name.split(' ').map(n => n[0]).join('')}
+                        {`${lead.first_name?.[0] || ''}${lead.last_name?.[0] || ''}`}
                       </span>
                     </div>
                     <div>
-                      <div className="text-white text-sm font-medium">{lead.name}</div>
+                      <div className="text-white text-sm font-medium">{`${lead.first_name} ${lead.last_name}`}</div>
                       <div className="text-secondary-400 text-xs">{lead.company}</div>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Badge variant="primary" size="sm">Score: {lead.score}</Badge>
+                    <Badge variant="primary" size="sm">Score: {lead.lead_score}</Badge>
                     <span className="text-green-500 text-sm font-medium">
                       ${((lead.deal_value_estimate || 50000) / 1000).toFixed(0)}K
                     </span>
@@ -381,7 +427,7 @@ const BulkConversionModal: React.FC<BulkConversionModalProps> = ({
               <div>
                 <h4 className="font-medium text-yellow-200">Bulk Conversion Notice</h4>
                 <p className="text-yellow-300/80 text-sm mt-1">
-                  This action will convert {leads.length} leads into deals with the same settings. 
+                  This action will convert {leads.length} leads into deals with the same settings.
                   Each deal will get a unique ID and cloud folder. This action cannot be undone.
                 </p>
               </div>

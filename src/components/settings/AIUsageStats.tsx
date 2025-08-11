@@ -2,14 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Bot, BarChart, Calendar, Download, RefreshCw, Filter, Search, Clock, Zap, AlertTriangle } from 'lucide-react';
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../../services/supabase';
 import { useToastContext } from '../../contexts/ToastContext';
-
-// Initialize Supabase client
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL || '',
-  import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-);
 
 interface AILog {
   id: string;

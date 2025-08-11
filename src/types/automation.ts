@@ -8,6 +8,7 @@ export interface AutomationComponent {
   category: 'trigger' | 'condition' | 'action';
   icon?: React.ComponentType<{ className?: string }>;
   type?: string;
+  complexity?: 'basic' | 'intermediate' | 'advanced';
   config?: Record<string, any>;
 }
 

@@ -17,6 +17,9 @@ interface GuruInsight {
 interface GuruContextType {
   insights: GuruInsight[];
   isLoading: boolean;
+  isOpen: boolean;
+  openGuru: () => void;
+  closeGuru: () => void;
   generateInsights: (data: {
     contacts?: Contact[];
     deals?: Deal[];
@@ -35,6 +38,13 @@ interface GuruContextType {
     description: string;
     impact: 'low' | 'medium' | 'high';
   }[]>;
+  sendMessage: () => Promise<void>;
+  messages: any[];
+  suggestedQueries: string[];
+  pageTitle: string;
+  usageCount: number;
+  usageLimit: number;
+  askGuru: (message: string) => Promise<void>;
 }
 
 const GuruContext = createContext<GuruContextType | undefined>(undefined);
@@ -47,9 +57,21 @@ export const useGuru = () => {
   return context;
 };
 
+// Alias for compatibility
+export const useGuruContext = useGuru;
+
 export const GuruProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [insights, setInsights] = useState<GuruInsight[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [suggestedQueries, setSuggestedQueries] = useState<string[]>([]);
+  const [pageTitle, setPageTitle] = useState<string>('');
+  const [usageCount, setUsageCount] = useState<number>(0);
+  const [usageLimit] = useState<number>(Infinity);
+
+  const openGuru = () => setIsOpen(true);
+  const closeGuru = () => setIsOpen(false);
 
   const generateInsights = async (data: {
     contacts?: Contact[];
@@ -231,15 +253,51 @@ export const GuruProvider: React.FC<{ children: React.ReactNode }> = ({ children
     ];
   };
 
+  const sendMessage = async () => {};
+
+  const askGuru = async (message: string) => {
+    setIsLoading(true);
+    try {
+      // Simulate AI response
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Add the message to insights
+      addInsight({
+        type: 'tip',
+        title: 'AI Assistant Response',
+        message: `Based on your question: "${message}", here are some insights and recommendations for improving your call performance and conversion rates.`,
+        priority: 'medium',
+        category: 'sales',
+      });
+      
+      // Open the guru panel
+      openGuru();
+    } catch (error) {
+      console.error('Error asking guru:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const value = {
     insights,
     isLoading,
+    isOpen,
+    openGuru,
+    closeGuru,
     generateInsights,
     addInsight,
     clearInsights,
     getSalesTips,
     analyzeLead,
     suggestAutomations,
+    sendMessage,
+    messages,
+    suggestedQueries,
+    pageTitle,
+    usageCount,
+    usageLimit,
+    askGuru,
   };
 
   return (

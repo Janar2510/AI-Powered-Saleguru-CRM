@@ -1,14 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Plus, User, Building, Mail, Phone, Globe, Tag, DollarSign } from 'lucide-react';
 import Badge from '../ui/Badge';
-import { createClient } from '@supabase/supabase-js';
+import Button from '../ui/Button';
+import { supabase } from '../../services/supabase';
 import { useToastContext } from '../../contexts/ToastContext';
-
-// Initialize Supabase client
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL || '',
-  import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-);
+import { useModal } from '../../contexts/ModalContext';
 
 interface CreateLeadModalProps {
   isOpen: boolean;
@@ -18,6 +15,15 @@ interface CreateLeadModalProps {
 
 const CreateLeadModal: React.FC<CreateLeadModalProps> = ({ isOpen, onClose, onLeadCreated }) => {
   const { showToast } = useToastContext();
+  const { openModal, closeModal } = useModal();
+
+  // Open modal when component mounts
+  useEffect(() => {
+    if (isOpen) {
+      openModal();
+      return () => closeModal();
+    }
+  }, [isOpen, openModal, closeModal]);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -120,7 +126,7 @@ const CreateLeadModal: React.FC<CreateLeadModalProps> = ({ isOpen, onClose, onLe
       showToast({
         type: 'success',
         title: 'Lead Created',
-        message: `${formData.name} has been added to your leads.`
+        description: `${formData.name} has been added to your leads.`
       });
 
       // Reset form and close modal
@@ -146,7 +152,7 @@ const CreateLeadModal: React.FC<CreateLeadModalProps> = ({ isOpen, onClose, onLe
       showToast({
         type: 'error',
         title: 'Creation Failed',
-        message: 'Failed to create lead. Please try again.'
+        description: 'Failed to create lead. Please try again.'
       });
     } finally {
       setIsSubmitting(false);
@@ -155,20 +161,20 @@ const CreateLeadModal: React.FC<CreateLeadModalProps> = ({ isOpen, onClose, onLe
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-secondary-800 rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+  const modalContent = (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-lg flex items-center justify-center z-[9999999] !z-[9999999] p-4">
+      <div className="bg-[#23233a]/99 backdrop-blur-2xl rounded-xl w-full max-w-4xl max-h-[95vh] overflow-y-auto border border-[#23233a]/60 shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-secondary-700">
+        <div className="flex items-center justify-between p-6 border-b border-[#23233a]/30">
           <div>
             <h3 className="text-xl font-semibold text-white">Add New Lead</h3>
-            <p className="text-secondary-400 text-sm mt-1">
+            <p className="text-[#b0b0d0] text-sm mt-1">
               Create a new lead record to track potential opportunities
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-secondary-400 hover:text-white hover:bg-secondary-700 rounded-lg transition-colors"
+            className="p-2 text-[#b0b0d0] hover:text-white hover:bg-[#23233a]/50 rounded-lg transition-colors"
             disabled={isSubmitting}
           >
             <X className="w-5 h-5" />
@@ -184,7 +190,7 @@ const CreateLeadModal: React.FC<CreateLeadModalProps> = ({ isOpen, onClose, onLe
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-secondary-300 mb-2">
+                <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
                   Full Name *
                 </label>
                 <input
@@ -193,55 +199,55 @@ const CreateLeadModal: React.FC<CreateLeadModalProps> = ({ isOpen, onClose, onLe
                   value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
                   placeholder="John Smith"
-                  className="w-full px-4 py-3 bg-secondary-700 border border-secondary-600 rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-600"
+                  className="w-full px-4 py-3 bg-[#23233a]/50 border-2 border-white/20 rounded-lg text-white placeholder-[#b0b0d0] focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]"
                   disabled={isSubmitting}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-secondary-300 mb-2">
+                <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
                   Email Address *
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-secondary-400" />
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#b0b0d0]" />
                   <input
                     type="email"
                     required
                     value={formData.email}
                     onChange={(e) => handleInputChange('email', e.target.value)}
                     placeholder="john@company.com"
-                    className="w-full pl-10 pr-4 py-3 bg-secondary-700 border border-secondary-600 rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-600"
+                    className="w-full pl-10 pr-4 py-3 bg-[#23233a]/50 border-2 border-white/20 rounded-lg text-white placeholder-[#b0b0d0] focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]"
                     disabled={isSubmitting}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-secondary-300 mb-2">
+                <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
                   Position
                 </label>
                 <input
                   type="text"
                   value={formData.position}
                   onChange={(e) => handleInputChange('position', e.target.value)}
-                  placeholder="CTO, VP Sales, etc."
-                  className="w-full px-4 py-3 bg-secondary-700 border border-secondary-600 rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-600"
+                  placeholder="Sales Manager"
+                  className="w-full px-4 py-3 bg-[#23233a]/50 border-2 border-white/20 rounded-lg text-white placeholder-[#b0b0d0] focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]"
                   disabled={isSubmitting}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-secondary-300 mb-2">
+                <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
                   Phone Number
                 </label>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-secondary-400" />
+                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#b0b0d0]" />
                   <input
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => handleInputChange('phone', e.target.value)}
                     placeholder="+1 (555) 123-4567"
-                    className="w-full pl-10 pr-4 py-3 bg-secondary-700 border border-secondary-600 rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-600"
+                    className="w-full pl-10 pr-4 py-3 bg-[#23233a]/50 border-2 border-white/20 rounded-lg text-white placeholder-[#b0b0d0] focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]"
                     disabled={isSubmitting}
                   />
                 </div>
@@ -257,7 +263,7 @@ const CreateLeadModal: React.FC<CreateLeadModalProps> = ({ isOpen, onClose, onLe
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-secondary-300 mb-2">
+                <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
                   Company Name *
                 </label>
                 <input
@@ -265,20 +271,20 @@ const CreateLeadModal: React.FC<CreateLeadModalProps> = ({ isOpen, onClose, onLe
                   required
                   value={formData.company}
                   onChange={(e) => handleInputChange('company', e.target.value)}
-                  placeholder="TechCorp Inc."
-                  className="w-full px-4 py-3 bg-secondary-700 border border-secondary-600 rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-600"
+                  placeholder="Acme Corporation"
+                  className="w-full px-4 py-3 bg-[#23233a]/50 border-2 border-white/20 rounded-lg text-white placeholder-[#b0b0d0] focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]"
                   disabled={isSubmitting}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-secondary-300 mb-2">
+                <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
                   Industry
                 </label>
                 <select
                   value={formData.industry}
                   onChange={(e) => handleInputChange('industry', e.target.value)}
-                  className="w-full px-4 py-3 bg-secondary-700 border border-secondary-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-600"
+                  className="w-full px-4 py-3 bg-[#23233a]/50 border-2 border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]"
                   disabled={isSubmitting}
                 >
                   <option value="">Select industry...</option>
@@ -291,13 +297,13 @@ const CreateLeadModal: React.FC<CreateLeadModalProps> = ({ isOpen, onClose, onLe
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-secondary-300 mb-2">
+                <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
                   Company Size
                 </label>
                 <select
                   value={formData.company_size}
                   onChange={(e) => handleInputChange('company_size', e.target.value)}
-                  className="w-full px-4 py-3 bg-secondary-700 border border-secondary-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-600"
+                  className="w-full px-4 py-3 bg-[#23233a]/50 border-2 border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]"
                   disabled={isSubmitting}
                 >
                   <option value="">Select size...</option>
@@ -310,17 +316,17 @@ const CreateLeadModal: React.FC<CreateLeadModalProps> = ({ isOpen, onClose, onLe
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-secondary-300 mb-2">
+                <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
                   Website
                 </label>
                 <div className="relative">
-                  <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-secondary-400" />
+                  <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#b0b0d0]" />
                   <input
                     type="url"
                     value={formData.website}
                     onChange={(e) => handleInputChange('website', e.target.value)}
                     placeholder="https://company.com"
-                    className="w-full pl-10 pr-4 py-3 bg-secondary-700 border border-secondary-600 rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-600"
+                    className="w-full pl-10 pr-4 py-3 bg-[#23233a]/50 border-2 border-white/20 rounded-lg text-white placeholder-[#b0b0d0] focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]"
                     disabled={isSubmitting}
                   />
                 </div>
@@ -336,13 +342,13 @@ const CreateLeadModal: React.FC<CreateLeadModalProps> = ({ isOpen, onClose, onLe
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-secondary-300 mb-2">
+                <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
                   Lead Source
                 </label>
                 <select
                   value={formData.source}
                   onChange={(e) => handleInputChange('source', e.target.value)}
-                  className="w-full px-4 py-3 bg-secondary-700 border border-secondary-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-600"
+                  className="w-full px-4 py-3 bg-[#23233a]/50 border-2 border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]"
                   disabled={isSubmitting}
                 >
                   {sources.map((source) => (
@@ -354,24 +360,24 @@ const CreateLeadModal: React.FC<CreateLeadModalProps> = ({ isOpen, onClose, onLe
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-secondary-300 mb-2">
+                <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
                   Estimated Deal Value
                 </label>
                 <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-secondary-400" />
+                  <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#b0b0d0]" />
                   <input
                     type="number"
                     value={formData.deal_value_estimate}
                     onChange={(e) => handleInputChange('deal_value_estimate', e.target.value)}
                     placeholder="50000"
-                    className="w-full pl-10 pr-4 py-3 bg-secondary-700 border border-secondary-600 rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-600"
+                    className="w-full pl-10 pr-4 py-3 bg-[#23233a]/50 border-2 border-white/20 rounded-lg text-white placeholder-[#b0b0d0] focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]"
                     disabled={isSubmitting}
                   />
                 </div>
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-secondary-300 mb-2">
+                <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
                   LinkedIn URL
                 </label>
                 <input
@@ -379,7 +385,7 @@ const CreateLeadModal: React.FC<CreateLeadModalProps> = ({ isOpen, onClose, onLe
                   value={formData.linkedin_url}
                   onChange={(e) => handleInputChange('linkedin_url', e.target.value)}
                   placeholder="https://linkedin.com/in/johnsmith"
-                  className="w-full px-4 py-3 bg-secondary-700 border border-secondary-600 rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-600"
+                  className="w-full px-4 py-3 bg-[#23233a]/50 border-2 border-white/20 rounded-lg text-white placeholder-[#b0b0d0] focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]"
                   disabled={isSubmitting}
                 />
               </div>
@@ -388,7 +394,7 @@ const CreateLeadModal: React.FC<CreateLeadModalProps> = ({ isOpen, onClose, onLe
 
           {/* Tags */}
           <div>
-            <label className="block text-sm font-medium text-secondary-300 mb-2">
+            <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
               Tags
             </label>
             <div className="flex items-center space-x-2 mb-3">
@@ -398,17 +404,19 @@ const CreateLeadModal: React.FC<CreateLeadModalProps> = ({ isOpen, onClose, onLe
                 onChange={(e) => setNewTag(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
                 placeholder="Add a tag..."
-                className="flex-1 px-4 py-2 bg-secondary-700 border border-secondary-600 rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-600"
+                className="flex-1 px-4 py-2 bg-[#23233a]/50 border-2 border-white/20 rounded-lg text-white placeholder-[#b0b0d0] focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]"
                 disabled={isSubmitting}
               />
-              <button
+              <Button
                 type="button"
                 onClick={addTag}
-                className="btn-secondary px-3 py-2"
+                variant="secondary"
+                size="sm"
+                icon={Plus}
                 disabled={isSubmitting}
               >
-                <Plus className="w-4 h-4" />
-              </button>
+                Add
+              </Button>
             </div>
             <div className="flex flex-wrap gap-2">
               {formData.tags.map((tag, index) => (
@@ -422,7 +430,7 @@ const CreateLeadModal: React.FC<CreateLeadModalProps> = ({ isOpen, onClose, onLe
                   <button
                     type="button"
                     onClick={() => removeTag(tag)}
-                    className="ml-1 hover:text-red-400"
+                    className="ml-1 hover:text-[#ef4444]"
                     disabled={isSubmitting}
                   >
                     <X className="w-3 h-3" />
@@ -434,7 +442,7 @@ const CreateLeadModal: React.FC<CreateLeadModalProps> = ({ isOpen, onClose, onLe
 
           {/* Notes */}
           <div>
-            <label className="block text-sm font-medium text-secondary-300 mb-2">
+            <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
               Notes
             </label>
             <textarea
@@ -442,28 +450,31 @@ const CreateLeadModal: React.FC<CreateLeadModalProps> = ({ isOpen, onClose, onLe
               value={formData.notes}
               onChange={(e) => handleInputChange('notes', e.target.value)}
               placeholder="Additional information about this lead..."
-              className="w-full px-4 py-3 bg-secondary-700 border border-secondary-600 rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-600"
+              className="w-full px-4 py-3 bg-[#23233a]/50 border-2 border-white/20 rounded-lg text-white placeholder-[#b0b0d0] focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]"
               disabled={isSubmitting}
             />
           </div>
 
           {/* Form Actions */}
-          <div className="flex items-center justify-between pt-4 border-t border-secondary-700">
-            <div className="text-sm text-secondary-400">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-4 border-t border-[#23233a]/30 gap-4">
+            <div className="text-sm text-[#b0b0d0]">
               Lead will be automatically scored based on provided information
             </div>
-            <div className="flex space-x-3">
-              <button
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button
                 type="button"
                 onClick={onClose}
-                className="btn-secondary"
+                variant="secondary"
+                size="lg"
                 disabled={isSubmitting}
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="submit"
-                className="btn-primary flex items-center space-x-2"
+                variant="gradient"
+                size="lg"
+                icon={isSubmitting ? undefined : Plus}
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
@@ -472,18 +483,17 @@ const CreateLeadModal: React.FC<CreateLeadModalProps> = ({ isOpen, onClose, onLe
                     <span>Creating...</span>
                   </>
                 ) : (
-                  <>
-                    <Plus className="w-4 h-4" />
-                    <span>Create Lead</span>
-                  </>
+                  <span>Create Lead</span>
                 )}
-              </button>
+              </Button>
             </div>
           </div>
         </form>
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default CreateLeadModal;

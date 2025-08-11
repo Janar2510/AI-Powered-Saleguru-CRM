@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Zap, Plus, Play, Pause, Edit, Trash2, ArrowRight } from 'lucide-react';
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
+import Button from '../ui/Button';
 
 interface AutomationRule {
   id: string;
@@ -143,31 +144,33 @@ const AutomationRules: React.FC<AutomationRulesProps> = ({ onChanges }) => {
         </div>
 
         <div className="flex items-center space-x-2 ml-4">
-          <button
+          <Button
             onClick={() => toggleRule(rule.id)}
-            className={`p-2 rounded-lg transition-colors ${
-              rule.isActive 
-                ? 'text-green-400 hover:bg-green-900/20' 
-                : 'text-secondary-400 hover:bg-secondary-700'
-            }`}
+            variant={rule.isActive ? 'success' : 'secondary'}
+            size="sm"
+            className="p-2"
           >
             {rule.isActive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => {
               setEditingRule(rule);
               setShowRuleBuilder(true);
             }}
-            className="p-2 text-secondary-400 hover:text-white hover:bg-secondary-700 rounded-lg transition-colors"
+            variant="secondary"
+            size="sm"
+            className="p-2"
           >
             <Edit className="w-4 h-4" />
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => deleteRule(rule.id)}
-            className="p-2 text-secondary-400 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-colors"
+            variant="danger"
+            size="sm"
+            className="p-2"
           >
             <Trash2 className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
       </div>
     </Card>
@@ -185,16 +188,18 @@ const AutomationRules: React.FC<AutomationRulesProps> = ({ onChanges }) => {
               <p className="text-secondary-400 text-sm">Automate repetitive tasks and workflows</p>
             </div>
           </div>
-          <button
+          <Button
             onClick={() => {
               setEditingRule(null);
               setShowRuleBuilder(true);
             }}
-            className="btn-primary flex items-center space-x-2"
+            variant="primary"
+            size="sm"
+            className="flex items-center space-x-2"
           >
             <Plus className="w-4 h-4" />
             <span>Create Rule</span>
-          </button>
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -328,21 +333,23 @@ const AutomationRules: React.FC<AutomationRulesProps> = ({ onChanges }) => {
             </div>
 
             <div className="flex space-x-3 mt-6">
-              <button
+              <Button
                 onClick={() => setShowRuleBuilder(false)}
-                className="flex-1 btn-secondary"
+                variant="secondary"
+                size="sm"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => {
                   setShowRuleBuilder(false);
                   onChanges(true);
                 }}
-                className="flex-1 btn-primary"
+                variant="primary"
+                size="sm"
               >
                 {editingRule ? 'Update Rule' : 'Create Rule'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

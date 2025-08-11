@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { User, Mail, Globe, Palette, Eye, EyeOff, Save } from 'lucide-react';
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
+import Button from '../ui/Button';
 
 interface AccountPreferencesProps {
   onChanges: (hasChanges: boolean) => void;
@@ -185,20 +186,17 @@ const AccountPreferences: React.FC<AccountPreferencesProps> = ({ onChanges }) =>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {themes.map((theme) => (
-            <button
+            <Button
               key={theme.value}
               onClick={() => handleInputChange('theme', theme.value)}
-              className={`p-4 rounded-lg border-2 transition-all ${
-                formData.theme === theme.value
-                  ? 'border-primary-600 bg-primary-600/10'
-                  : 'border-secondary-600 hover:border-secondary-500'
-              }`}
+              variant={formData.theme === theme.value ? 'gradient' : 'secondary'}
+              className="p-4 h-full w-full text-left"
             >
               <div className="text-left">
                 <div className="font-medium text-white">{theme.label}</div>
-                <div className="text-sm text-secondary-400 mt-1">{theme.description}</div>
+                <div className="text-sm text-[#b0b0d0] mt-1">{theme.description}</div>
               </div>
-            </button>
+            </Button>
           ))}
         </div>
       </Card>
@@ -296,13 +294,10 @@ const AccountPreferences: React.FC<AccountPreferencesProps> = ({ onChanges }) =>
 
       {/* Save Button */}
       <div className="flex justify-end">
-        <button
-          onClick={handleSave}
-          className="btn-primary flex items-center space-x-2"
-        >
+        <Button onClick={handleSave} variant="gradient" className="flex items-center space-x-2">
           <Save className="w-4 h-4" />
           <span>Save Changes</span>
-        </button>
+        </Button>
       </div>
     </div>
   );

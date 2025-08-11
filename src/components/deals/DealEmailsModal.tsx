@@ -1,6 +1,13 @@
-import React, { useState } from 'react';
-import { X, Mail, Send, Reply, Forward, Plus, Search, Filter, Paperclip, Star } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { 
+  X, Plus, Send, Paperclip, Mail, Clock, User, Building, 
+  ChevronDown, ChevronUp, Eye, EyeOff, Download, Archive,
+  Trash2, Star, Flag, Reply, ReplyAll, Forward, MoreHorizontal, Search
+} from 'lucide-react';
+import EnhancedEmailComposer from '../emails/EnhancedEmailComposer';
+import Button from '../ui/Button';
 import Badge from '../ui/Badge';
+import { useToastContext } from '../../contexts/ToastContext';
 
 interface DealEmail {
   id: string;
@@ -85,8 +92,46 @@ const DealEmailsModal: React.FC<DealEmailsModalProps> = ({ isOpen, onClose, deal
 
   const [selectedEmail, setSelectedEmail] = useState<DealEmail | null>(emails[0]);
   const [showComposer, setShowComposer] = useState(false);
+  const [composerData, setComposerData] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('all');
+
+  const { showToast } = useToastContext();
+
+  const handleSendEmail = async (emailData: any) => {
+    try {
+      // Simulate sending email
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      showToast({
+        title: 'Email Sent',
+        description: 'Your email has been sent successfully',
+        type: 'success'
+      });
+      setShowComposer(false);
+      return true;
+    } catch (error) {
+      showToast({
+        title: 'Error',
+        description: 'Failed to send email',
+        type: 'error'
+      });
+      return false;
+    }
+  };
+
+  const openComposer = () => {
+    setComposerData({
+      to: deal.contact,
+      subject: `Re: ${deal.title}`,
+      dealId: deal.id
+    });
+    setShowComposer(true);
+  };
+
+  const closeComposer = () => {
+    setShowComposer(false);
+    setComposerData(null);
+  };
 
   const filteredEmails = emails.filter(email => {
     const matchesSearch = email.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -114,69 +159,6 @@ const DealEmailsModal: React.FC<DealEmailsModalProps> = ({ isOpen, onClose, deal
     return groups;
   }, {} as Record<string, DealEmail[]>);
 
-  const EmailComposer = () => (
-    <div className="border-t border-secondary-700 p-4 bg-secondary-750">
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h4 className="font-medium text-white">Send Email</h4>
-          <button
-            onClick={() => setShowComposer(false)}
-            className="text-secondary-400 hover:text-white"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm text-secondary-300 mb-1">To:</label>
-            <input
-              type="email"
-              defaultValue="john.smith@techcorp.com"
-              className="w-full px-3 py-2 bg-secondary-700 border border-secondary-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-600"
-            />
-          </div>
-          <div>
-            <label className="block text-sm text-secondary-300 mb-1">Subject:</label>
-            <input
-              type="text"
-              placeholder="Email subject..."
-              className="w-full px-3 py-2 bg-secondary-700 border border-secondary-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-600"
-            />
-          </div>
-        </div>
-        
-        <div>
-          <label className="block text-sm text-secondary-300 mb-1">Message:</label>
-          <textarea
-            rows={6}
-            placeholder="Type your message..."
-            className="w-full px-3 py-2 bg-secondary-700 border border-secondary-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-600"
-          />
-        </div>
-        
-        <div className="flex items-center justify-between">
-          <button className="flex items-center space-x-2 text-secondary-400 hover:text-white">
-            <Paperclip className="w-4 h-4" />
-            <span className="text-sm">Attach files</span>
-          </button>
-          <div className="flex space-x-2">
-            <button
-              onClick={() => setShowComposer(false)}
-              className="btn-secondary text-sm"
-            >
-              Cancel
-            </button>
-            <button className="btn-primary text-sm flex items-center space-x-2">
-              <Send className="w-4 h-4" />
-              <span>Send</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
   if (!isOpen) return null;
 
   return (
@@ -192,7 +174,7 @@ const DealEmailsModal: React.FC<DealEmailsModalProps> = ({ isOpen, onClose, deal
           </div>
           <div className="flex items-center space-x-2">
             <button
-              onClick={() => setShowComposer(true)}
+              onClick={openComposer}
               className="btn-primary flex items-center space-x-2"
             >
               <Plus className="w-4 h-4" />
@@ -365,7 +347,14 @@ const DealEmailsModal: React.FC<DealEmailsModalProps> = ({ isOpen, onClose, deal
         </div>
 
         {/* Email Composer */}
-        {showComposer && <EmailComposer />}
+        {showComposer && composerData && (
+          <EnhancedEmailComposer
+            isOpen={showComposer}
+            onClose={closeComposer}
+            onSend={handleSendEmail}
+            initialData={composerData}
+          />
+        )}
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Plus, Building, Globe, Mail, Phone, Tag, Linkedin, Twitter, Facebook, MapPin, Bot, Zap } from 'lucide-react';
 import { Company, CompanyFormData } from '../../types/company';
 import Badge from '../ui/Badge';
+import Button from '../ui/Button';
 import { useToastContext } from '../../contexts/ToastContext';
 import { useGuru } from '../../contexts/GuruContext';
 import EnrichmentButton from '../enrichment/EnrichmentButton';
@@ -189,52 +190,52 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-secondary-300 mb-2">
+            <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
               Company Name *
             </label>
             <div className="relative">
-              <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-secondary-400" />
+              <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#b0b0d0]" />
               <input
                 type="text"
                 required
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
                 placeholder="Company Name"
-                className={`w-full pl-10 pr-4 py-3 bg-secondary-700 border ${
-                  errors.name ? 'border-red-500' : 'border-secondary-600'
-                } rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-600`}
+                className={`w-full pl-10 pr-4 py-3 bg-[#23233a]/50 border-2 rounded-lg text-white placeholder-[#b0b0d0] focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff] ${
+                  errors.name ? 'border-[#ef4444]' : 'border-white/20'
+                }`}
                 disabled={isSubmitting}
               />
               {errors.name && (
-                <p className="text-red-500 text-xs mt-1">{errors.name}</p>
+                <p className="text-[#ef4444] text-xs mt-1">{errors.name}</p>
               )}
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-secondary-300 mb-2">
+            <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
               Website
             </label>
             <div className="relative">
-              <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-secondary-400" />
+              <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#b0b0d0]" />
               <input
                 type="url"
                 value={formData.website || ''}
                 onChange={(e) => handleInputChange('website', e.target.value)}
                 placeholder="https://company.com"
-                className={`w-full pl-10 pr-4 py-3 bg-secondary-700 border ${
-                  errors.website ? 'border-red-500' : 'border-secondary-600'
-                } rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-600`}
+                className={`w-full pl-10 pr-4 py-3 bg-[#23233a]/50 border-2 rounded-lg text-white placeholder-[#b0b0d0] focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff] ${
+                  errors.website ? 'border-[#ef4444]' : 'border-white/20'
+                }`}
                 disabled={isSubmitting}
               />
               {errors.website && (
-                <p className="text-red-500 text-xs mt-1">{errors.website}</p>
+                <p className="text-[#ef4444] text-xs mt-1">{errors.website}</p>
               )}
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-secondary-300 mb-2">
+            <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
               Industry
             </label>
             <input
@@ -242,19 +243,19 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
               value={formData.industry || ''}
               onChange={(e) => handleInputChange('industry', e.target.value)}
               placeholder="e.g. Technology, Finance, Healthcare"
-              className="w-full px-4 py-3 bg-secondary-700 border border-secondary-600 rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-600"
+              className="w-full px-4 py-3 bg-[#23233a]/50 border-2 border-white/20 rounded-lg text-white placeholder-[#b0b0d0] focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]"
               disabled={isSubmitting}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-secondary-300 mb-2">
+            <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
               Company Size
             </label>
             <select
               value={formData.size || ''}
               onChange={(e) => handleInputChange('size', e.target.value)}
-              className="w-full px-4 py-3 bg-secondary-700 border border-secondary-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-600"
+              className="w-full px-4 py-3 bg-[#23233a]/50 border-2 border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]"
               disabled={isSubmitting}
             >
               <option value="">Select size...</option>
@@ -266,25 +267,8 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
             </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-secondary-300 mb-2">
-              Status
-            </label>
-            <select
-              value={formData.status}
-              onChange={(e) => handleInputChange('status', e.target.value)}
-              className="w-full px-4 py-3 bg-secondary-700 border border-secondary-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-600"
-              disabled={isSubmitting}
-            >
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="lead">Lead</option>
-              <option value="customer">Customer</option>
-            </select>
-          </div>
-
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-secondary-300 mb-2">
+            <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
               Description
             </label>
             <textarea
@@ -292,7 +276,7 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
               value={formData.description || ''}
               onChange={(e) => handleInputChange('description', e.target.value)}
               placeholder="Brief description of the company..."
-              className="w-full px-4 py-3 bg-secondary-700 border border-secondary-600 rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-600 resize-none"
+              className="w-full px-4 py-3 bg-[#23233a]/50 border-2 border-white/20 rounded-lg text-white placeholder-[#b0b0d0] focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]"
               disabled={isSubmitting}
             />
           </div>
@@ -304,39 +288,39 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
         <h3 className="text-lg font-semibold text-white mb-4">Contact Information</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-secondary-300 mb-2">
+            <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
               Email
             </label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-secondary-400" />
+              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#b0b0d0]" />
               <input
                 type="email"
                 value={formData.email || ''}
                 onChange={(e) => handleInputChange('email', e.target.value)}
-                placeholder="info@company.com"
-                className={`w-full pl-10 pr-4 py-3 bg-secondary-700 border ${
-                  errors.email ? 'border-red-500' : 'border-secondary-600'
-                } rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-600`}
+                placeholder="contact@company.com"
+                className={`w-full pl-10 pr-4 py-3 bg-[#23233a]/50 border-2 rounded-lg text-white placeholder-[#b0b0d0] focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff] ${
+                  errors.email ? 'border-[#ef4444]' : 'border-white/20'
+                }`}
                 disabled={isSubmitting}
               />
               {errors.email && (
-                <p className="text-red-500 text-xs mt-1">{errors.email}</p>
+                <p className="text-[#ef4444] text-xs mt-1">{errors.email}</p>
               )}
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-secondary-300 mb-2">
+            <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
               Phone
             </label>
             <div className="relative">
-              <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-secondary-400" />
+              <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#b0b0d0]" />
               <input
                 type="tel"
                 value={formData.phone || ''}
                 onChange={(e) => handleInputChange('phone', e.target.value)}
                 placeholder="+1 (555) 123-4567"
-                className="w-full pl-10 pr-4 py-3 bg-secondary-700 border border-secondary-600 rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-600"
+                className="w-full pl-10 pr-4 py-3 bg-[#23233a]/50 border-2 border-white/20 rounded-lg text-white placeholder-[#b0b0d0] focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]"
                 disabled={isSubmitting}
               />
             </div>
@@ -349,24 +333,24 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
         <h3 className="text-lg font-semibold text-white mb-4">Address</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-secondary-300 mb-2">
+            <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
               Street Address
             </label>
             <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-secondary-400" />
+              <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#b0b0d0]" />
               <input
                 type="text"
                 value={formData.address || ''}
                 onChange={(e) => handleInputChange('address', e.target.value)}
-                placeholder="123 Main St"
-                className="w-full pl-10 pr-4 py-3 bg-secondary-700 border border-secondary-600 rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-600"
+                placeholder="123 Business St"
+                className="w-full pl-10 pr-4 py-3 bg-[#23233a]/50 border-2 border-white/20 rounded-lg text-white placeholder-[#b0b0d0] focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]"
                 disabled={isSubmitting}
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-secondary-300 mb-2">
+            <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
               City
             </label>
             <input
@@ -374,27 +358,27 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
               value={formData.city || ''}
               onChange={(e) => handleInputChange('city', e.target.value)}
               placeholder="City"
-              className="w-full px-4 py-3 bg-secondary-700 border border-secondary-600 rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-600"
+              className="w-full px-4 py-3 bg-[#23233a]/50 border-2 border-white/20 rounded-lg text-white placeholder-[#b0b0d0] focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]"
               disabled={isSubmitting}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-secondary-300 mb-2">
+            <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
               State/Province
             </label>
             <input
               type="text"
               value={formData.state || ''}
               onChange={(e) => handleInputChange('state', e.target.value)}
-              placeholder="State/Province"
-              className="w-full px-4 py-3 bg-secondary-700 border border-secondary-600 rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-600"
+              placeholder="State"
+              className="w-full px-4 py-3 bg-[#23233a]/50 border-2 border-white/20 rounded-lg text-white placeholder-[#b0b0d0] focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]"
               disabled={isSubmitting}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-secondary-300 mb-2">
+            <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
               Country
             </label>
             <input
@@ -402,13 +386,13 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
               value={formData.country || ''}
               onChange={(e) => handleInputChange('country', e.target.value)}
               placeholder="Country"
-              className="w-full px-4 py-3 bg-secondary-700 border border-secondary-600 rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-600"
+              className="w-full px-4 py-3 bg-[#23233a]/50 border-2 border-white/20 rounded-lg text-white placeholder-[#b0b0d0] focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]"
               disabled={isSubmitting}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-secondary-300 mb-2">
+            <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
               Postal Code
             </label>
             <input
@@ -416,7 +400,7 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
               value={formData.postal_code || ''}
               onChange={(e) => handleInputChange('postal_code', e.target.value)}
               placeholder="Postal Code"
-              className="w-full px-4 py-3 bg-secondary-700 border border-secondary-600 rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-600"
+              className="w-full px-4 py-3 bg-[#23233a]/50 border-2 border-white/20 rounded-lg text-white placeholder-[#b0b0d0] focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]"
               disabled={isSubmitting}
             />
           </div>
@@ -428,58 +412,58 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
         <h3 className="text-lg font-semibold text-white mb-4">Social Profiles</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-secondary-300 mb-2">
+            <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
               LinkedIn
             </label>
             <div className="relative">
-              <Linkedin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-secondary-400" />
+              <Linkedin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#b0b0d0]" />
               <input
                 type="url"
                 value={formData.linkedin_url || ''}
                 onChange={(e) => handleInputChange('linkedin_url', e.target.value)}
                 placeholder="https://linkedin.com/company/name"
-                className="w-full pl-10 pr-4 py-3 bg-secondary-700 border border-secondary-600 rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-600"
+                className="w-full pl-10 pr-4 py-3 bg-[#23233a]/50 border-2 border-white/20 rounded-lg text-white placeholder-[#b0b0d0] focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]"
                 disabled={isSubmitting}
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-secondary-300 mb-2">
+            <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
               Twitter
             </label>
             <div className="relative">
-              <Twitter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-secondary-400" />
+              <Twitter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#b0b0d0]" />
               <input
                 type="url"
                 value={formData.twitter_url || ''}
                 onChange={(e) => handleInputChange('twitter_url', e.target.value)}
                 placeholder="https://twitter.com/username"
-                className="w-full pl-10 pr-4 py-3 bg-secondary-700 border border-secondary-600 rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-600"
+                className="w-full pl-10 pr-4 py-3 bg-[#23233a]/50 border-2 border-white/20 rounded-lg text-white placeholder-[#b0b0d0] focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]"
                 disabled={isSubmitting}
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-secondary-300 mb-2">
+            <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
               Facebook
             </label>
             <div className="relative">
-              <Facebook className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-secondary-400" />
+              <Facebook className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#b0b0d0]" />
               <input
                 type="url"
                 value={formData.facebook_url || ''}
                 onChange={(e) => handleInputChange('facebook_url', e.target.value)}
                 placeholder="https://facebook.com/companyname"
-                className="w-full pl-10 pr-4 py-3 bg-secondary-700 border border-secondary-600 rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-600"
+                className="w-full pl-10 pr-4 py-3 bg-[#23233a]/50 border-2 border-white/20 rounded-lg text-white placeholder-[#b0b0d0] focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]"
                 disabled={isSubmitting}
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-secondary-300 mb-2">
+            <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
               Logo URL
             </label>
             <input
@@ -487,7 +471,7 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
               value={formData.logo_url || ''}
               onChange={(e) => handleInputChange('logo_url', e.target.value)}
               placeholder="https://example.com/logo.png"
-              className="w-full px-4 py-3 bg-secondary-700 border border-secondary-600 rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-600"
+              className="w-full px-4 py-3 bg-[#23233a]/50 border-2 border-white/20 rounded-lg text-white placeholder-[#b0b0d0] focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]"
               disabled={isSubmitting}
             />
           </div>
@@ -496,7 +480,7 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
 
       {/* Tags */}
       <div>
-        <label className="block text-sm font-medium text-secondary-300 mb-2">
+        <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
           Tags
         </label>
         <div className="flex items-center space-x-2 mb-3">
@@ -506,17 +490,19 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
             onChange={(e) => setNewTag(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
             placeholder="Add a tag..."
-            className="flex-1 px-4 py-2 bg-secondary-700 border border-secondary-600 rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-600"
+            className="flex-1 px-4 py-2 bg-[#23233a]/50 border-2 border-white/20 rounded-lg text-white placeholder-[#b0b0d0] focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]"
             disabled={isSubmitting}
           />
-          <button
+          <Button
             type="button"
             onClick={addTag}
-            className="btn-secondary px-3 py-2"
+            variant="secondary"
+            size="sm"
+            icon={Plus}
             disabled={isSubmitting}
           >
-            <Plus className="w-4 h-4" />
-          </button>
+            Add
+          </Button>
         </div>
         <div className="flex flex-wrap gap-2">
           {formData.tags.map((tag, index) => (
@@ -531,7 +517,7 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
               <button
                 type="button"
                 onClick={() => removeTag(tag)}
-                className="ml-1 hover:text-red-400"
+                className="ml-1 hover:text-[#ef4444]"
                 disabled={isSubmitting}
               >
                 <X className="w-3 h-3" />
@@ -542,38 +528,42 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
       </div>
 
       {/* AI Assistant */}
-      <div className="p-4 bg-gradient-to-r from-primary-600/10 to-purple-600/10 border border-primary-600/20 rounded-lg">
+      <div className="p-4 bg-gradient-to-r from-[#a259ff]/10 to-[#8b5cf6]/10 border border-[#a259ff]/20 rounded-lg">
         <div className="flex items-start space-x-3">
-          <Bot className="w-5 h-5 text-primary-400 mt-1" />
+          <Bot className="w-5 h-5 text-[#a259ff] mt-1" />
           <div>
             <h4 className="font-medium text-white">Need help with this company?</h4>
-            <p className="text-secondary-300 text-sm mt-1">
+            <p className="text-[#b0b0d0] text-sm mt-1">
               Ask SaleToruGuru to find more information, suggest contacts, or analyze industry trends.
             </p>
-            <button 
+            <Button 
               type="button"
               onClick={handleAskGuru}
-              className="btn-primary text-sm mt-3"
+              variant="gradient"
+              size="sm"
+              className="mt-3"
             >
               Ask Guru
-            </button>
+            </Button>
           </div>
         </div>
       </div>
 
       {/* Form Actions */}
-      <div className="flex space-x-3 pt-4 border-t border-secondary-700">
-        <button
+      <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-[#23233a]/30">
+        <Button
           type="button"
           onClick={onCancel}
-          className="flex-1 btn-secondary"
+          variant="secondary"
+          size="lg"
           disabled={isSubmitting}
         >
           Cancel
-        </button>
-        <button
+        </Button>
+        <Button
           type="submit"
-          className="flex-1 btn-primary flex items-center justify-center space-x-2"
+          variant="gradient"
+          size="lg"
           disabled={isSubmitting}
         >
           {isSubmitting ? (
@@ -582,11 +572,9 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
               <span>{initialData?.id ? 'Updating...' : 'Creating...'}</span>
             </>
           ) : (
-            <>
-              <span>{initialData?.id ? 'Update Company' : 'Create Company'}</span>
-            </>
+            <span>{initialData?.id ? 'Update Company' : 'Create Company'}</span>
           )}
-        </button>
+        </Button>
       </div>
     </form>
   );

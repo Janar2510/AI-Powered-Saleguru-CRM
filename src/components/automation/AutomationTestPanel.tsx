@@ -3,14 +3,8 @@ import { Play, CheckCircle, XCircle, Clock, AlertTriangle, ArrowRight, RefreshCw
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
 import { AutomationRule } from '../../types/automation';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../../services/supabase';
 import { useToastContext } from '../../contexts/ToastContext';
-
-// Initialize Supabase client
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL || '',
-  import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-);
 
 interface AutomationTestPanelProps {
   rule: AutomationRule;

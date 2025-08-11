@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Bot, Zap, TrendingUp, CheckSquare, AlertTriangle, Target, Calendar, ChevronRight } from 'lucide-react';
+import { Bot, Zap, TrendingUp, CheckSquare, AlertTriangle, Target, Calendar, ChevronRight, ArrowRight } from 'lucide-react';
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
 import { useGuru } from '../../contexts/GuruContext';
-import { createClient } from '@supabase/supabase-js';
-
-// Initialize Supabase client
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL || '',
-  import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-);
+import { supabase } from '../../services/supabase';
+import Button from '../ui/Button';
+import { useNavigate } from 'react-router-dom';
+import BottleneckPanel from '../ai/BottleneckPanel';
+import { Bottleneck } from '../../types/ai';
+import { useTasks } from '../../hooks/useTasks';
+import { useToastContext } from '../../contexts/ToastContext';
 
 interface GuruInsight {
   id: string;
@@ -23,17 +23,24 @@ interface GuruInsight {
   };
 }
 
-const GuruInsightsWidget: React.FC = () => {
-  const { openGuru, sendMessage } = useGuru();
+interface GuruInsightsWidgetProps {
+  loading?: boolean;
+}
+
+const GuruInsightsWidget: React.FC<GuruInsightsWidgetProps> = ({ loading }) => {
+  const guru = useGuru();
   const [insights, setInsights] = useState<GuruInsight[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [meetingsCount, setMeetingsCount] = useState(0);
   const [overdueTasksCount, setOverdueTasksCount] = useState(0);
   const [highValueDealsCount, setHighValueDealsCount] = useState(0);
+  const [showBottlenecks, setShowBottlenecks] = useState(false);
+  const [bottlenecks, setBottlenecks] = useState<Bottleneck[]>([]);
+  const { createTask } = useTasks();
+  const { showToast } = useToastContext();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
-      setIsLoading(true);
       try {
         // Fetch calendar events for this week
         const today = new Date();
@@ -58,21 +65,29 @@ const GuruInsightsWidget: React.FC = () => {
         ) || [];
         setMeetingsCount(meetings.length);
         
-        // Fetch overdue tasks
-        const { data: overdueTasks, error: tasksError } = await supabase
+        // Fetch all tasks and filter for overdue ones
+        const { data: allTasks, error: tasksError } = await supabase
           .from('tasks')
-          .select('*')
-          .eq('status', 'overdue');
+          .select('*');
         
         if (tasksError) throw tasksError;
-        setOverdueTasksCount(overdueTasks?.length || 0);
+        
+        // Calculate overdue tasks based on due date
+        const todayForTasks = new Date();
+        todayForTasks.setHours(0, 0, 0, 0);
+        const overdueTasks = allTasks?.filter(task => {
+          const dueDate = new Date(task.due_date);
+          dueDate.setHours(0, 0, 0, 0);
+          return dueDate < todayForTasks && task.status !== 'completed' && task.status !== 'cancelled';
+        }) || [];
+        
+        setOverdueTasksCount(overdueTasks.length);
         
         // Fetch high-value deals
         const { data: highValueDeals, error: dealsError } = await supabase
           .from('deals')
           .select('*')
-          .gt('value', 50000)
-          .not('stage_id', 'in', '("closed-won","closed-lost")');
+          .gt('value', 50000);
         
         if (dealsError) throw dealsError;
         setHighValueDealsCount(highValueDeals?.length || 0);
@@ -80,7 +95,7 @@ const GuruInsightsWidget: React.FC = () => {
         // Generate insights based on data
         const generatedInsights: GuruInsight[] = [];
         
-        if (overdueTasks?.length > 0) {
+        if (overdueTasks.length > 0) {
           generatedInsights.push({
             id: 'overdue-tasks',
             title: `${overdueTasks.length} overdue tasks need attention`,
@@ -178,8 +193,6 @@ const GuruInsightsWidget: React.FC = () => {
             }
           }
         ]);
-      } finally {
-        setIsLoading(false);
       }
     };
     
@@ -187,11 +200,8 @@ const GuruInsightsWidget: React.FC = () => {
   }, []);
 
   const handleAction = (query: string) => {
-    openGuru();
-    // Small delay to ensure panel is open
-    setTimeout(() => {
-      sendMessage(query);
-    }, 300);
+    // Placeholder: show a toast or log
+    console.log('Guru action:', query);
   };
 
   const getInsightIcon = (type: string) => {
@@ -247,68 +257,180 @@ const GuruInsightsWidget: React.FC = () => {
     return days.indexOf(dayName);
   };
 
-  return (
-    <Card className="bg-gradient-to-r from-primary-600/10 to-purple-600/10 border border-primary-600/20">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-primary-600/30 backdrop-blur-sm rounded-full flex items-center justify-center">
-            <Bot className="w-5 h-5 text-primary-400" />
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-white">SaleToruGuru Insights</h3>
-            <p className="text-sm text-secondary-300">AI-powered recommendations for your day</p>
-          </div>
-        </div>
-        <button
-          onClick={openGuru}
-          className="btn-primary text-sm flex items-center space-x-2"
-        >
-          <Zap className="w-4 h-4" />
-          <span>Ask Guru</span>
-        </button>
-      </div>
+  const handleShowBottlenecks = () => {
+    // Sample bottleneck data - in real app, this would come from AI analysis
+    const sampleBottlenecks: Bottleneck[] = [
+      {
+        id: '1',
+        type: 'deal',
+        entity_id: 'deal-1',
+        title: 'TechCorp Enterprise Deal',
+        description: 'This deal has been in negotiation for 15 days without progress. Consider scheduling a follow-up call.',
+        priority: 'high',
+        idle_days: 15,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: '2',
+        type: 'task',
+        entity_id: 'task-1',
+        title: 'Prepare Q4 Proposal',
+        description: 'This task is overdue and blocking other activities. High priority for completion.',
+        priority: 'high',
+        idle_days: 8,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: '3',
+        type: 'contact',
+        entity_id: 'contact-1',
+        title: 'John Smith - Decision Maker',
+        description: 'No recent communication with this key contact. Risk of losing relationship.',
+        priority: 'medium',
+        idle_days: 12,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+    ];
+    
+    setBottlenecks(sampleBottlenecks);
+    setShowBottlenecks(true);
+  };
 
-      {isLoading ? (
-        <div className="flex items-center justify-center py-8">
-          <div className="w-8 h-8 border-2 border-primary-600 border-t-transparent rounded-full animate-spin"></div>
+  const handleViewEntity = (type: string, id: string) => {
+    // Navigate to the specific entity
+    console.log(`Viewing ${type} with id: ${id}`);
+    setShowBottlenecks(false);
+    // You can implement navigation logic here
+  };
+
+  const handleCreateTaskFromBottleneck = async (bottleneck: Bottleneck) => {
+    try {
+      const taskData = {
+        title: `Follow up on ${bottleneck.title}`,
+        description: bottleneck.description,
+        priority: bottleneck.priority,
+        due_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Tomorrow
+        due_time: '',
+        type: 'follow-up' as const,
+        assigned_to: '',
+        tags: []
+      };
+      
+      const taskCreated = await createTask(taskData);
+      if (taskCreated) {
+        showToast({
+          type: 'success',
+          title: 'Success',
+          description: 'Task created successfully!'
+        });
+        setShowBottlenecks(false);
+      }
+    } catch (error) {
+      console.error('Error creating task from bottleneck:', error);
+      showToast({
+        type: 'error',
+        title: 'Error',
+        description: 'Failed to create task'
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="w-full h-full flex flex-col">
+        <div className="flex items-center justify-center h-32">
+          <div className="w-6 h-6 border-2 border-[#a259ff] border-t-transparent rounded-full animate-spin"></div>
         </div>
-      ) : insights.length > 0 ? (
-        <div className="space-y-4">
-          {insights.map((insight) => (
-            <div key={insight.id} className="bg-secondary-700/50 rounded-lg p-4 hover:bg-secondary-700/70 transition-colors">
-              <div className="flex items-start space-x-3">
-                <div className="mt-1">
-                  {getInsightIcon(insight.type)}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-medium text-white">{insight.title}</h4>
-                    {getPriorityBadge(insight.priority)}
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="w-full h-full flex flex-col">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-2">
+            <Bot className="w-5 h-5 text-[#a259ff]" />
+            <h3 className="text-lg font-semibold text-white">Guru Insights</h3>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              onClick={handleShowBottlenecks}
+              variant="danger"
+              size="sm"
+              icon={AlertTriangle}
+            >
+              View Bottlenecks
+            </Button>
+            <Button
+              onClick={() => console.log('Ask Guru clicked')}
+              variant="primary"
+              size="sm"
+              icon={Zap}
+            >
+              Ask Guru
+            </Button>
+          </div>
+        </div>
+
+        {insights.length > 0 ? (
+          <div className="space-y-4">
+            {insights.map((insight) => (
+              <div key={insight.id} className="bg-[#23233a]/30 rounded-lg p-4 hover:bg-[#23233a]/50 transition-colors">
+                <div className="flex items-start space-x-3">
+                  <div className="mt-1">
+                    {getInsightIcon(insight.type)}
                   </div>
-                  <p className="text-sm text-secondary-300 mt-1">{insight.description}</p>
-                  
-                  {insight.action && (
-                    <button
-                      onClick={() => handleAction(insight.action!.query)}
-                      className="mt-3 text-sm text-primary-400 hover:text-primary-300 flex items-center space-x-1"
-                    >
-                      <span>{insight.action.label}</span>
-                      <ChevronRight className="w-3 h-3" />
-                    </button>
-                  )}
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium text-white">{insight.title}</h4>
+                      {getPriorityBadge(insight.priority)}
+                    </div>
+                    <p className="text-sm text-[#b0b0d0] mt-1">{insight.description}</p>
+                    
+                    {insight.action && (
+                      <Button
+                        onClick={() => handleAction(insight.action!.query)}
+                        variant="gradient"
+                        size="sm"
+                        icon={ChevronRight}
+                        iconPosition="right"
+                        className="mt-3"
+                      >
+                        {insight.action.label}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-8">
-          <AlertTriangle className="w-12 h-12 text-secondary-600 mx-auto mb-4" />
-          <p className="text-secondary-400">No insights available</p>
-          <p className="text-secondary-500 text-sm mt-1">Try asking Guru a question to get started</p>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <AlertTriangle className="w-12 h-12 text-[#b0b0d0] mx-auto mb-4" />
+            <p className="text-[#b0b0d0]">No insights available</p>
+            <p className="text-[#b0b0d0] text-sm mt-1">Try asking Guru a question to get started</p>
+          </div>
+        )}
+      </div>
+
+      {/* Bottleneck Panel Modal */}
+      {showBottlenecks && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="w-full max-w-2xl mx-6">
+            <BottleneckPanel
+              bottlenecks={bottlenecks}
+              onClose={() => setShowBottlenecks(false)}
+              onViewEntity={handleViewEntity}
+              onCreateTask={handleCreateTaskFromBottleneck}
+            />
+          </div>
         </div>
       )}
-    </Card>
+    </>
   );
 };
 

@@ -1,377 +1,366 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Send, Minimize2, Sparkles, Bot, Zap, Lightbulb, Clock, Target, CheckSquare, Calendar, Mail } from 'lucide-react';
+import { X, Send, Minimize2, Sparkles, Bot, Zap, Lightbulb, Clock, Target, CheckSquare, Calendar, Mail, User, AlertTriangle, Cog, Loader2 } from 'lucide-react';
 import clsx from 'clsx';
 import { useGuru } from '../../contexts/GuruContext';
 import { useToastContext } from '../../contexts/ToastContext';
 import Badge from '../ui/Badge';
+import GuruAISettings from './GuruAISettings';
+import BottleneckPanel from './BottleneckPanel';
+import { useTasks } from '../../hooks/useTasks';
+import EnhancedEmailComposer from '../emails/EnhancedEmailComposer';
+import openAIService, { GuruContext, GuruResponse } from '../../services/openaiService';
+import { Bottleneck } from '../../types/ai';
+
+// Error Boundary for GuruPanel
+class GuruPanelErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: any}> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error: any, info: any) {
+    // You can log error here
+    console.error('GuruPanel crashed:', error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-secondary-900/90">
+          <div className="bg-secondary-800 p-8 rounded-xl shadow-xl text-center">
+            <h2 className="text-lg font-bold text-red-400 mb-2">Guru Chat Error</h2>
+            <p className="text-secondary-200 mb-4">Something went wrong with the Guru chat window.</p>
+            <pre className="text-xs text-secondary-400 bg-secondary-900 p-2 rounded overflow-x-auto max-w-xs mx-auto">{String(this.state.error)}</pre>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const GuruPanel: React.FC = () => {
-  const { 
-    isOpen, 
-    messages, 
-    pageTitle, 
-    suggestedQueries, 
-    closeGuru, 
-    sendMessage,
-    isLoading,
-    usageCount,
-    usageLimit
-  } = useGuru();
-  
-  const { showToast } = useToastContext();
-  
+  const guru = useGuru() as any;
+  const isOpen = guru?.isOpen;
+  const suggestedQueries = Array.isArray(guru?.suggestedQueries) ? guru.suggestedQueries : [
+    'Summarize my pipeline',
+    'What needs attention?',
+    'Show overdue tasks',
+    'Suggest next best action',
+  ];
   const [input, setInput] = useState('');
-  const [isMinimized, setIsMinimized] = useState(false);
-  const [showMentions, setShowMentions] = useState(false);
-  const [mentionQuery, setMentionQuery] = useState('');
-  const [cursorPosition, setCursorPosition] = useState(0);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [showSettings, setShowSettings] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [bottlenecks, setBottlenecks] = useState<Bottleneck[]>([]);
+  const [showBottlenecks, setShowBottlenecks] = useState(false);
+  const chatRef = useRef<HTMLDivElement>(null);
+  const { createTask } = useTasks();
+  const { showToast } = useToastContext();
+  const [showEmailComposer, setShowEmailComposer] = useState(false);
+  const [emailData, setEmailData] = useState<any>(null);
+  const [isAILoading, setIsAILoading] = useState(false);
 
   useEffect(() => {
-    if (isOpen && inputRef.current && !isMinimized) {
-      inputRef.current.focus();
+    if (chatRef.current) {
+      chatRef.current.scrollTop = chatRef.current.scrollHeight;
     }
-  }, [isOpen, isMinimized]);
+  }, [messages, isTyping]);
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const handleInputChange = (value: string) => {
-    setInput(value);
-    
-    // Check for @ mentions
-    const lastAtIndex = value.lastIndexOf('@');
-    if (lastAtIndex !== -1) {
-      const textAfterAt = value.substring(lastAtIndex + 1);
-      if (!textAfterAt.includes(' ') && textAfterAt.length > 0) {
-        setMentionQuery(textAfterAt);
-        setShowMentions(true);
-        setCursorPosition(lastAtIndex);
-      } else {
-        setShowMentions(false);
+  // Build context for AI
+  const buildGuruContext = (): GuruContext => {
+    return {
+      user: {
+        name: 'Janar Kuusk',
+        role: 'Sales Manager',
+        preferences: {
+          communicationStyle: 'professional',
+          automationLevel: 'high'
+        }
+      },
+      crm: {
+        deals: [], // You can fetch real data here
+        contacts: [],
+        tasks: [],
+        companies: [],
+        analytics: {
+          pipelineValue: 125000,
+          conversionRate: 23,
+          avgDealCycle: 45,
+          activeDeals: 12
+        }
+      },
+      conversation: {
+        history: messages,
+        currentPage: 'dashboard'
       }
-    } else {
-      setShowMentions(false);
-    }
+    };
   };
 
   const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
-
-    // Check if user has reached their limit
-    if (usageCount >= usageLimit) {
-      showToast({
-        title: 'AI Usage Limit Reached',
-        description: `You've reached your daily limit of ${usageLimit} AI requests.`,
-        type: 'error'
-      });
-      return;
-    }
-
-    const message = input.trim();
+    if (!input.trim()) return;
+    const userMessage = input.trim();
     setInput('');
-
+    setMessages(prev => [...prev, { sender: 'user', text: userMessage }]);
+    
+    // Use real AI for processing
+    setIsAILoading(true);
     try {
-      await sendMessage(message);
+      const context = buildGuruContext();
+      const aiResponse = await openAIService.processGuruMessage(
+        userMessage,
+        context,
+        messages
+      );
+      
+      // Handle AI response
+      if (aiResponse.type === 'action' && aiResponse.actions) {
+        // Execute actions
+        for (const action of aiResponse.actions) {
+          switch (action.type) {
+            case 'create_task':
+              const taskCreated = await createTask(action.data);
+              if (taskCreated) {
+                setMessages(prev => [...prev, { 
+                  sender: 'guru', 
+                  text: `✅ Task "${action.data.title}" created successfully!` 
+                }]);
+              }
+              break;
+            case 'compose_email':
+              setEmailData(action.data);
+              setShowEmailComposer(true);
+              break;
+            case 'show_bottlenecks':
+              // Handle bottleneck detection
+              if (action.data && action.data.bottlenecks) {
+                setBottlenecks(action.data.bottlenecks);
+                setShowBottlenecks(true);
+              }
+              break;
+            // Add more action handlers as needed
+          }
+        }
+      }
+      
+      // Add AI response to chat
+      setMessages(prev => [...prev, { 
+        sender: 'guru', 
+        text: aiResponse.content 
+      }]);
+      
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('AI processing error:', error);
+      setMessages(prev => [...prev, { 
+        sender: 'guru', 
+        text: "I'm having trouble processing your request. Please try again." 
+      }]);
+    } finally {
+      setIsAILoading(false);
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
+  const handleViewEntity = (type: string, id: string) => {
+    // Navigate to the specific entity
+    console.log(`Viewing ${type} with id: ${id}`);
+    // You can implement navigation logic here
+    setShowBottlenecks(false);
+  };
+
+  const handleCreateTaskFromBottleneck = async (bottleneck: Bottleneck) => {
+    try {
+      const taskData = {
+        title: `Follow up on ${bottleneck.title}`,
+        description: bottleneck.description,
+        priority: bottleneck.priority,
+        due_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Tomorrow
+        type: 'follow_up',
+        status: 'pending'
+      };
+      
+      const taskCreated = await createTask(taskData);
+      if (taskCreated) {
+        showToast('Task created successfully!', 'success');
+        setShowBottlenecks(false);
+      }
+    } catch (error) {
+      console.error('Error creating task from bottleneck:', error);
+      showToast('Failed to create task', 'error');
     }
   };
 
-  const getContextIcon = () => {
-    switch (pageTitle.toLowerCase()) {
-      case 'deals':
-        return <Target className="w-5 h-5 text-primary-500" />;
-      case 'contacts':
-      case 'companies':
-        return <User className="w-5 h-5 text-green-500" />;
-      case 'tasks':
-        return <CheckSquare className="w-5 h-5 text-orange-500" />;
-      case 'calendar':
-        return <Calendar className="w-5 h-5 text-blue-500" />;
-      case 'emails':
-      case 'email templates':
-        return <Mail className="w-5 h-5 text-purple-500" />;
-      default:
-        return <Bot className="w-5 h-5 text-primary-500" />;
-    }
-  };
-
-  // Entities for mentions (deals, contacts, etc.)
-  const entities = [
-    { id: 'deal-1', name: 'TechCorp Enterprise Deal', type: 'deal' },
-    { id: 'deal-2', name: 'StartupXYZ Cloud Setup', type: 'deal' },
-    { id: 'contact-1', name: 'John Smith', type: 'contact' },
-    { id: 'contact-2', name: 'Sarah Johnson', type: 'contact' },
-  ];
-
-  const filteredEntities = entities.filter(entity =>
-    entity.name.toLowerCase().includes(mentionQuery.toLowerCase())
-  );
-
-  const insertMention = (entity: typeof entities[0]) => {
-    const beforeAt = input.substring(0, cursorPosition);
-    const afterMention = input.substring(cursorPosition + mentionQuery.length + 1);
-    const newText = `${beforeAt}@${entity.name}${afterMention}`;
-    
-    setInput(newText);
-    setShowMentions(false);
-    setMentionQuery('');
-    
-    // Focus back to input
-    setTimeout(() => {
-      inputRef.current?.focus();
-    }, 0);
+  const handleEmailSend = async (emailData: any): Promise<boolean> => {
+    // Handle email sending (you can integrate with your email service here)
+    setShowEmailComposer(false);
+    setMessages(prev => [...prev, { 
+      sender: 'guru', 
+      text: `📧 Email sent successfully to ${emailData.to}!` 
+    }]);
+    return true; // Return success
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className={clsx(
-      'fixed right-0 top-0 h-full bg-secondary-800/95 backdrop-blur-sm border-l border-secondary-700 shadow-2xl transition-all duration-300 z-50',
-      isMinimized ? 'w-16' : 'w-[400px] max-w-full',
-      'flex flex-col'
-    )}>
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-secondary-700 bg-gradient-to-r from-primary-600 to-purple-700">
-        {!isMinimized && (
-          <div className="flex items-center space-x-3">
-            <div className="relative">
-              <img 
-                src="https://i.imgur.com/Zylpdjy.png" 
-                alt="SaleToruGuru" 
-                className="w-6 h-6 object-contain"
-              />
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold text-white">SaleToruGuru</h2>
-              <p className="text-xs text-purple-200">{pageTitle} Assistant</p>
-            </div>
+    <div className="fixed inset-0 z-50 flex items-end justify-end pointer-events-none">
+      {/* Overlay */}
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm pointer-events-auto" onClick={guru?.closeGuru || (() => {})} />
+      
+      {/* Bottleneck Panel */}
+      {showBottlenecks && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-auto">
+          <div className="w-full max-w-2xl mx-6">
+            <BottleneckPanel
+              bottlenecks={bottlenecks}
+              onClose={() => setShowBottlenecks(false)}
+              onViewEntity={handleViewEntity}
+              onCreateTask={handleCreateTaskFromBottleneck}
+            />
           </div>
-        )}
-        {!isMinimized && (
-          <div className="flex items-center space-x-1">
-            <div className="text-xs text-purple-200 px-2 py-1 bg-purple-900/30 rounded-full">
-              {usageCount}/{usageLimit === Infinity ? '∞' : usageLimit} today
-            </div>
-          </div>
-        )}
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={() => setIsMinimized(!isMinimized)}
-            className="p-1.5 rounded-lg hover:bg-white/10 text-white transition-colors touch-target"
-            aria-label={isMinimized ? "Expand" : "Minimize"}
-          >
-            <Minimize2 className="w-4 h-4" />
-          </button>
-          <button
-            onClick={closeGuru}
-            className="p-1.5 rounded-lg hover:bg-white/10 text-white transition-colors touch-target"
-            aria-label="Close"
-          >
-            <X className="w-4 h-4" />
-          </button>
         </div>
-      </div>
-
-      {!isMinimized && (
-        <>
-          {/* Context Suggestions */}
-          {messages.length <= 1 && (
-            <div className="p-4 border-b border-secondary-700 bg-secondary-750">
-              <h3 className="text-sm font-medium text-secondary-300 mb-3">Try asking about {pageTitle}:</h3>
-              <div className="space-y-2">
-                {suggestedQueries.slice(0, 3).map((suggestion, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setInput(suggestion)}
-                    className="w-full text-left px-3 py-2 bg-secondary-600 hover:bg-secondary-500 rounded-lg text-xs text-secondary-200 transition-colors"
-                  >
-                    {suggestion}
-                  </button>
-                ))}
+      )}
+      
+      {/* Panel */}
+      <div className="relative w-full max-w-md m-6 pointer-events-auto animate-fade-in-up">
+        <div className="bg-gradient-to-br from-secondary-900/95 to-primary-900/90 backdrop-blur-md border border-primary-700/30 shadow-2xl rounded-2xl overflow-hidden flex flex-col min-h-[480px] max-h-[80vh]">
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-primary-700/20 bg-secondary-900/80">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-lg">
+                <span className="text-2xl font-bold text-white">G</span>
               </div>
-            </div>
-          )}
-
-          {/* Usage Limit Alert */}
-          {usageCount >= usageLimit && (
-            <div className="p-3 bg-yellow-900/20 border-b border-yellow-600/30">
-              <div className="flex items-start space-x-2">
-                <AlertTriangle className="w-4 h-4 text-yellow-500 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-yellow-200">Usage Limit Reached</p>
-                  <p className="text-xs text-yellow-300/80 mt-1">
-                    You've reached your daily limit of {usageLimit} AI requests. 
-                    Upgrade your plan for unlimited access.
-                  </p>
+              <div>
+                <div className="font-semibold text-lg text-white flex items-center gap-2">Guru
+                  <span className="ml-2 w-2 h-2 rounded-full bg-green-400 animate-pulse" title="Online" />
+                </div>
+                <div className="text-xs text-primary-300 flex items-center gap-1">
+                  {isTyping ? <Loader2 className="w-3 h-3 animate-spin" /> : <span>Online</span>}
                 </div>
               </div>
             </div>
-          )}
-
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={clsx(
-                  'flex',
-                  message.type === 'user' ? 'justify-end' : 'justify-start'
-                )}
-              >
-                <div
-                  className={clsx(
-                    'max-w-[85%] px-4 py-3 rounded-2xl text-sm leading-relaxed',
-                    message.type === 'user'
-                      ? 'bg-primary-600 text-white rounded-br-md'
-                      : 'bg-secondary-700 text-secondary-100 rounded-bl-md'
-                  )}
-                >
-                  {message.type === 'guru' && (
-                    <div className="flex items-center space-x-2 mb-2">
-                      <Sparkles className="w-4 h-4 text-primary-400" />
-                      <span className="text-xs font-medium text-primary-400">SaleToruGuru</span>
-                      {message.metadata?.confidence && (
-                        <Badge variant="secondary" size="sm">
-                          {message.metadata.confidence}% confident
-                        </Badge>
-                      )}
-                    </div>
-                  )}
-                  <div className="whitespace-pre-wrap">{message.content}</div>
-                  
-                  {/* Action Buttons */}
-                  {message.metadata?.actions && (
-                    <div className="flex flex-wrap gap-2 mt-3">
-                      {message.metadata.actions.map((action, index) => (
-                        <button
-                          key={index}
-                          className="px-3 py-1 bg-primary-600 hover:bg-primary-700 text-white text-xs rounded-lg transition-colors"
-                        >
-                          {action.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  
-                  <div className={clsx(
-                    'text-xs mt-2 opacity-70',
-                    message.type === 'user' ? 'text-purple-200' : 'text-secondary-400'
-                  )}>
-                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </div>
+            <button
+              className="p-2 rounded-full hover:bg-primary-800/40 transition-colors text-primary-300"
+              onClick={() => setShowSettings(true)}
+              title="Guru Settings"
+            >
+              <Cog className="w-5 h-5" />
+            </button>
+          </div>
+          {/* Chat Area */}
+          <div ref={chatRef} className="flex-1 overflow-y-auto px-6 py-4 space-y-4 bg-gradient-to-br from-secondary-900/80 to-primary-900/70">
+            {messages.length === 0 && (
+              <div className="flex flex-col items-center justify-center h-full text-center text-primary-300 opacity-70">
+                <span className="text-2xl mb-2">👋</span>
+                <span className="font-medium">Hi, I'm Guru! How can I help you today?</span>
+                <span className="text-xs mt-1">Ask me anything about your CRM, automations, analytics, or more.</span>
+              </div>
+            )}
+            {messages.map((msg: any, idx: number) => (
+              <div key={idx} className={clsx(
+                'flex',
+                msg.role === 'user' ? 'justify-end' : 'justify-start'
+              )}>
+                <div className={clsx(
+                  'max-w-[80%] px-4 py-2 rounded-xl shadow',
+                  msg.role === 'user'
+                    ? 'bg-primary-700 text-white rounded-br-none'
+                    : 'bg-secondary-800 text-primary-100 rounded-bl-none border border-primary-700/30'
+                )}>
+                  {msg.content}
                 </div>
               </div>
             ))}
-
-            {isLoading && (
+            {isTyping && (
               <div className="flex justify-start">
-                <div className="bg-secondary-700 px-4 py-3 rounded-2xl rounded-bl-md">
-                  <div className="flex items-center space-x-2">
-                    <Sparkles className="w-4 h-4 text-primary-400" />
-                    <span className="text-xs font-medium text-primary-400">Analyzing...</span>
-                  </div>
-                  <div className="flex space-x-1 mt-2">
-                    <div className="w-2 h-2 bg-secondary-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-secondary-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-2 h-2 bg-secondary-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                  </div>
+                <div className="max-w-[80%] px-4 py-2 rounded-xl bg-secondary-800 text-primary-100 border border-primary-700/30 animate-pulse">
+                  Guru is typing...
                 </div>
               </div>
             )}
-            <div ref={messagesEndRef} />
           </div>
-
-          {/* Input */}
-          <div className="p-4 border-t border-secondary-700 bg-secondary-750">
-            <div className="flex space-x-3">
-              <div className="relative flex-1">
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={input}
-                  onChange={(e) => handleInputChange(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder={`Ask about ${pageTitle.toLowerCase()}...`}
-                  className="w-full px-4 py-3 bg-secondary-700 border border-secondary-600 rounded-xl text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-600"
-                  disabled={isLoading || usageCount >= usageLimit}
-                />
-                
-                {/* Mention Dropdown */}
-                {showMentions && filteredEntities.length > 0 && (
-                  <div className="absolute bottom-full left-0 mb-2 w-64 bg-secondary-700 border border-secondary-600 rounded-lg shadow-lg z-10">
-                    <div className="p-2">
-                      <div className="text-xs text-secondary-400 mb-2">Mention entity:</div>
-                      {filteredEntities.map((entity) => (
-                        <button
-                          key={entity.id}
-                          type="button"
-                          onClick={() => insertMention(entity)}
-                          className="w-full text-left p-2 hover:bg-secondary-600 rounded-lg transition-colors"
-                        >
-                          <div className="flex items-center space-x-2">
-                            {entity.type === 'deal' ? (
-                              <Target className="w-4 h-4 text-primary-400" />
-                            ) : (
-                              <User className="w-4 h-4 text-primary-400" />
-                            )}
-                            <div>
-                              <div className="font-medium text-white">{entity.name}</div>
-                              <div className="text-xs text-secondary-400 capitalize">{entity.type}</div>
-                            </div>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
+          {/* Suggestions */}
+          {suggestedQueries.length > 0 && (
+            <div className="px-6 pb-2 flex flex-wrap gap-2">
+              {suggestedQueries.map((q: string, i: number) => (
+                <button
+                  key={i}
+                  className="px-3 py-1 bg-primary-700/80 hover:bg-primary-600 text-white text-xs rounded-lg transition-colors"
+                  onClick={() => setInput(q)}
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+          )}
+          {/* Input Bar */}
+          <form
+            className="flex items-center gap-2 px-6 py-4 border-t border-primary-700/20 bg-secondary-900/80"
+            onSubmit={e => {
+              e.preventDefault();
+              handleSend();
+            }}
+          >
+            <input
+              className="flex-1 bg-secondary-800/80 text-white px-4 py-2 rounded-lg border border-primary-700/30 focus:outline-none focus:ring-2 focus:ring-primary-500 placeholder-primary-400"
+              placeholder="Type your message..."
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
+            />
+            <button
+              type="submit"
+              className="ml-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg shadow transition-colors"
+              disabled={!input.trim()}
+            >
+              Send
+            </button>
+          </form>
+        </div>
+        {/* Settings Modal */}
+        {showSettings && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+            <div className="bg-secondary-900 rounded-2xl shadow-2xl p-8 w-full max-w-md relative">
               <button
-                onClick={handleSend}
-                disabled={!input.trim() || isLoading || usageCount >= usageLimit}
-                className="px-4 py-3 bg-primary-600 hover:bg-primary-700 disabled:bg-secondary-600 disabled:cursor-not-allowed rounded-xl text-white transition-colors touch-target"
-                aria-label="Send message"
+                className="absolute top-3 right-3 p-2 rounded-full hover:bg-primary-800/40 text-primary-300"
+                onClick={() => setShowSettings(false)}
+                title="Close"
               >
-                <Send className="w-4 h-4" />
+                ×
               </button>
-            </div>
-            
-            <div className="flex items-center justify-between mt-2 text-xs text-secondary-500">
-              <span>Cmd+K to open • Context: {pageTitle}</span>
-              <span>AI-powered assistance</span>
+              <h2 className="text-xl font-bold text-white mb-4">Guru Settings</h2>
+              <div className="text-primary-200 text-sm">Settings coming soon...</div>
             </div>
           </div>
-        </>
-      )}
-
-      {/* Minimized State */}
-      {isMinimized && (
-        <div className="flex flex-col items-center py-4 space-y-4">
-          <img 
-            src="https://i.imgur.com/Zylpdjy.png" 
-            alt="SaleToruGuru" 
-            className="w-8 h-8 object-contain"
-          />
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+        )}
+      </div>
+      {/* Email Composer Modal */}
+      <EnhancedEmailComposer
+        isOpen={showEmailComposer}
+        onClose={() => setShowEmailComposer(false)}
+        onSend={handleEmailSend}
+        initialData={emailData}
+      />
+      {isAILoading && (
+        <div className="flex items-center space-x-2 text-secondary-400 text-sm">
+          <div className="w-4 h-4 border-2 border-primary-600 border-t-transparent rounded-full animate-spin"></div>
+          <span>Guru is thinking...</span>
         </div>
       )}
     </div>
   );
 };
 
-export default GuruPanel;
+// Export GuruPanel wrapped in error boundary
+const GuruPanelWithBoundary: React.FC = () => (
+  <GuruPanelErrorBoundary>
+    <GuruPanel />
+  </GuruPanelErrorBoundary>
+);
+
+export default GuruPanelWithBoundary;

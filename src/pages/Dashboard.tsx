@@ -15,10 +15,13 @@ import {
   ChevronRight,
   ArrowRight,
   Zap,
-  Sparkles
+  Sparkles,
+  UserCircle
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
+import Button from '../components/ui/Button';
+import QuickActionButton from '../components/ui/QuickActionButton';
 import { useGuru } from '../contexts/GuruContext';
 import { useToastContext } from '../contexts/ToastContext';
 import { useNavigate } from 'react-router-dom';
@@ -28,13 +31,24 @@ import GuruInsightsWidget from '../components/dashboard/GuruInsightsWidget';
 import TaskSummaryWidget from '../components/dashboard/TaskSummaryWidget';
 import PipelineWidget from '../components/dashboard/PipelineWidget';
 import DashboardAnalytics from '../components/dashboard/DashboardAnalytics';
-import { getSupabaseClient, isSupabaseAvailable } from '../lib/supabase';
-
-// Get the centralized Supabase client
-const supabase = isSupabaseAvailable() ? getSupabaseClient() : null;
+import { supabase } from '../services/supabase';
+import CreateDealModal from '../components/deals/CreateDealModal';
+import CreateContactModal from '../components/contacts/CreateContactModal';
+import CreateTaskModal from '../components/tasks/CreateTaskModal';
+import CreateEventModal from '../components/calendar/CreateEventModal';
+import DealUpdatesWidget from '../components/dashboard/DealUpdatesWidget';
+import NotificationCard from '../components/dashboard/NotificationCard';
+import LeadScoringCard from '../components/dashboard/LeadScoringCard';
+import AppMarketplaceCard from '../components/dashboard/AppMarketplaceCard';
+import { FocusTimeWidget } from '../components/dashboard/FocusTimeWidget';
+import { SocialMentionsWidget } from '../components/social/SocialMentionsWidget';
+import Leaderboard from '../components/dashboard/Leaderboard';
+import DatabaseStatus from '../components/common/DatabaseStatus';
 
 const Dashboard: React.FC = () => {
-  const { openGuru, sendMessage } = useGuru();
+  const guruContext = useGuru();
+  const openGuru = guruContext.openGuru || (() => {});
+  const sendMessage = guruContext.sendMessage || (() => {});
   const { showToast } = useToastContext();
   const navigate = useNavigate();
   
@@ -63,6 +77,377 @@ const Dashboard: React.FC = () => {
       avgDealSize: 0
     }
   });
+  
+  // Modal state
+  const [isDealModalOpen, setDealModalOpen] = useState(false);
+  const [isContactModalOpen, setContactModalOpen] = useState(false);
+  const [isTaskModalOpen, setTaskModalOpen] = useState(false);
+  const [isEventModalOpen, setEventModalOpen] = useState(false);
+
+  // Handle deal creation
+  const handleDealCreated = async (dealData: any) => {
+    try {
+      // Save to database
+      const { data, error } = await supabase
+        .from('deals')
+        .insert([{
+          title: dealData.title,
+          description: dealData.description,
+          value: dealData.value,
+          stage_id: dealData.stage_id,
+          probability: dealData.probability,
+          expected_close_date: dealData.expected_close_date,
+          company_id: null, // Set to null or map if available
+          contact_id: null, // Set to null or map if available
+          lead_id: dealData.lead_id || null, // Set if converting from lead
+          owner_id: null, // Set to null or map if available
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      showToast({
+        type: 'success',
+        title: 'Deal Created',
+        message: `${dealData.title} has been created successfully!`
+      });
+
+      // Refresh dashboard data
+      fetchDashboardData();
+    } catch (error) {
+      console.error('Error creating deal:', error);
+      showToast({
+        type: 'error',
+        title: 'Creation Failed',
+        message: 'Failed to create deal. Please try again.'
+      });
+    }
+  };
+
+  // Handle contact creation
+  const handleContactCreated = async (contactData: any) => {
+    try {
+      // Save to database
+      const { data, error } = await supabase
+        .from('contacts')
+        .insert([{
+          name: contactData.name,
+          email: contactData.email,
+          phone: contactData.phone,
+          company: contactData.company,
+          position: contactData.position,
+          owner_id: null, // Will be set to current user
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      showToast({
+        type: 'success',
+        title: 'Contact Created',
+        message: `${contactData.name} has been added to your contacts!`
+      });
+
+      // Refresh dashboard data
+      fetchDashboardData();
+    } catch (error) {
+      console.error('Error creating contact:', error);
+      showToast({
+        type: 'error',
+        title: 'Creation Failed',
+        message: 'Failed to create contact. Please try again.'
+      });
+    }
+  };
+
+  // Handle task creation
+  const handleTaskCreated = async (taskData: any) => {
+    try {
+      // Save to database
+      const { data, error } = await supabase
+        .from('tasks')
+        .insert([{
+          title: taskData.title,
+          description: taskData.description,
+          due_date: taskData.due_date,
+          due_time: taskData.due_time,
+          priority: taskData.priority,
+          status: taskData.status || 'pending',
+          type: taskData.type,
+          assigned_to: taskData.assigned_to,
+          created_by: null, // Will be set to current user
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      showToast({
+        type: 'success',
+        title: 'Task Created',
+        message: `${taskData.title} has been added to your tasks!`
+      });
+
+      // Refresh dashboard data
+      fetchDashboardData();
+    } catch (error) {
+      console.error('Error creating task:', error);
+      showToast({
+        type: 'error',
+        title: 'Creation Failed',
+        message: 'Failed to create task. Please try again.'
+      });
+    }
+  };
+
+  // Handle event creation
+  const handleEventCreated = async (eventData: any) => {
+    try {
+      showToast({
+        type: 'success',
+        title: 'Event Created',
+        message: `${eventData.title} has been scheduled!`
+      });
+
+      // Refresh dashboard data
+      fetchDashboardData();
+    } catch (error) {
+      console.error('Error creating event:', error);
+      showToast({
+        type: 'error',
+        title: 'Creation Failed',
+        message: 'Failed to create event. Please try again.'
+      });
+    }
+  };
+
+  // Fetch dashboard data function
+  const fetchDashboardData = async () => {
+    setIsLoading(true);
+    setConnectionError(null);
+    
+    try {
+      if (!supabase) {
+        // Use sample data if Supabase is not configured
+        const { sampleDeals, sampleStages, sampleTasks, sampleContacts } = getSampleData();
+        
+        // Process sample data
+        const dealsByStage = sampleStages.map((stage: any) => {
+          const stageDeals = sampleDeals.filter((deal: any) => deal.stage_id === stage.id);
+          return {
+            id: stage.id,
+            name: stage.name,
+            count: stageDeals.length,
+            value: stageDeals.reduce((sum: any, deal: any) => sum + (deal.value || 0), 0)
+          };
+        });
+        
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const todaysTasks = sampleTasks
+          .filter((task: any) => {
+            const taskDate = new Date(task.due_date);
+            taskDate.setHours(0, 0, 0, 0);
+            return taskDate.getTime() === today.getTime() && !task.completed;
+          })
+          .slice(0, 4);
+        
+        const totalDeals = sampleDeals.length;
+        const closedDeals = sampleDeals.filter((deal: any) => deal.stage_id === 'closed-won').length;
+        const conversionRate = totalDeals > 0 ? Math.round((closedDeals / totalDeals) * 100) : 24;
+        
+        const totalValue = sampleDeals.reduce((sum: any, deal: any) => sum + (deal.value || 0), 0);
+        const avgDealSize = totalDeals > 0 ? Math.round(totalValue / totalDeals) : 50000;
+        
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+        const newContacts = sampleContacts.filter((contact: any) => 
+          new Date(contact.created_at) >= oneWeekAgo
+        ).length;
+        
+        setDashboardData({
+          deals: {
+            total: totalDeals,
+            value: totalValue,
+            byStage: dealsByStage,
+            recentlyUpdated: sampleDeals
+          },
+          tasks: {
+            total: sampleTasks.length,
+            completed: sampleTasks.filter(task => task.completed).length,
+            overdue: sampleTasks.filter(task => 
+              new Date(task.due_date) < today && !task.completed
+            ).length,
+            today: todaysTasks
+          },
+          contacts: {
+            total: sampleContacts.length,
+            newThisWeek: newContacts
+          },
+          performance: {
+            conversionRate,
+            avgDealCycle: 28,
+            avgDealSize
+          }
+        });
+        
+        setConnectionError('Demo Mode: Connect to Supabase for live data');
+        return;
+      }
+      
+      // Fetch deals with timeout
+      const dealsPromise = Promise.race([
+        supabase.from('deals').select('*'),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Request timeout')), 10000))
+      ]);
+      
+      const { data: deals, error: dealsError } = await dealsPromise as any;
+      
+      if (dealsError) throw dealsError;
+      
+      // Fetch stages with timeout
+      const stagesPromise = Promise.race([
+        supabase.from('stages').select('*').order('sort_order'),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Request timeout')), 10000))
+      ]);
+      
+      const { data: stages, error: stagesError } = await stagesPromise as any;
+      
+      if (stagesError) throw stagesError;
+      
+      // Fetch tasks with timeout
+      const tasksPromise = Promise.race([
+        supabase.from('tasks').select('*'),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Request timeout')), 10000))
+      ]);
+      
+      const { data: tasks, error: tasksError } = await tasksPromise as any;
+      
+      if (tasksError) throw tasksError;
+      
+      // Fetch contacts with timeout
+      const contactsPromise = Promise.race([
+        supabase.from('contacts').select('*'),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Request timeout')), 10000))
+      ]);
+      
+      const { data: contacts, error: contactsError } = await contactsPromise as any;
+      
+      if (contactsError) throw contactsError;
+      
+      // Process data
+      const dealsData = deals || [];
+      const stagesData = stages || [];
+      const tasksData = tasks || [];
+      const contactsData = contacts || [];
+      
+      // Calculate deals by stage
+      const dealsByStage = stagesData.map((stage: any) => {
+        const stageDeals = dealsData.filter((deal: any) => deal.stage_id === stage.id);
+        return {
+          id: stage.id,
+          name: stage.name,
+          count: stageDeals.length,
+          value: stageDeals.reduce((sum: any, deal: any) => sum + (deal.value || 0), 0)
+        };
+      });
+      
+      // Get recently updated deals
+      const recentDeals = [...dealsData]
+        .sort((a: any, b: any) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+        .slice(0, 3)
+        .map((deal: any) => {
+          // Find the corresponding stage for this deal
+          const stage = stagesData.find((s: any) => s.id === deal.stage_id);
+          return {
+            ...deal,
+            stage_name: stage ? stage.name : 'Unknown Stage'
+          };
+        });
+      
+      // Get today's tasks
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      
+      const todaysTasks = tasksData
+        .filter((task: any) => {
+          const taskDate = new Date(task.due_date);
+          taskDate.setHours(0, 0, 0, 0);
+          return taskDate.getTime() === today.getTime() && !task.completed;
+        })
+        .slice(0, 4);
+      
+      // Calculate performance metrics
+      const totalDeals = dealsData.length;
+      const closedDeals = dealsData.filter((deal: any) => deal.stage_id === 'closed-won').length;
+      const conversionRate = totalDeals > 0 ? Math.round((closedDeals / totalDeals) * 100) : 0;
+      
+      const totalValue = dealsData.reduce((sum: any, deal: any) => sum + (deal.value || 0), 0);
+      const avgDealSize = totalDeals > 0 ? Math.round(totalValue / totalDeals) : 0;
+      
+      // Count new contacts this week
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+      const newContacts = contactsData.filter((contact: any) => 
+        new Date(contact.created_at) >= oneWeekAgo
+      ).length;
+      
+      // Update dashboard data
+      setDashboardData({
+        deals: {
+          total: totalDeals,
+          value: totalValue,
+          byStage: dealsByStage,
+          recentlyUpdated: recentDeals
+        },
+        tasks: {
+          total: tasksData.length,
+          completed: tasksData.filter(task => task.completed).length,
+          overdue: tasksData.filter(task => 
+            new Date(task.due_date) < today && !task.completed
+          ).length,
+          today: todaysTasks
+        },
+        contacts: {
+          total: contactsData.length,
+          newThisWeek: newContacts
+        },
+        performance: {
+          conversionRate,
+          avgDealCycle: 28, // Placeholder
+          avgDealSize
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      
+      // Set connection error message
+      if (error instanceof Error) {
+        if (error.message.includes('timeout')) {
+          setConnectionError('Connection timeout. Please check your internet connection.');
+        } else if (error.message.includes('JWT')) {
+          setConnectionError('Authentication error. Please check your Supabase configuration.');
+        } else {
+          setConnectionError(`Database error: ${error.message}`);
+        }
+      } else {
+        setConnectionError('An unexpected error occurred while fetching data.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   // Sample data for demo mode
   const getSampleData = () => {
@@ -96,275 +481,8 @@ const Dashboard: React.FC = () => {
     return { sampleDeals, sampleStages, sampleTasks, sampleContacts };
   };
   
-  // Fetch dashboard data
+  // Fetch dashboard data on component mount
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      setIsLoading(true);
-      setConnectionError(null);
-      
-      try {
-        if (!supabase) {
-          // Use sample data if Supabase is not configured
-          const { sampleDeals, sampleStages, sampleTasks, sampleContacts } = getSampleData();
-          
-          // Process sample data
-          const dealsByStage = sampleStages.map(stage => {
-            const stageDeals = sampleDeals.filter(deal => deal.stage_id === stage.id);
-            return {
-              id: stage.id,
-              name: stage.name,
-              count: stageDeals.length,
-              value: stageDeals.reduce((sum, deal) => sum + (deal.value || 0), 0)
-            };
-          });
-          
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          
-          const todaysTasks = sampleTasks
-            .filter(task => {
-              const taskDate = new Date(task.due_date);
-              taskDate.setHours(0, 0, 0, 0);
-              return taskDate.getTime() === today.getTime() && !task.completed;
-            })
-            .slice(0, 4);
-          
-          const totalDeals = sampleDeals.length;
-          const closedDeals = sampleDeals.filter(deal => deal.stage_id === 'closed-won').length;
-          const conversionRate = totalDeals > 0 ? Math.round((closedDeals / totalDeals) * 100) : 24;
-          
-          const totalValue = sampleDeals.reduce((sum, deal) => sum + (deal.value || 0), 0);
-          const avgDealSize = totalDeals > 0 ? Math.round(totalValue / totalDeals) : 50000;
-          
-          const oneWeekAgo = new Date();
-          oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-          const newContacts = sampleContacts.filter(contact => 
-            new Date(contact.created_at) >= oneWeekAgo
-          ).length;
-          
-          setDashboardData({
-            deals: {
-              total: totalDeals,
-              value: totalValue,
-              byStage: dealsByStage,
-              recentlyUpdated: sampleDeals
-            },
-            tasks: {
-              total: sampleTasks.length,
-              completed: sampleTasks.filter(task => task.completed).length,
-              overdue: sampleTasks.filter(task => 
-                new Date(task.due_date) < today && !task.completed
-              ).length,
-              today: todaysTasks
-            },
-            contacts: {
-              total: sampleContacts.length,
-              newThisWeek: newContacts
-            },
-            performance: {
-              conversionRate,
-              avgDealCycle: 28,
-              avgDealSize
-            }
-          });
-          
-          setConnectionError('Demo Mode: Connect to Supabase for live data');
-          return;
-        }
-        
-        // Fetch deals with timeout
-        const dealsPromise = Promise.race([
-          supabase.from('deals').select('*'),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Request timeout')), 10000))
-        ]);
-        
-        const { data: deals, error: dealsError } = await dealsPromise as any;
-        
-        if (dealsError) throw dealsError;
-        
-        // Fetch stages with timeout
-        const stagesPromise = Promise.race([
-          supabase.from('stages').select('*').order('sort_order'),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Request timeout')), 10000))
-        ]);
-        
-        const { data: stages, error: stagesError } = await stagesPromise as any;
-        
-        if (stagesError) throw stagesError;
-        
-        // Fetch tasks with timeout
-        const tasksPromise = Promise.race([
-          supabase.from('tasks').select('*'),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Request timeout')), 10000))
-        ]);
-        
-        const { data: tasks, error: tasksError } = await tasksPromise as any;
-        
-        if (tasksError) throw tasksError;
-        
-        // Fetch contacts with timeout
-        const contactsPromise = Promise.race([
-          supabase.from('contacts').select('*'),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Request timeout')), 10000))
-        ]);
-        
-        const { data: contacts, error: contactsError } = await contactsPromise as any;
-        
-        if (contactsError) throw contactsError;
-        
-        // Process data
-        const dealsData = deals || [];
-        const stagesData = stages || [];
-        const tasksData = tasks || [];
-        const contactsData = contacts || [];
-        
-        // Calculate deals by stage
-        const dealsByStage = stagesData.map(stage => {
-          const stageDeals = dealsData.filter(deal => deal.stage_id === stage.id);
-          return {
-            id: stage.id,
-            name: stage.name,
-            count: stageDeals.length,
-            value: stageDeals.reduce((sum, deal) => sum + (deal.value || 0), 0)
-          };
-        });
-        
-        // Get recently updated deals
-        const recentDeals = [...dealsData]
-          .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-          .slice(0, 3);
-        
-        // Get today's tasks
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        
-        const todaysTasks = tasksData
-          .filter(task => {
-            const taskDate = new Date(task.due_date);
-            taskDate.setHours(0, 0, 0, 0);
-            return taskDate.getTime() === today.getTime() && !task.completed;
-          })
-          .slice(0, 4);
-        
-        // Calculate performance metrics
-        const totalDeals = dealsData.length;
-        const closedDeals = dealsData.filter(deal => deal.stage_id === 'closed-won').length;
-        const conversionRate = totalDeals > 0 ? Math.round((closedDeals / totalDeals) * 100) : 0;
-        
-        const totalValue = dealsData.reduce((sum, deal) => sum + (deal.value || 0), 0);
-        const avgDealSize = totalDeals > 0 ? Math.round(totalValue / totalDeals) : 0;
-        
-        // Count new contacts this week
-        const oneWeekAgo = new Date();
-        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-        const newContacts = contactsData.filter(contact => 
-          new Date(contact.created_at) >= oneWeekAgo
-        ).length;
-        
-        // Update dashboard data
-        setDashboardData({
-          deals: {
-            total: totalDeals,
-            value: totalValue,
-            byStage: dealsByStage,
-            recentlyUpdated: recentDeals
-          },
-          tasks: {
-            total: tasksData.length,
-            completed: tasksData.filter(task => task.completed).length,
-            overdue: tasksData.filter(task => 
-              new Date(task.due_date) < today && !task.completed
-            ).length,
-            today: todaysTasks
-          },
-          contacts: {
-            total: contactsData.length,
-            newThisWeek: newContacts
-          },
-          performance: {
-            conversionRate,
-            avgDealCycle: 28, // Placeholder
-            avgDealSize
-          }
-        });
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-        
-        // Set connection error message
-        if (error instanceof Error) {
-          if (error.message.includes('Failed to fetch') || error.message.includes('fetch')) {
-            setConnectionError('Unable to connect to database. Please check your internet connection and Supabase configuration.');
-          } else if (error.message.includes('timeout')) {
-            setConnectionError('Request timed out. Please try again.');
-          } else {
-            setConnectionError(`Database error: ${error.message}`);
-          }
-        } else {
-          setConnectionError('An unexpected error occurred while loading data.');
-        }
-        
-        // Use sample data as fallback
-        const { sampleDeals, sampleStages, sampleTasks, sampleContacts } = getSampleData();
-        
-        const dealsByStage = sampleStages.map(stage => {
-          const stageDeals = sampleDeals.filter(deal => deal.stage_id === stage.id);
-          return {
-            id: stage.id,
-            name: stage.name,
-            count: stageDeals.length,
-            value: stageDeals.reduce((sum, deal) => sum + (deal.value || 0), 0)
-          };
-        });
-        
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        
-        const todaysTasks = sampleTasks
-          .filter(task => {
-            const taskDate = new Date(task.due_date);
-            taskDate.setHours(0, 0, 0, 0);
-            return taskDate.getTime() === today.getTime() && !task.completed;
-          })
-          .slice(0, 4);
-        
-        setDashboardData({
-          deals: {
-            total: sampleDeals.length,
-            value: sampleDeals.reduce((sum, deal) => sum + deal.value, 0),
-            byStage: dealsByStage,
-            recentlyUpdated: sampleDeals
-          },
-          tasks: {
-            total: sampleTasks.length,
-            completed: sampleTasks.filter(task => task.completed).length,
-            overdue: sampleTasks.filter(task => 
-              new Date(task.due_date) < today && !task.completed
-            ).length,
-            today: todaysTasks
-          },
-          contacts: {
-            total: sampleContacts.length,
-            newThisWeek: 2
-          },
-          performance: {
-            conversionRate: 24,
-            avgDealCycle: 28,
-            avgDealSize: 50000
-          }
-        });
-        
-        showToast({
-          type: 'warning',
-          title: 'Connection Issue',
-          message: 'Using demo data. Check your Supabase configuration.'
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
     fetchDashboardData();
   }, [showToast]);
 
@@ -372,54 +490,26 @@ const Dashboard: React.FC = () => {
     { 
       icon: Target, 
       label: 'Add Deal', 
-      color: 'bg-purple-600 hover:bg-purple-700',
-      action: () => {
-        showToast({ 
-          type: 'info', 
-          title: 'Add Deal', 
-          message: 'Opening deal creation form...' 
-        });
-        navigate('/deals');
-      }
+      gradient: 'bg-gradient-to-br from-purple-500 via-purple-600 to-indigo-700 hover:from-purple-600 hover:via-purple-700 hover:to-indigo-800',
+      action: () => setDealModalOpen(true)
     },
     { 
       icon: Users, 
       label: 'Add Contact', 
-      color: 'bg-green-600 hover:bg-green-700',
-      action: () => {
-        showToast({ 
-          type: 'info', 
-          title: 'Add Contact', 
-          message: 'Opening contact creation form...' 
-        });
-        navigate('/contacts');
-      }
+      gradient: 'bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-700 hover:from-emerald-600 hover:via-emerald-700 hover:to-teal-800',
+      action: () => setContactModalOpen(true)
     },
     { 
       icon: Calendar, 
       label: 'Schedule Meeting', 
-      color: 'bg-blue-600 hover:bg-blue-700',
-      action: () => {
-        showToast({ 
-          type: 'info', 
-          title: 'Schedule Meeting', 
-          message: 'Opening calendar...' 
-        });
-        navigate('/calendar');
-      }
+      gradient: 'bg-gradient-to-br from-blue-500 via-blue-600 to-cyan-700 hover:from-blue-600 hover:via-blue-700 hover:to-cyan-800',
+      action: () => setEventModalOpen(true)
     },
     { 
       icon: CheckSquare, 
       label: 'New Task', 
-      color: 'bg-orange-600 hover:bg-orange-700',
-      action: () => {
-        showToast({ 
-          type: 'info', 
-          title: 'New Task', 
-          message: 'Opening task creation form...' 
-        });
-        navigate('/tasks');
-      }
+      gradient: 'bg-gradient-to-br from-orange-500 via-orange-600 to-red-600 hover:from-orange-600 hover:via-orange-700 hover:to-red-700',
+      action: () => setTaskModalOpen(true)
     },
   ];
 
@@ -455,168 +545,198 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <Container>
-      <div className="space-y-6 animate-fade-in relative">
-        {/* 3D Background for visual appeal */}
-        <div className="absolute inset-0 -z-10 opacity-20">
-          <Spline scene="https://prod.spline.design/n0GFhlzrcT-MOycs/scene.splinecode" />
-        </div>
-        
-        {/* Connection Error Banner */}
-        {connectionError && (
-          <Card className="bg-yellow-600/10 border border-yellow-600/30">
-            <div className="flex items-start space-x-3">
-              <AlertTriangle className="w-5 h-5 text-yellow-500 mt-1" />
-              <div className="flex-1">
-                <h4 className="font-medium text-yellow-200">Connection Notice</h4>
-                <p className="text-yellow-300 text-sm mt-1">{connectionError}</p>
-                {connectionError.includes('Demo Mode') && (
-                  <p className="text-yellow-400 text-xs mt-2">
-                    To connect to your Supabase database, add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your .env file.
-                  </p>
-                )}
+    <div className="relative z-10 min-h-screen">
+      {/* 3D Background */}
+      <div className="fixed inset-0 z-0">
+        <Spline
+          scene="https://prod.spline.design/n0GFhlzrcT-MOycs/scene.splinecode"
+          className="w-full h-full"
+        />
+      </div>
+      
+      {/* Gradient Overlay */}
+      <div className="fixed inset-0 bg-gradient-to-b from-[#18182c]/50 to-[#18182c]/70 z-0"></div>
+      
+      {/* Content */}
+      <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+        <div className="space-y-4 sm:space-y-6 animate-fade-in">
+          {/* Connection Error Banner */}
+          {connectionError && (
+            <div className="bg-yellow-600/10 backdrop-blur-sm border border-yellow-600/30 rounded-xl p-4">
+              <div className="flex items-start space-x-3">
+                <AlertTriangle className="w-5 h-5 text-yellow-500 mt-1 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-medium text-yellow-200">Connection Notice</h4>
+                  <p className="text-yellow-300 text-sm mt-1">{connectionError}</p>
+                  {connectionError.includes('Demo Mode') && (
+                    <p className="text-yellow-400 text-xs mt-2">
+                      To connect to your Supabase database, add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your .env file.
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
-          </Card>
-        )}
-        
-        {/* Page Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-white">Welcome, Janar</h1>
-            <p className="text-secondary-400 mt-1">{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Badge variant="success" size="md">Pro Plan</Badge>
-            <button 
-              onClick={openGuru}
-              className="btn-primary flex items-center space-x-2"
-            >
-              <Bot className="w-4 h-4" />
-              <span>Ask Guru</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div>
-          <h2 className="text-lg font-semibold text-white mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {quickActions.map((action, index) => (
-              <button
-                key={index}
-                onClick={action.action}
-                className={`${action.color} p-4 rounded-xl text-white transition-all hover:scale-105 duration-200 shadow-lg`}
-              >
-                <div className="flex items-center justify-center space-x-2">
-                  <action.icon className="w-5 h-5" />
-                  <span className="font-medium">{action.label}</span>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          {/* Today's Tasks */}
-          <TaskSummaryWidget
-            tasks={dashboardData.tasks.today}
-            totalTasks={dashboardData.tasks.total}
-            completedTasks={dashboardData.tasks.completed}
-            overdueTasks={dashboardData.tasks.overdue}
-          />
-
-          {/* Deal Updates */}
-          <Card className="lg:col-span-2 bg-white/10 backdrop-blur-md">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white">Deal Updates</h3>
-              <button 
-                onClick={() => navigate('/deals')}
-                className="text-primary-400 hover:text-primary-300"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="space-y-4">
-              {dashboardData.deals.recentlyUpdated.length > 0 ? (
-                dashboardData.deals.recentlyUpdated.map((deal, index) => (
-                  <div key={deal.id} className="flex items-center justify-between p-3 bg-secondary-700/60 backdrop-blur-sm rounded-lg hover:bg-secondary-700 transition-colors">
-                    <div className="flex items-center space-x-3">
-                      <TrendingUp className="w-5 h-5 text-accent-500" />
-                      <div>
-                        <h4 className="font-medium text-white">{deal.title}</h4>
-                        <p className="text-sm text-secondary-400">{deal.stage_id.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}</p>
-                        <p className="text-xs text-secondary-500">{deal.contact} • {new Date(deal.updated_at).toLocaleString()}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-accent-500">${deal.value.toLocaleString()}</p>
-                      <button 
-                        onClick={() => navigate('/deals')}
-                        className="text-xs text-primary-400 hover:text-primary-300"
-                      >
-                        View Deal
-                      </button>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-8">
-                  <Target className="w-12 h-12 text-secondary-600 mx-auto mb-2" />
-                  <p className="text-secondary-400">No recent deal updates</p>
-                  <button 
-                    onClick={() => navigate('/deals')}
-                    className="btn-secondary text-sm mt-2"
-                  >
-                    View All Deals
-                  </button>
-                </div>
-              )}
-            </div>
-            
-            {/* Pipeline Overview */}
-            <div className="mt-6 pt-6 border-t border-secondary-700">
-              <PipelineWidget 
-                stages={dashboardData.deals.byStage}
-                totalValue={dashboardData.deals.value}
+          )}
+          
+          {/* Page Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center space-x-4">
+              <div>
+                <h1 className="text-2xl lg:text-3xl font-bold text-white">Welcome, Janar</h1>
+                <p className="text-[#b0b0d0] mt-1 text-sm lg:text-base">{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+              </div>
+              <Button
+                onClick={() => navigate('/settings/account')}
+                variant="secondary"
+                size="sm"
+                icon={UserCircle}
+                className="w-10 h-10 p-0 rounded-full"
+                title="Account Settings"
               />
             </div>
-          </Card>
-        </div>
-
-        {/* Guru Insights Widget */}
-        <GuruInsightsWidget />
-
-        {/* Analytics Overview */}
-        <div>
-          <h2 className="text-lg font-semibold text-white mb-4">Analytics Overview</h2>
-          <DashboardAnalytics />
-        </div>
-        
-        {/* Guru Tip of the Day */}
-        <Card className="bg-gradient-to-r from-primary-600/10 to-purple-600/10 border border-primary-600/20">
-          <div className="flex items-start space-x-3">
-            <div className="w-10 h-10 bg-primary-600/30 backdrop-blur-sm rounded-full flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-primary-400" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-medium text-white">Guru Tip of the Day</h3>
-              <p className="text-secondary-300 text-sm mt-2">
-                Try asking SaleToruGuru to "analyze stuck deals" to identify opportunities that need attention and get personalized recommendations for moving them forward.
-              </p>
-              <button 
-                onClick={() => handleAskGuruAbout("analyze stuck deals")}
-                className="btn-primary text-sm mt-4 flex items-center space-x-2"
-              >
-                <Bot className="w-4 h-4" />
-                <span>Try This Tip</span>
-              </button>
+            <div className="flex items-center space-x-4">
+              <DatabaseStatus />
+              <Badge variant="success" size="md">Pro Plan</Badge>
             </div>
           </div>
-        </Card>
+
+          {/* Quick Actions */}
+          <div>
+            <h2 className="text-lg font-semibold text-white mb-4">Quick Actions</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {quickActions.map((action, index) => (
+                <QuickActionButton
+                  key={index}
+                  icon={action.icon}
+                  label={action.label}
+                  onClick={action.action}
+                  gradient={action.gradient}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 min-h-[340px]">
+            <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-4 lg:p-6">
+              <TaskSummaryWidget
+                tasks={dashboardData.tasks.today}
+                totalTasks={dashboardData.tasks.total}
+                completedTasks={dashboardData.tasks.completed}
+                overdueTasks={dashboardData.tasks.overdue}
+                loading={isLoading}
+              />
+            </div>
+            <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-4 lg:p-6">
+              <PipelineWidget 
+                stages={dashboardData.deals.byStage} 
+                totalValue={dashboardData.deals.value} 
+                loading={isLoading}
+              />
+            </div>
+          </div>
+
+          {/* Insights & Utility Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 mt-6 min-h-[340px]">
+            <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-4 lg:p-6">
+              <NotificationCard loading={isLoading} />
+            </div>
+            <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-4 lg:p-6">
+              <LeadScoringCard loading={isLoading} />
+            </div>
+            <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-4 lg:p-6 md:col-span-2 lg:col-span-1">
+              <AppMarketplaceCard />
+            </div>
+          </div>
+
+          {/* Deal Updates & Guru Insights (full width) */}
+          <div className="grid grid-cols-1 gap-4 lg:gap-6 mt-6 min-h-[340px]">
+            <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-4 lg:p-6">
+              <DealUpdatesWidget recentlyUpdated={dashboardData.deals.recentlyUpdated} loading={isLoading} />
+            </div>
+            <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-4 lg:p-6">
+              <GuruInsightsWidget loading={isLoading} />
+            </div>
+          </div>
+
+          {/* Analytics Overview */}
+          <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-4 lg:p-6">
+            <h2 className="text-lg font-semibold text-white mb-4">Analytics Overview</h2>
+            <DashboardAnalytics />
+          </div>
+
+          {/* Gamification & Productivity Section */}
+          <div className="mt-6">
+            <h2 className="text-lg font-semibold text-white mb-4 lg:mb-6">Gamification & Productivity</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+              <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-4 lg:p-6 min-h-[280px] flex flex-col">
+                <Leaderboard />
+              </div>
+              <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-4 lg:p-6 min-h-[280px] flex flex-col">
+                <SocialMentionsWidget />
+              </div>
+              <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-4 lg:p-6 min-h-[280px] flex flex-col md:col-span-2 lg:col-span-1">
+                <FocusTimeWidget />
+              </div>
+            </div>
+          </div>
+          
+          {/* Guru Tip of the Day */}
+          <div className="bg-gradient-to-r from-[#a259ff]/10 to-[#377dff]/10 backdrop-blur-sm rounded-xl border border-[#a259ff]/20 p-4 lg:p-6">
+            <div className="flex items-start space-x-3">
+              <div className="w-10 h-10 bg-[#a259ff]/30 backdrop-blur-sm rounded-full flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-[#a259ff]" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-white">Guru Tip of the Day</h3>
+                <p className="text-[#b0b0d0] text-sm mt-2">
+                  Try asking SaleToruGuru to "analyze stuck deals" to identify opportunities that need attention and get personalized recommendations for moving them forward.
+                </p>
+                <Button 
+                  onClick={() => handleAskGuruAbout("analyze stuck deals")}
+                  variant="gradient"
+                  size="sm"
+                  icon={Bot}
+                  className="mt-4"
+                >
+                  Try This Tip
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Modals for Quick Actions */}
+          <CreateDealModal
+            isOpen={isDealModalOpen}
+            onClose={() => setDealModalOpen(false)}
+            onDealCreated={handleDealCreated}
+            stages={[]}
+            companies={[]}
+            contacts={[]}
+          />
+          <CreateContactModal
+            isOpen={isContactModalOpen}
+            onClose={() => setContactModalOpen(false)}
+            onContactCreated={handleContactCreated}
+          />
+          <CreateTaskModal
+            isOpen={isTaskModalOpen}
+            onClose={() => setTaskModalOpen(false)}
+            onTaskCreated={handleTaskCreated}
+            currentUserId={null}
+          />
+          <CreateEventModal
+            isOpen={isEventModalOpen}
+            onClose={() => setEventModalOpen(false)}
+            onEventCreated={handleEventCreated}
+          />
+
+          <div className="flex items-center justify-center mt-10 opacity-60">
+            <span className="text-lg font-semibold text-secondary-400">More features coming soon...</span>
+          </div>
+        </div>
       </div>
-    </Container>
+    </div>
   );
 };
 

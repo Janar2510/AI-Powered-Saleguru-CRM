@@ -3,13 +3,7 @@ import { Bot, Zap, TrendingUp, CheckSquare, AlertTriangle, Target, Calendar, Che
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
 import { useGuru } from '../../contexts/GuruContext';
-import { createClient } from '@supabase/supabase-js';
-
-// Initialize Supabase client
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL || '',
-  import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-);
+import { supabase } from '../../services/supabase';
 
 interface GuruInsight {
   id: string;

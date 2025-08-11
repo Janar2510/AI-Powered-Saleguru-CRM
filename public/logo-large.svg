@@ -1,0 +1,33 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="logoGradientLarge" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:1" />
+      <stop offset="30%" style="stop-color:#a855f7;stop-opacity:1" />
+      <stop offset="70%" style="stop-color:#c084fc;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e879f9;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glowLarge">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="rgba(139, 92, 246, 0.3)"/>
+    </filter>
+  </defs>
+  
+  <!-- Background circle with gradient and shadow -->
+  <circle cx="60" cy="60" r="60" fill="url(#logoGradientLarge)" filter="url(#glowLarge) url(#shadow)"/>
+  
+  <!-- Letter S -->
+  <path d="M35 30C35 26.6863 37.6863 24 41 24H55C58.3137 24 61 26.6863 61 30V40C61 43.3137 58.3137 46 55 46H47C45.3431 46 44 47.3431 44 49V53C44 54.6569 45.3431 56 47 56H61C64.3137 56 67 58.6863 67 62V72C67 75.3137 64.3137 78 61 78H47C43.6863 78 41 75.3137 41 72V62C41 58.6863 43.6863 56 47 56H55C56.6569 56 58 54.6569 58 53V49C58 47.3431 56.6569 46 55 46H41C37.6863 46 35 43.3137 35 40V30Z" fill="white"/>
+  
+  <!-- Letter T -->
+  <path d="M70 24H95C98.3137 24 101 26.6863 101 30V40C101 43.3137 98.3137 46 95 46H85V72C85 75.3137 82.3137 78 79 78H71C67.6863 78 65 75.3137 65 72V46H70C73.3137 46 76 43.3137 76 40V30C76 26.6863 73.3137 24 70 24Z" fill="white"/>
+  
+  <!-- Subtle inner glow -->
+  <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="2"/>
+  <circle cx="60" cy="60" r="48" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+</svg> 

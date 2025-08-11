@@ -1,231 +1,285 @@
 # Deployment Checklist
 
-Use this checklist to ensure your AI-Powered SaleGuru CRM is properly configured and ready for production deployment.
+## Pre-Deployment Testing
 
-## ✅ Pre-Deployment Setup
+### Core Functionality
+- [ ] Authentication and user management
+- [ ] Dashboard and analytics
+- [ ] Contact and company management
+- [ ] Deal tracking and pipeline
+- [ ] Task management
+- [ ] Email integration
+- [ ] Calendar integration
 
-### Environment Configuration
-- [ ] Environment variables configured in `.env` file
-- [ ] `VITE_SUPABASE_URL` set correctly
-- [ ] `VITE_SUPABASE_ANON_KEY` set correctly
-- [ ] Environment variables configured in deployment platform (Vercel/Netlify/etc.)
+### Sales Order Management System
+- [ ] **Quotation Flow**
+  - [ ] Create new quotations with line items
+  - [ ] Calculate totals, taxes, and discounts
+  - [ ] Generate unique quotation numbers
+  - [ ] Preview and download quotations
+  - [ ] Convert quotations to sales orders
 
-### Supabase Setup
-- [ ] Supabase project created
-- [ ] Database tables created:
-  - [ ] `contacts`
-  - [ ] `companies`
-  - [ ] `deals`
-  - [ ] `tasks`
-  - [ ] `leads`
-  - [ ] `enrichment_status`
-  - [ ] `enrichment_data`
-- [ ] Row Level Security (RLS) policies configured
-- [ ] Edge Functions deployed:
-  - [ ] `enrich-lead`
-  - [ ] `openai-proxy`
-  - [ ] `send-email`
-  - [ ] `execute-automation`
-  - [ ] `create-deal-folder`
-- [ ] Edge Function environment variables set:
-  - [ ] `OPENAI_API_KEY`
-  - [ ] `SENDGRID_API_KEY` (if using email)
-  - [ ] `SENDGRID_FROM_EMAIL` (if using email)
+- [ ] **Sales Order Management**
+  - [ ] Create sales orders from quotations
+  - [ ] Add product kits and variants
+  - [ ] Track partial shipments
+  - [ ] Manage order status (draft, confirmed, in production, ready for delivery)
+  - [ ] Email gateway integration for order communications
 
-### Code Quality
-- [ ] TypeScript compilation passes (`npm run type-check`)
-- [ ] ESLint passes (`npm run lint`)
-- [ ] No console.log statements in production code
-- [ ] All TypeScript errors resolved
-- [ ] Build succeeds locally (`npm run build`)
+- [ ] **Invoicing System**
+  - [ ] Generate invoices based on ordered quantities
+  - [ ] Generate invoices based on delivered quantities
+  - [ ] Time & materials invoicing
+  - [ ] Payment terms management
+  - [ ] Invoice aging reports
+  - [ ] Multiple calculation methods
 
-## ✅ Deployment Platform Setup
+- [ ] **Inter-Company Rules**
+  - [ ] Mirror sales orders as purchase orders
+  - [ ] Multi-company order management
+  - [ ] Cross-company document linking
 
-### Vercel
-- [ ] Vercel CLI installed
-- [ ] Project connected to Vercel
-- [ ] Environment variables configured in Vercel dashboard
-- [ ] Custom domain configured (if applicable)
-- [ ] SSL certificate enabled
+### Document Management System
+- [ ] **Document Upload**
+  - [ ] Drag & drop file upload
+  - [ ] File type validation
+  - [ ] File size limits
+  - [ ] Progress indicators
 
-### Netlify
-- [ ] Repository connected to Netlify
-- [ ] Build settings configured:
-  - [ ] Build command: `npm run build`
-  - [ ] Publish directory: `dist`
-- [ ] Environment variables configured
-- [ ] Custom domain configured (if applicable)
-- [ ] SSL certificate enabled
+- [ ] **Document Preview**
+  - [ ] PDF preview with zoom controls
+  - [ ] Navigation controls
+  - [ ] Full-screen preview mode
+  - [ ] Multiple file format support
 
-### Docker
-- [ ] Dockerfile tested locally
-- [ ] Docker image builds successfully
-- [ ] Container runs without errors
-- [ ] Port mappings configured correctly
-- [ ] Environment variables passed to container
+- [ ] **Document Management**
+  - [ ] Download documents
+  - [ ] Delete documents with confirmation
+  - [ ] Search and filter documents
+  - [ ] Multiple view modes (cards, table, list, grid)
 
-## ✅ Security Configuration
+- [ ] **Template System**
+  - [ ] Document template selector
+  - [ ] Template preview functionality
+  - [ ] Custom template generation
+  - [ ] Template categorization and filtering
 
-### General Security
-- [ ] API keys not exposed in client-side code
-- [ ] Environment variables properly secured
-- [ ] HTTPS enabled in production
-- [ ] CORS settings configured correctly
-- [ ] Security headers configured:
-  - [ ] X-Frame-Options: DENY
-  - [ ] X-Content-Type-Options: nosniff
-  - [ ] X-XSS-Protection: 1; mode=block
-  - [ ] Referrer-Policy: strict-origin-when-cross-origin
+### eSignature System
+- [ ] **PDF Upload and Processing**
+  - [ ] Upload PDF documents
+  - [ ] PDF validation and error handling
+  - [ ] File size and format restrictions
 
-### Supabase Security
-- [ ] Row Level Security (RLS) enabled on all tables
-- [ ] RLS policies configured for each table
-- [ ] API keys have appropriate permissions
-- [ ] Database backups configured
-- [ ] Audit logging enabled (if available)
+- [ ] **Signature Field Placement**
+  - [ ] Drag and drop signature fields
+  - [ ] Resize and reposition fields
+  - [ ] Multiple signature field types
+  - [ ] Field validation
 
-## ✅ Performance Optimization
+- [ ] **Signing Workflow**
+  - [ ] Internal signing process
+  - [ ] Customer-side signing
+  - [ ] Signature status tracking
+  - [ ] Document completion verification
 
-### Build Optimization
-- [ ] Code splitting configured
-- [ ] Tree shaking enabled
-- [ ] Minification enabled
-- [ ] Source maps disabled in production
-- [ ] Console logs removed in production build
+- [ ] **Document Storage**
+  - [ ] Secure signed document storage
+  - [ ] Link signed documents to sales orders
+  - [ ] Document version management
+  - [ ] Access control for signed documents
 
-### Caching
-- [ ] Static assets cached appropriately
-- [ ] CDN configured (if applicable)
-- [ ] Browser caching headers set
-- [ ] Service worker configured (if applicable)
+### Quotation Builder
+- [ ] **Upselling Features**
+  - [ ] Product recommendation engine
+  - [ ] Additional product suggestions
+  - [ ] Discount application
+  - [ ] Closing triggers
 
-### Database Optimization
-- [ ] Database indexes created for frequently queried columns
-- [ ] Connection pooling configured
-- [ ] Query performance optimized
-- [ ] Database monitoring enabled
+- [ ] **Variant Grid Entry**
+  - [ ] Product variant selection
+  - [ ] Matrix display for combinations
+  - [ ] Size, color, and attribute management
+  - [ ] Bulk variant addition
 
-## ✅ Monitoring & Analytics
+- [ ] **eSignature Integration**
+  - [ ] Signature field placement in quotes
+  - [ ] Customer signature collection
+  - [ ] Quote acceptance workflow
+  - [ ] Signed quote to order conversion
 
-### Error Tracking
-- [ ] Error tracking service configured (Sentry, LogRocket, etc.)
-- [ ] Error reporting tested
-- [ ] Error notifications configured
+### Customer Portal
+- [ ] **Document Access**
+  - [ ] View live documents
+  - [ ] Download documents
+  - [ ] Document search and filtering
+  - [ ] Document history tracking
 
-### Performance Monitoring
-- [ ] Performance monitoring configured
-- [ ] Core Web Vitals tracking enabled
-- [ ] Load time monitoring set up
+- [ ] **Order Management**
+  - [ ] View order status
+  - [ ] Modify orders before signing
+  - [ ] Track delivery status
+  - [ ] Order history and tracking
 
-### Uptime Monitoring
-- [ ] Uptime monitoring service configured
-- [ ] Health check endpoints implemented
-- [ ] Alert notifications configured
+- [ ] **eSign Confirmation**
+  - [ ] Sign quotes and contracts
+  - [ ] Signature verification
+  - [ ] Document completion confirmation
+  - [ ] Email notifications
 
-## ✅ Testing
+### Permission System
+- [ ] **Role-Based Access Control**
+  - [ ] Admin permissions (full access)
+  - [ ] Manager permissions (limited delete)
+  - [ ] User permissions (read-only delete)
+  - [ ] Permission inheritance
 
-### Functionality Testing
-- [ ] All major features tested in production environment
-- [ ] Contact creation and management tested
-- [ ] Deal pipeline functionality tested
-- [ ] AI features tested
-- [ ] Email functionality tested (if applicable)
-- [ ] Authentication flow tested
+- [ ] **Delete Protection**
+  - [ ] DeleteConfirmationModal for all delete operations
+  - [ ] Permission checks before deletion
+  - [ ] Audit trail for deletions
+  - [ ] Safe fallback for unauthorized actions
 
-### Cross-Browser Testing
-- [ ] Chrome/Chromium tested
-- [ ] Firefox tested
-- [ ] Safari tested
-- [ ] Edge tested
-- [ ] Mobile browsers tested
+- [ ] **Module Protection**
+  - [ ] Warehouse module delete protection
+  - [ ] Accounting module delete protection
+  - [ ] Document management protection
+  - [ ] Sales order protection
 
-### Performance Testing
-- [ ] Page load times measured
-- [ ] API response times tested
-- [ ] Database query performance tested
-- [ ] Memory usage monitored
+### Accounting System
+- [ ] **Document Flow**
+  - [ ] Quotation creation and numbering
+  - [ ] Order generation from quotations
+  - [ ] Proforma invoice creation
+  - [ ] Final invoice generation
+  - [ ] Unique numbering for all documents
 
-## ✅ Documentation
+- [ ] **Advanced Filtering**
+  - [ ] Search by document number
+  - [ ] Filter by document type
+  - [ ] Filter by status
+  - [ ] Date range filtering
 
-### User Documentation
-- [ ] User guide created
-- [ ] Feature documentation updated
-- [ ] FAQ section created
-- [ ] Troubleshooting guide available
+- [ ] **View Modes**
+  - [ ] Card view for documents
+  - [ ] Table view with sorting
+  - [ ] List view for compact display
+  - [ ] Grid view for overview
 
-### Technical Documentation
-- [ ] API documentation updated
-- [ ] Deployment guide completed
-- [ ] Environment setup guide available
-- [ ] Architecture documentation updated
+## Database Testing
+- [ ] **Migrations**
+  - [ ] All migrations run successfully
+  - [ ] No foreign key constraint violations
+  - [ ] Sample data inserted correctly
+  - [ ] RLS policies working properly
 
-## ✅ Post-Deployment Verification
+- [ ] **Data Integrity**
+  - [ ] Document relationships maintained
+  - [ ] User permissions working
+  - [ ] Audit logs functioning
+  - [ ] Backup and restore procedures
 
-### Functionality Verification
-- [ ] Application loads correctly
-- [ ] All navigation links work
-- [ ] Forms submit successfully
-- [ ] Data persists correctly
-- [ ] AI features respond appropriately
-- [ ] Email notifications work (if applicable)
+## Performance Testing
+- [ ] **Load Testing**
+  - [ ] Multiple concurrent users
+  - [ ] Large document uploads
+  - [ ] PDF processing performance
+  - [ ] Database query optimization
 
-### Security Verification
-- [ ] HTTPS redirects work correctly
-- [ ] Security headers present
-- [ ] No sensitive data exposed in browser
-- [ ] Authentication flows work securely
+- [ ] **Memory Usage**
+  - [ ] Document preview memory management
+  - [ ] File upload memory limits
+  - [ ] Browser memory usage
+  - [ ] Server memory monitoring
 
-### Performance Verification
-- [ ] Page load times acceptable
-- [ ] API response times within limits
-- [ ] No memory leaks detected
-- [ ] Database performance acceptable
+## Security Testing
+- [ ] **Authentication**
+  - [ ] User login/logout
+  - [ ] Session management
+  - [ ] Password reset functionality
+  - [ ] Multi-factor authentication (if applicable)
 
-## ✅ Backup & Recovery
+- [ ] **Authorization**
+  - [ ] Role-based access control
+  - [ ] Permission enforcement
+  - [ ] Data isolation between users
+  - [ ] Admin privilege verification
 
-### Data Backup
-- [ ] Database backup strategy implemented
-- [ ] Backup retention policy configured
-- [ ] Backup restoration tested
-- [ ] Point-in-time recovery available
+- [ ] **File Security**
+  - [ ] Secure file uploads
+  - [ ] File type validation
+  - [ ] Malware scanning (if applicable)
+  - [ ] Secure file storage
 
-### Application Backup
-- [ ] Source code backed up
-- [ ] Configuration files backed up
-- [ ] Environment variables documented
-- [ ] Rollback procedure documented
+## UI/UX Testing
+- [ ] **Responsive Design**
+  - [ ] Mobile device compatibility
+  - [ ] Tablet device compatibility
+  - [ ] Desktop optimization
+  - [ ] Cross-browser compatibility
 
-## ✅ Maintenance Plan
+- [ ] **User Experience**
+  - [ ] Intuitive navigation
+  - [ ] Clear error messages
+  - [ ] Loading states
+  - [ ] Success confirmations
 
-### Regular Maintenance
-- [ ] Dependency update schedule established
-- [ ] Security patch update process defined
-- [ ] Performance monitoring schedule set
-- [ ] Backup verification schedule established
+- [ ] **Accessibility**
+  - [ ] Keyboard navigation
+  - [ ] Screen reader compatibility
+  - [ ] Color contrast compliance
+  - [ ] Focus management
 
-### Support Plan
-- [ ] Support contact information available
-- [ ] Issue reporting process established
-- [ ] Escalation procedures defined
-- [ ] Maintenance window schedule created
+## Integration Testing
+- [ ] **Email Integration**
+  - [ ] Email sending functionality
+  - [ ] Email tracking
+  - [ ] Template rendering
+  - [ ] Attachment handling
 
-## ✅ Final Verification
+- [ ] **Storage Integration**
+  - [ ] Supabase storage connectivity
+  - [ ] File upload/download
+  - [ ] Storage quota management
+  - [ ] Backup procedures
 
-### Go-Live Checklist
-- [ ] All checklist items completed
-- [ ] Stakeholder approval received
-- [ ] Rollback plan prepared
-- [ ] Support team notified
-- [ ] Monitoring alerts configured
-- [ ] Documentation published
+- [ ] **Third-Party Services**
+  - [ ] PDF processing services
+  - [ ] eSignature services
+  - [ ] Email gateway services
+  - [ ] Payment processing (if applicable)
 
-### Post-Launch Monitoring
-- [ ] Monitor application performance for 24-48 hours
-- [ ] Check error logs regularly
-- [ ] Monitor user feedback
-- [ ] Track key performance metrics
-- [ ] Address any issues promptly
+## Post-Deployment Verification
+- [ ] **Monitoring**
+  - [ ] Error logging
+  - [ ] Performance monitoring
+  - [ ] User activity tracking
+  - [ ] System health checks
 
----
+- [ ] **Backup Verification**
+  - [ ] Database backups
+  - [ ] File storage backups
+  - [ ] Configuration backups
+  - [ ] Recovery procedures
 
-**Note**: This checklist should be reviewed and updated regularly as the application evolves. Consider automating some of these checks where possible. 
+- [ ] **Documentation**
+  - [ ] User documentation updated
+  - [ ] API documentation updated
+  - [ ] Deployment procedures documented
+  - [ ] Troubleshooting guides
+
+## Rollback Plan
+- [ ] **Database Rollback**
+  - [ ] Migration rollback procedures
+  - [ ] Data backup verification
+  - [ ] Schema restoration process
+
+- [ ] **Application Rollback**
+  - [ ] Previous version deployment
+  - [ ] Configuration rollback
+  - [ ] Service restart procedures
+
+- [ ] **Communication Plan**
+  - [ ] User notification procedures
+  - [ ] Status page updates
+  - [ ] Support team preparation
+  - [ ] Emergency contact procedures 

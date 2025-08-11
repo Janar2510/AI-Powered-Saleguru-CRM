@@ -213,6 +213,13 @@ For support and questions:
 - [ ] Integration marketplace
 - [ ] Mobile-specific features
 
+## Changelog
+
+- [FEATURE] Added useFeatureLock hook for feature gating by plan, with modal support and dev mode override. Includes robust logic and is ready for integration.
+- [FEATURE] Added a DebugTools page for developer diagnostics, with user/session/database/settings tabs, copy/export, and a placeholder for future DevMode integration.
+- [FEATURE] Added a ResetPassword page for handling password reset links, matching the app's style and using the correct supabase client and logo.
+- [FIX] User profile creation now always sets the 'admin_email' field to the user's email, even for email-only signups. The users table schema should include 'admin_email text not null' to enforce this at the database level.
+
 ---
 
 **Built with ❤️ by the Saletoru Team**

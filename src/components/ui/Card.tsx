@@ -8,6 +8,8 @@ interface CardProps {
   padding?: 'none' | 'sm' | 'md' | 'lg';
   variant?: 'default' | 'glass' | 'elevated';
   as?: keyof JSX.IntrinsicElements;
+  loading?: boolean;
+  onClick?: React.MouseEventHandler;
 }
 
 const Card: React.FC<CardProps> = ({ 
@@ -16,7 +18,9 @@ const Card: React.FC<CardProps> = ({
   hover = false,
   padding = 'md',
   variant = 'glass',
-  as: Component = 'div'
+  as: Component = 'div',
+  loading = false,
+  onClick
 }) => {
   const paddingClasses = {
     none: '',
@@ -27,7 +31,7 @@ const Card: React.FC<CardProps> = ({
 
   const variantClasses = {
     default: 'bg-secondary-800 border border-secondary-700',
-    glass: 'bg-secondary-800/40 backdrop-blur-xl border border-white/5 shadow-lg',
+    glass: 'bg-[#23233a]/40 backdrop-blur-sm border border-[#23233a]/50 shadow-lg',
     elevated: 'bg-secondary-800/60 backdrop-blur-md border border-secondary-700/80 shadow-xl'
   };
 
@@ -41,8 +45,15 @@ const Card: React.FC<CardProps> = ({
         'animate-fade-in',
         className
       )}
+      onClick={onClick}
     >
-      {children}
+      {loading ? (
+        <div className="flex items-center justify-center h-32 animate-pulse">
+          <div className="w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      ) : (
+        children
+      )}
     </Component>
   );
 };

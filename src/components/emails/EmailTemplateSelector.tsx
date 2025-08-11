@@ -2,13 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Check, Star, Bot } from 'lucide-react';
 import Badge from '../ui/Badge';
 import { useToastContext } from '../../contexts/ToastContext';
-import { createClient } from '@supabase/supabase-js';
-
-// Initialize Supabase client
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL || '',
-  import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-);
+import { supabase } from '../../services/supabase';
 
 interface EmailTemplate {
   id: string;

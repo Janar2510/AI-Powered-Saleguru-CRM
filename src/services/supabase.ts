@@ -1,16 +1,20 @@
 import { createClient } from '@supabase/supabase-js';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import 'react-native-url-polyfill/auto';
 
-const supabaseUrl = 'https://bsgqtbiyhqwzwzzsadkg.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzZ3F0Yml5aHF3end6enNhZGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk3MjAwMDUsImV4cCI6MjA2NTI5NjAwNX0.BGgcuf_9WT01NyG3BlRGHd79d6VO8k1I_EFG9EZjOk8';
+// Debug environment variables
+console.log('🔧 Supabase Configuration:');
+console.log('VITE_SUPABASE_URL:', import.meta.env.VITE_SUPABASE_URL);
+console.log('VITE_SUPABASE_ANON_KEY:', import.meta.env.VITE_SUPABASE_ANON_KEY ? 'Present' : 'Missing');
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://bsgqtbiyhqwzwzzsadkg.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzZ3F0Yml5aHF3end6enNhZGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk3MjAwMDUsImV4cCI6MjA2NTI5NjAwNX0.BGgcuf_9WT01NyG3BlRGHd79d6VO8k1I_EFG9EZjOk8';
+
+console.log('🔧 Using Supabase URL:', supabaseUrl);
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storage: AsyncStorage,
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: false,
+    detectSessionInUrl: true,
   },
 });
 
@@ -69,4 +73,4 @@ export interface Task {
   status: 'pending' | 'in_progress' | 'completed';
   created_at: string;
   updated_at: string;
-} 
+}

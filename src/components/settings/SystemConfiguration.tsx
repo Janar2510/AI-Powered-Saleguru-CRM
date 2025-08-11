@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Shield, Users, Database, Download, Upload, AlertTriangle, Server } from 'lucide-react';
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
+import Button from '../ui/Button';
 
 interface SystemConfigurationProps {
   onChanges: (hasChanges: boolean) => void;
@@ -24,6 +25,22 @@ const SystemConfiguration: React.FC<SystemConfigurationProps> = ({ onChanges }) 
     { id: '2', name: 'Sarah Johnson', email: 'sarah@example.com', role: 'manager', status: 'active', lastLogin: new Date(Date.now() - 2 * 60 * 60 * 1000) },
     { id: '3', name: 'Mike Wilson', email: 'mike@example.com', role: 'sales_rep', status: 'inactive', lastLogin: new Date(Date.now() - 24 * 60 * 60 * 1000) }
   ]);
+
+  // Mock data for API keys and webhooks
+  const mockApiKeys = [
+    { key: 'sk-1234-5678', created: '2024-07-18', lastUsed: '2024-07-20', status: 'active' }
+  ];
+  const mockWebhooks = [
+    { id: 1, url: 'https://example.com/webhook', status: 'active', lastDelivery: '2024-07-20 10:00' },
+    { id: 2, url: 'https://zapier.com/hooks/abc', status: 'error', lastDelivery: '2024-07-19 18:00' }
+  ];
+  const [branding, setBranding] = useState({
+    logo: '',
+    primary: '#a259ff',
+    secondary: '#23233a'
+  });
+  const [lastExport, setLastExport] = useState('2024-07-19 15:00');
+  const [lastImport, setLastImport] = useState('2024-07-18 12:00');
 
   const handleSettingChange = (setting: string, value: any) => {
     setSystemSettings(prev => ({ ...prev, [setting]: value }));
@@ -225,13 +242,12 @@ const SystemConfiguration: React.FC<SystemConfigurationProps> = ({ onChanges }) 
         </div>
       </Card>
 
-      {/* Data Management */}
+      {/* Data Management (expanded) */}
       <Card>
         <div className="flex items-center space-x-3 mb-6">
           <Database className="w-6 h-6 text-primary-600" />
           <h3 className="text-xl font-semibold text-white">Data Management</h3>
         </div>
-
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -248,7 +264,6 @@ const SystemConfiguration: React.FC<SystemConfigurationProps> = ({ onChanges }) 
                 <option value="monthly">Monthly</option>
               </select>
             </div>
-
             <div>
               <label className="block text-sm font-medium text-secondary-300 mb-2">
                 Data Retention (days)
@@ -263,27 +278,131 @@ const SystemConfiguration: React.FC<SystemConfigurationProps> = ({ onChanges }) 
               />
             </div>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <button
-              onClick={handleBackup}
-              className="flex items-center justify-center space-x-2 p-4 bg-green-600 hover:bg-green-700 rounded-lg text-white transition-colors"
-            >
-              <Download className="w-5 h-5" />
-              <span>Create Backup</span>
-            </button>
-
-            <button
-              onClick={handleRestore}
-              className="flex items-center justify-center space-x-2 p-4 bg-orange-600 hover:bg-orange-700 rounded-lg text-white transition-colors"
-            >
-              <Upload className="w-5 h-5" />
-              <span>Restore from Backup</span>
-            </button>
+            <Button variant="gradient" size="md" onClick={() => setLastExport('2024-07-20 12:00')}>Export Data</Button>
+            <Button variant="secondary" size="md" onClick={() => setLastImport('2024-07-20 12:30')}>Import Data</Button>
+          </div>
+          <div className="flex gap-6 text-secondary-400 text-sm">
+            <span>Last Export: {lastExport}</span>
+            <span>Last Import: {lastImport}</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <Button onClick={handleBackup} variant="success" size="md" icon={Download}>Create Backup</Button>
+            <Button onClick={handleRestore} variant="warning" size="md" icon={Upload}>Restore from Backup</Button>
           </div>
         </div>
       </Card>
-
+      {/* API Access & Documentation */}
+      <Card>
+        <div className="flex items-center space-x-3 mb-6">
+          <Shield className="w-6 h-6 text-primary-600" />
+          <h3 className="text-xl font-semibold text-white">API Access</h3>
+        </div>
+        <div className="mb-4 text-secondary-300">Base URL: <span className="font-mono text-primary-400">https://api.saletoru.com/v1/</span></div>
+        <div className="mb-4 text-secondary-300">Example Endpoint: <span className="font-mono text-primary-400">GET /deals</span></div>
+        <div className="mb-4">
+          <Button variant="gradient" size="sm" className="mr-2">Generate API Key</Button>
+          <a href="#" className="text-primary-400 underline ml-2">API Documentation</a>
+        </div>
+        <table className="min-w-full text-sm">
+          <thead>
+            <tr className="text-secondary-400">
+              <th className="p-2 text-left">Key</th>
+              <th className="p-2 text-left">Created</th>
+              <th className="p-2 text-left">Last Used</th>
+              <th className="p-2 text-left">Status</th>
+              <th className="p-2 text-left">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {mockApiKeys.map((key, idx) => (
+              <tr key={idx} className="border-b border-secondary-700">
+                <td className="p-2 font-mono text-primary-400">{key.key}</td>
+                <td className="p-2">{key.created}</td>
+                <td className="p-2">{key.lastUsed}</td>
+                <td className="p-2">
+                  <Badge variant="success" size="sm">{key.status}</Badge>
+                </td>
+                <td className="p-2">
+                  <Button variant="secondary" size="sm">Revoke</Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
+      {/* Webhook Management */}
+      <Card>
+        <div className="flex items-center space-x-3 mb-6">
+          <Shield className="w-6 h-6 text-primary-600" />
+          <h3 className="text-xl font-semibold text-white">Webhook Management</h3>
+        </div>
+        <div className="mb-4">
+          <Button variant="gradient" size="sm">Add Webhook</Button>
+        </div>
+        <table className="min-w-full text-sm">
+          <thead>
+            <tr className="text-secondary-400">
+              <th className="p-2 text-left">URL</th>
+              <th className="p-2 text-left">Status</th>
+              <th className="p-2 text-left">Last Delivery</th>
+              <th className="p-2 text-left">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {mockWebhooks.map((wh) => (
+              <tr key={wh.id} className="border-b border-secondary-700">
+                <td className="p-2 font-mono text-primary-400">{wh.url}</td>
+                <td className="p-2">
+                  <Badge variant={wh.status === 'active' ? 'success' : 'danger'} size="sm">{wh.status}</Badge>
+                </td>
+                <td className="p-2">{wh.lastDelivery}</td>
+                <td className="p-2 flex gap-2">
+                  <Button variant="secondary" size="sm">Edit</Button>
+                  <Button variant="danger" size="sm">Remove</Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
+      {/* Branding/Customization */}
+      <Card>
+        <div className="flex items-center space-x-3 mb-6">
+          <Shield className="w-6 h-6 text-primary-600" />
+          <h3 className="text-xl font-semibold text-white">Branding & Customization</h3>
+        </div>
+        <div className="mb-4 flex items-center gap-4">
+          <div>
+            <label className="block text-sm font-medium text-secondary-300 mb-2">Logo</label>
+            <input type="file" accept="image/*" className="block w-full text-secondary-300" onChange={e => {
+              const file = e.target.files?.[0];
+              if (file) setBranding(prev => ({ ...prev, logo: URL.createObjectURL(file) }));
+            }} />
+          </div>
+          {branding.logo && (
+            <img src={branding.logo} alt="Logo Preview" className="h-16 w-16 rounded bg-secondary-700 border border-secondary-600 object-contain" />
+          )}
+        </div>
+        <div className="mb-4 flex gap-6">
+          <div>
+            <label className="block text-sm font-medium text-secondary-300 mb-2">Primary Color</label>
+            <input type="color" value={branding.primary} onChange={e => setBranding(prev => ({ ...prev, primary: e.target.value }))} className="w-10 h-10 rounded border-none" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-secondary-300 mb-2">Secondary Color</label>
+            <input type="color" value={branding.secondary} onChange={e => setBranding(prev => ({ ...prev, secondary: e.target.value }))} className="w-10 h-10 rounded border-none" />
+          </div>
+        </div>
+        <div className="mt-6 p-4 rounded-lg border border-secondary-600 bg-secondary-800/60">
+          <h4 className="text-sm font-semibold text-white mb-2">Live Preview</h4>
+          <div className="flex items-center gap-4">
+            {branding.logo && <img src={branding.logo} alt="Logo Preview" className="h-10 w-10 rounded bg-secondary-700 border border-secondary-600 object-contain" />}
+            <span className="text-lg font-bold" style={{ color: branding.primary }}>Saleguru CRM</span>
+            <span className="px-3 py-1 rounded" style={{ background: branding.secondary, color: branding.primary }}>Button</span>
+          </div>
+        </div>
+      </Card>
       {/* System Status */}
       <Card>
         <div className="flex items-center space-x-3 mb-6">

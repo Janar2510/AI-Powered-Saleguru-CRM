@@ -1,15 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Plus, Calendar, Clock, User, Target, AlertCircle, Tag, CheckSquare, Phone, Mail, Bell, ArrowRight, Edit, MapPin } from 'lucide-react';
 import { CalendarEventFormData } from '../../types/calendar';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../../services/supabase';
 import Badge from '../ui/Badge';
 import { useToastContext } from '../../contexts/ToastContext';
-
-// Initialize Supabase client
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL || '',
-  import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-);
+import { useModal } from '../../contexts/ModalContext';
 
 interface CreateEventModalProps {
   isOpen: boolean;
@@ -29,6 +25,15 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
   initialData
 }) => {
   const { showToast } = useToastContext();
+  const { openModal, closeModal } = useModal();
+
+  // Open modal when component mounts
+  useEffect(() => {
+    if (isOpen) {
+      openModal();
+      return () => closeModal();
+    }
+  }, [isOpen, openModal, closeModal]);
   
   // Initialize with current date/time if not provided
   const now = initialDate || new Date();
@@ -92,8 +97,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
         try {
           const { data: contactsData } = await supabase
             .from('contacts')
-            .select('id, name')
-            .order('name');
+            .select('*');
           
           if (contactsData) {
             setContacts(contactsData);
@@ -228,17 +232,17 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-secondary-800 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+  const modalContent = (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-lg flex items-center justify-center z-[9999999] !z-[9999999] p-4">
+      <div className="bg-[#23233a]/99 backdrop-blur-2xl rounded-xl w-full max-w-2xl max-h-[95vh] overflow-y-auto border border-[#23233a]/60 shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-secondary-700">
+        <div className="flex items-center justify-between p-6 border-b border-[#23233a]/30">
           <h3 className="text-xl font-semibold text-white">
             {isEditing ? 'Edit Event' : 'Create New Event'}
           </h3>
           <button
             onClick={onClose}
-            className="p-2 text-secondary-400 hover:text-white hover:bg-secondary-700 rounded-lg transition-colors"
+            className="p-2 text-[#b0b0d0] hover:text-white hover:bg-[#23233a]/50 rounded-lg transition-colors"
             disabled={isSubmitting}
           >
             <X className="w-5 h-5" />
@@ -248,7 +252,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Basic Information */}
           <div>
-            <label className="block text-sm font-medium text-secondary-300 mb-2">
+            <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
               Event Title *
             </label>
             <div className="relative">
@@ -264,22 +268,22 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
                 value={formData.title}
                 onChange={(e) => handleInputChange('title', e.target.value)}
                 placeholder="Enter event title..."
-                className={`w-full px-4 py-3 bg-secondary-700 border ${
-                  errors.title ? 'border-red-500' : 'border-secondary-600'
-                } rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-600`}
+                className={`w-full px-4 py-3 bg-[#23233a]/50 border-2 ${
+                  errors.title ? 'border-red-500' : 'border-white/20'
+                } rounded-lg text-white placeholder-[#b0b0d0] focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]`}
                 disabled={isSubmitting}
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-secondary-300 mb-2">
+            <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
               Event Type
             </label>
             <select
               value={formData.event_type}
               onChange={(e) => handleInputChange('event_type', e.target.value)}
-              className="w-full px-4 py-3 bg-secondary-700 border border-secondary-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-600"
+              className="w-full px-4 py-3 bg-[#23233a]/50 border-2 border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]"
               disabled={isSubmitting}
             >
               <option value="meeting">Meeting</option>
@@ -293,7 +297,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-secondary-300 mb-2">
+            <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
               Description
             </label>
             <textarea
@@ -301,7 +305,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
               value={formData.description}
               onChange={(e) => handleInputChange('description', e.target.value)}
               placeholder="Event description..."
-              className="w-full px-4 py-3 bg-secondary-700 border border-secondary-600 rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-600"
+              className="w-full px-4 py-3 bg-[#23233a]/50 border-2 border-white/20 rounded-lg text-white placeholder-[#b0b0d0] focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]"
               disabled={isSubmitting}
             />
           </div>
@@ -309,7 +313,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
           {/* Date and Time */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-secondary-300 mb-2">
+              <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
                 Start Date *
               </label>
               <div className="relative">
@@ -319,22 +323,22 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
                     {errors.start_date}
                   </div>
                 )}
-                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-secondary-400" />
+                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#b0b0d0]" />
                 <input
                   type="date"
                   required
                   value={formData.start_date}
                   onChange={(e) => handleInputChange('start_date', e.target.value)}
-                  className={`w-full pl-10 pr-4 py-3 bg-secondary-700 border ${
-                    errors.start_date ? 'border-red-500' : 'border-secondary-600'
-                  } rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-600`}
+                  className={`w-full pl-10 pr-4 py-3 bg-[#23233a]/50 border-2 ${
+                    errors.start_date ? 'border-red-500' : 'border-white/20'
+                  } rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]`}
                   disabled={isSubmitting}
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-secondary-300 mb-2">
+              <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
                 Start Time *
               </label>
               <div className="relative">
@@ -344,15 +348,15 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
                     {errors.start_time}
                   </div>
                 )}
-                <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-secondary-400" />
+                <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#b0b0d0]" />
                 <input
                   type="time"
                   required
                   value={formData.start_time}
                   onChange={(e) => handleInputChange('start_time', e.target.value)}
-                  className={`w-full pl-10 pr-4 py-3 bg-secondary-700 border ${
-                    errors.start_time ? 'border-red-500' : 'border-secondary-600'
-                  } rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-600`}
+                  className={`w-full pl-10 pr-4 py-3 bg-[#23233a]/50 border-2 ${
+                    errors.start_time ? 'border-red-500' : 'border-white/20'
+                  } rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]`}
                   disabled={isSubmitting}
                 />
               </div>
@@ -555,6 +559,8 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default CreateEventModal;

@@ -3,6 +3,7 @@ import { Building, Globe, Users, Edit, Trash2, Eye, DollarSign, Check, X, Zap, T
 import { Company } from '../../types/company';
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
+import Button from '../ui/Button';
 import { useToastContext } from '../../contexts/ToastContext';
 import EnrichmentStatusBadge from '../enrichment/EnrichmentStatusBadge';
 
@@ -11,7 +12,7 @@ interface CompanyListProps {
   onView: (companyId: string) => void;
   onEdit: (company: Company) => void;
   onDelete: (companyId: string) => void;
-  viewMode: 'table' | 'cards';
+  viewMode: 'table' | 'cards' | 'kanban';
 }
 
 const CompanyList: React.FC<CompanyListProps> = ({ 
@@ -54,26 +55,26 @@ const CompanyList: React.FC<CompanyListProps> = ({
 
   if (viewMode === 'table') {
     return (
-      <Card className="bg-white/10 backdrop-blur-md">
+      <Card className="bg-[#23233a]/50 backdrop-blur-md border border-[#23233a]/30">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-secondary-700">
-                <th className="text-left py-3 px-4 font-medium text-secondary-300">Company</th>
-                <th className="text-left py-3 px-4 font-medium text-secondary-300">Website</th>
-                <th className="text-left py-3 px-4 font-medium text-secondary-300">Industry</th>
-                <th className="text-left py-3 px-4 font-medium text-secondary-300">Contacts</th>
-                <th className="text-left py-3 px-4 font-medium text-secondary-300">Status</th>
-                <th className="text-left py-3 px-4 font-medium text-secondary-300">Data</th>
-                <th className="text-left py-3 px-4 font-medium text-secondary-300">Actions</th>
+              <tr className="border-b border-[#23233a]/30">
+                <th className="text-left py-3 px-4 font-medium text-[#b0b0d0]">Company</th>
+                <th className="text-left py-3 px-4 font-medium text-[#b0b0d0]">Website</th>
+                <th className="text-left py-3 px-4 font-medium text-[#b0b0d0]">Industry</th>
+                <th className="text-left py-3 px-4 font-medium text-[#b0b0d0]">Contacts</th>
+                <th className="text-left py-3 px-4 font-medium text-[#b0b0d0]">Status</th>
+                <th className="text-left py-3 px-4 font-medium text-[#b0b0d0]">Data</th>
+                <th className="text-left py-3 px-4 font-medium text-[#b0b0d0]">Actions</th>
               </tr>
             </thead>
             <tbody>
               {companies.map((company) => (
-                <tr key={company.id} className="border-b border-secondary-700 hover:bg-secondary-700/50 transition-colors">
+                <tr key={company.id} className="border-b border-[#23233a]/30 hover:bg-[#23233a]/30 transition-colors">
                   <td className="py-3 px-4">
                     <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center">
+                      <div className="w-10 h-10 bg-[#a259ff] rounded-lg flex items-center justify-center">
                         {company.logo_url ? (
                           <img 
                             src={company.logo_url} 
@@ -86,39 +87,39 @@ const CompanyList: React.FC<CompanyListProps> = ({
                       </div>
                       <div>
                         <div className="font-medium text-white">{company.name}</div>
-                        <div className="text-sm text-secondary-400">{company.size}</div>
+                        <div className="text-sm text-[#b0b0d0]">{company.size}</div>
                       </div>
                     </div>
                   </td>
                   <td className="py-3 px-4">
                     {company.website ? (
                       <div className="flex items-center space-x-2">
-                        <Globe className="w-4 h-4 text-secondary-400" />
+                        <Globe className="w-4 h-4 text-[#b0b0d0]" />
                         <a 
                           href={company.website} 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="text-primary-400 hover:text-primary-300 transition-colors"
+                          className="text-[#a259ff] hover:text-[#8b5cf6] transition-colors"
                           onClick={(e) => e.stopPropagation()}
                         >
                           {company.website.replace(/^https?:\/\/(www\.)?/, '')}
                         </a>
                       </div>
                     ) : (
-                      <span className="text-secondary-500">—</span>
+                      <span className="text-[#b0b0d0]">—</span>
                     )}
                   </td>
                   <td className="py-3 px-4">
                     {company.industry ? (
-                      <span className="text-secondary-300">{company.industry}</span>
+                      <span className="text-white">{company.industry}</span>
                     ) : (
-                      <span className="text-secondary-500">—</span>
+                      <span className="text-[#b0b0d0]">—</span>
                     )}
                   </td>
                   <td className="py-3 px-4">
                     <div className="flex items-center space-x-2">
-                      <Users className="w-4 h-4 text-secondary-400" />
-                      <span className="text-secondary-300">{company.contact_count}</span>
+                      <Users className="w-4 h-4 text-[#b0b0d0]" />
+                      <span className="text-white">{company.contact_count}</span>
                     </div>
                   </td>
                   <td className="py-3 px-4">
@@ -135,45 +136,47 @@ const CompanyList: React.FC<CompanyListProps> = ({
                   </td>
                   <td className="py-3 px-4">
                     <div className="flex items-center space-x-2">
-                      <button 
+                      <Button
                         onClick={() => onView(company.id)}
-                        className="p-1 text-secondary-400 hover:text-white hover:bg-secondary-700 rounded-lg transition-colors"
+                        variant="ghost"
+                        size="sm"
+                        icon={Eye}
                         title="View Company"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button 
+                      />
+                      <Button
                         onClick={() => onEdit(company)}
-                        className="p-1 text-secondary-400 hover:text-white hover:bg-secondary-700 rounded-lg transition-colors"
+                        variant="ghost"
+                        size="sm"
+                        icon={Edit}
                         title="Edit Company"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
+                      />
                       {deletingCompanyId === company.id ? (
-                        <div className="flex space-x-1 bg-red-900/20 rounded-lg p-1">
-                          <button 
+                        <div className="flex space-x-1 bg-[#ef4444]/20 rounded-lg p-1">
+                          <Button
                             onClick={() => setDeletingCompanyId(null)}
-                            className="p-1 text-secondary-400 hover:text-white transition-colors"
+                            variant="ghost"
+                            size="sm"
+                            icon={X}
                             title="Cancel"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                          <button 
+                          />
+                          <Button
                             onClick={() => handleDeleteCompany(company.id)}
-                            className="p-1 text-red-400 hover:text-red-300 transition-colors"
+                            variant="ghost"
+                            size="sm"
+                            icon={Check}
                             title="Confirm Delete"
-                          >
-                            <Check className="w-4 h-4" />
-                          </button>
+                            className="text-[#ef4444] hover:text-[#ef4444]"
+                          />
                         </div>
                       ) : (
-                        <button 
+                        <Button
                           onClick={() => setDeletingCompanyId(company.id)}
-                          className="p-1 text-secondary-400 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-colors"
+                          variant="ghost"
+                          size="sm"
+                          icon={Trash2}
                           title="Delete Company"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                          className="text-[#b0b0d0] hover:text-[#ef4444] hover:bg-[#ef4444]/20"
+                        />
                       )}
                     </div>
                   </td>
@@ -186,18 +189,152 @@ const CompanyList: React.FC<CompanyListProps> = ({
     );
   }
 
+  if (viewMode === 'kanban') {
+    // Group companies by status for Kanban view
+    const statusGroups = {
+      'lead': companies.filter(c => c.status === 'lead'),
+      'active': companies.filter(c => c.status === 'active'),
+      'customer': companies.filter(c => c.status === 'customer'),
+      'inactive': companies.filter(c => c.status === 'inactive')
+    };
+
+    const columns = [
+      { id: 'lead', title: 'Leads', companies: statusGroups.lead, color: 'border-[#f59e0b]' },
+      { id: 'active', title: 'Active', companies: statusGroups.active, color: 'border-[#43e7ad]' },
+      { id: 'customer', title: 'Customers', companies: statusGroups.customer, color: 'border-[#a259ff]' },
+      { id: 'inactive', title: 'Inactive', companies: statusGroups.inactive, color: 'border-[#6b7280]' }
+    ];
+
+    return (
+      <div className="flex space-x-6 overflow-x-auto pb-6">
+        {columns.map((column) => (
+          <div key={column.id} className="flex-1 min-w-[320px]">
+            <Card className={`bg-[#23233a]/50 backdrop-blur-md border ${column.color}/30 h-full`}>
+              <div className="flex items-center justify-between mb-4 p-4 border-b border-[#23233a]/30">
+                <h3 className="text-lg font-bold text-white">{column.title}</h3>
+                <Badge variant="secondary" size="sm">{column.companies.length}</Badge>
+              </div>
+              <div className="p-4 space-y-3">
+                {column.companies.length > 0 ? (
+                  column.companies.map((company) => (
+                    <Card 
+                      key={company.id} 
+                      className="bg-[#23233a]/30 backdrop-blur-md border border-[#23233a]/30 hover:shadow-lg transition-shadow cursor-pointer"
+                      onClick={() => onView(company.id)}
+                    >
+                      <div className="p-3 space-y-3">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-[#a259ff] rounded-lg flex items-center justify-center">
+                            {company.logo_url ? (
+                              <img 
+                                src={company.logo_url} 
+                                alt={company.name} 
+                                className="w-10 h-10 rounded-lg object-cover"
+                              />
+                            ) : (
+                              <Building className="w-5 h-5 text-white" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2">
+                              <h4 className="font-semibold text-white text-sm">{company.name}</h4>
+                              {company.enrichment_status === 'completed' && (
+                                <Zap className="w-3 h-3 text-[#a259ff]" title="Data Enriched" />
+                              )}
+                            </div>
+                            <p className="text-[#b0b0d0] text-xs">{company.industry}</p>
+                            <p className="text-[#b0b0d0] text-xs">{company.size}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-1 text-xs">
+                          {company.website && (
+                            <div className="flex items-center space-x-2">
+                              <Globe className="w-3 h-3 text-[#b0b0d0]" />
+                              <a 
+                                href={company.website} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-[#a259ff] hover:text-[#8b5cf6] transition-colors truncate"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {company.website.replace(/^https?:\/\/(www\.)?/, '')}
+                              </a>
+                            </div>
+                          )}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              <Users className="w-3 h-3 text-[#b0b0d0]" />
+                              <span className="text-white">{company.contact_count} contacts</span>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Target className="w-3 h-3 text-[#b0b0d0]" />
+                              <span className="text-white">{company.deal_count} deals</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-2 border-t border-[#23233a]/30">
+                          <div className="flex space-x-1">
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onEdit(company);
+                              }}
+                              variant="ghost"
+                              size="sm"
+                              icon={Edit}
+                              className="w-6 h-6 p-0"
+                            />
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onView(company.id);
+                              }}
+                              variant="ghost"
+                              size="sm"
+                              icon={Eye}
+                              className="w-6 h-6 p-0"
+                            />
+                          </div>
+                          {company.total_deal_value && (
+                            <div className="text-xs">
+                              <span className="text-[#b0b0d0]">Value: </span>
+                              <span className="text-[#43e7ad] font-bold">
+                                ${(company.total_deal_value / 1000).toFixed(0)}K
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  ))
+                ) : (
+                  <div className="text-center py-8">
+                    <Building className="w-8 h-8 text-[#b0b0d0] mx-auto mb-2" />
+                    <p className="text-[#b0b0d0] text-sm">No companies</p>
+                  </div>
+                )}
+              </div>
+            </Card>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
       {companies.map((company) => (
         <Card 
           key={company.id} 
-          className="bg-white/10 backdrop-blur-md hover:shadow-lg transition-shadow cursor-pointer"
+          className="bg-[#23233a]/50 backdrop-blur-md border border-[#23233a]/30 hover:shadow-lg transition-shadow cursor-pointer"
           onClick={() => onView(company.id)}
         >
           <div className="space-y-4">
             <div className="flex items-start justify-between">
               <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-primary-600 rounded-lg flex items-center justify-center">
+                <div className="w-12 h-12 bg-[#a259ff] rounded-lg flex items-center justify-center">
                   {company.logo_url ? (
                     <img 
                       src={company.logo_url} 
@@ -212,19 +349,19 @@ const CompanyList: React.FC<CompanyListProps> = ({
                   <div className="flex items-center space-x-2">
                     <h3 className="font-semibold text-white">{company.name}</h3>
                     {company.enrichment_status === 'completed' && (
-                      <Zap className="w-4 h-4 text-primary-400" title="Data Enriched" />
+                      <Zap className="w-4 h-4 text-[#a259ff]" title="Data Enriched" />
                     )}
                   </div>
-                  <p className="text-secondary-400 text-sm">{company.industry}</p>
-                  <p className="text-secondary-500 text-sm">{company.size}</p>
+                  <p className="text-[#b0b0d0] text-sm">{company.industry}</p>
+                  <p className="text-[#b0b0d0] text-sm">{company.size}</p>
                 </div>
               </div>
               {company.total_deal_value && (
                 <div className="text-right">
-                  <div className="text-lg font-bold text-green-500">
+                  <div className="text-lg font-bold text-[#43e7ad]">
                     ${(company.total_deal_value / 1000).toFixed(0)}K
                   </div>
-                  <div className="text-xs text-secondary-400">Deal Value</div>
+                  <div className="text-xs text-[#b0b0d0]">Deal Value</div>
                 </div>
               )}
             </div>
@@ -232,12 +369,12 @@ const CompanyList: React.FC<CompanyListProps> = ({
             <div className="space-y-2 text-sm">
               {company.website && (
                 <div className="flex items-center space-x-2">
-                  <Globe className="w-4 h-4 text-secondary-400" />
+                  <Globe className="w-4 h-4 text-[#b0b0d0]" />
                   <a 
                     href={company.website} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="text-primary-400 hover:text-primary-300 transition-colors"
+                    className="text-[#a259ff] hover:text-[#8b5cf6] transition-colors"
                     onClick={(e) => e.stopPropagation()}
                   >
                     {company.website.replace(/^https?:\/\/(www\.)?/, '')}
@@ -246,18 +383,18 @@ const CompanyList: React.FC<CompanyListProps> = ({
               )}
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <Users className="w-4 h-4 text-secondary-400" />
-                  <span className="text-secondary-300">{company.contact_count} contacts</span>
+                  <Users className="w-4 h-4 text-[#b0b0d0]" />
+                  <span className="text-white">{company.contact_count} contacts</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Target className="w-4 h-4 text-secondary-400" />
-                  <span className="text-secondary-300">{company.deal_count} deals</span>
+                  <Target className="w-4 h-4 text-[#b0b0d0]" />
+                  <span className="text-white">{company.deal_count} deals</span>
                 </div>
               </div>
               {company.last_contacted_at && (
                 <div className="flex items-center space-x-2">
-                  <Clock className="w-4 h-4 text-secondary-400" />
-                  <span className="text-secondary-300">
+                  <Clock className="w-4 h-4 text-[#b0b0d0]" />
+                  <span className="text-white">
                     Last contacted: {company.last_contacted_at.toLocaleDateString()}
                   </span>
                 </div>
@@ -278,27 +415,31 @@ const CompanyList: React.FC<CompanyListProps> = ({
               {getStatusBadge(company.status)}
             </div>
 
-            <div className="flex space-x-2 pt-2 border-t border-secondary-700">
-              <button 
+            <div className="flex gap-2 pt-2 border-t border-[#23233a]/30">
+              <Button 
                 onClick={(e) => {
                   e.stopPropagation();
                   onEdit(company);
                 }}
-                className="flex-1 btn-secondary text-sm flex items-center justify-center space-x-1"
+                variant="secondary"
+                size="sm"
+                icon={Edit}
+                className="flex-1"
               >
-                <Edit className="w-3 h-3" />
-                <span>Edit</span>
-              </button>
-              <button 
+                Edit
+              </Button>
+              <Button 
                 onClick={(e) => {
                   e.stopPropagation();
                   onView(company.id);
                 }}
-                className="flex-1 btn-primary text-sm flex items-center justify-center space-x-1"
+                variant="gradient"
+                size="sm"
+                icon={Eye}
+                className="flex-1"
               >
-                <Eye className="w-3 h-3" />
-                <span>View</span>
-              </button>
+                View
+              </Button>
             </div>
           </div>
         </Card>

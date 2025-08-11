@@ -29,33 +29,91 @@ import {
   Bot,
   Grid as GridIcon,
   List as ListIcon,
-  RefreshCw
+  RefreshCw,
+  Workflow,
+  Cpu,
+  Brain,
+  Lightbulb,
+  Sparkles,
+  ArrowRight,
+  ArrowLeft,
+  RotateCcw,
+  Pause,
+  PlayCircle,
+  StopCircle,
+  Activity,
+  BarChart3,
+  TrendingUp,
+  TrendingDown,
+  Shield,
+  Lock,
+  Unlock,
+  Download,
+  Upload,
+  Share2,
+  MoreHorizontal,
+  Search,
+  SortAsc,
+  SortDesc,
+  Filter as FilterIcon,
+  Globe,
+  Database,
+  Cloud,
+  Server,
+  Wifi,
+  WifiOff,
+  CheckCircle,
+  XCircle,
+  Minus,
+  Star,
+  Bookmark,
+  Edit,
+  Eye as EyeIcon,
+  Code,
+  Palette,
+  Layers,
+  GitBranch,
+  GitCommit,
+  GitPullRequest,
+  GitMerge,
+  GitCompare,
+  GitFork
 } from 'lucide-react';
 import { DndContext, DragOverlay, useSensor, useSensors, PointerSensor, TouchSensor } from '@dnd-kit/core';
 import { restrictToWindowEdges } from '@dnd-kit/modifiers';
-import { createClient } from '@supabase/supabase-js';
-import Container from '../components/layout/Container';
+import Spline from '@splinetool/react-spline';
+import { supabase } from '../services/supabase';
+import { useToastContext } from '../contexts/ToastContext';
+import { useGuruContext } from '../contexts/GuruContext';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
+import Button from '../components/ui/Button';
 import AutomationFlowDesigner from '../components/automation/AutomationFlowDesigner';
 import AutomationComponentLibrary from '../components/automation/AutomationComponentLibrary';
 import AutomationRuleForm from '../components/automation/AutomationRuleForm';
 import AutomationRuleCard from '../components/automation/AutomationRuleCard';
 import AutomationRuleTemplates from '../components/automation/AutomationRuleTemplates';
 import AutomationTestPanel from '../components/automation/AutomationTestPanel';
-import { useToastContext } from '../contexts/ToastContext';
-import { useGuru } from '../contexts/GuruContext';
 import { AutomationRule, AutomationComponent, AutomationTrigger, AutomationCondition, AutomationAction } from '../types/automation';
 
-// Initialize Supabase client
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL || '',
-  import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-);
+interface AutomationStats {
+  totalRules: number;
+  activeRules: number;
+  inactiveRules: number;
+  totalExecutions: number;
+  successfulExecutions: number;
+  failedExecutions: number;
+  averageExecutionTime: number;
+  topTriggerType: string;
+  mostUsedAction: string;
+  automationEfficiency: number;
+  timeSaved: number;
+  costSavings: number;
+}
 
 const AutomationBuilder: React.FC = () => {
   const { showToast } = useToastContext();
-  const { openGuru } = useGuru();
+  const { askGuru } = useGuruContext();
   
   // State for automation rules
   const [rules, setRules] = useState<AutomationRule[]>([]);
@@ -64,10 +122,16 @@ const AutomationBuilder: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'my-rules' | 'templates'>('my-rules');
+  const [activeTab, setActiveTab] = useState<'my-rules' | 'templates' | 'analytics'>('my-rules');
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [filters, setFilters] = useState({
+    status: 'all',
+    triggerType: 'all',
+    actionType: 'all',
+    dateRange: 'all'
+  });
   
   // State for the flow designer
   const [currentFlow, setCurrentFlow] = useState<{
@@ -82,6 +146,22 @@ const AutomationBuilder: React.FC = () => {
   
   // State for drag and drop
   const [activeComponent, setActiveComponent] = useState<AutomationComponent | null>(null);
+  
+  // Mock automation stats
+  const [stats, setStats] = useState<AutomationStats>({
+    totalRules: 24,
+    activeRules: 18,
+    inactiveRules: 6,
+    totalExecutions: 1247,
+    successfulExecutions: 1189,
+    failedExecutions: 58,
+    averageExecutionTime: 2.3,
+    topTriggerType: 'Deal Stage Changed',
+    mostUsedAction: 'Send Email',
+    automationEfficiency: 95.3,
+    timeSaved: 47.2,
+    costSavings: 2840
+  });
   
   // Sensors for drag and drop
   const sensors = useSensors(
@@ -448,20 +528,22 @@ const AutomationBuilder: React.FC = () => {
             <h2 className="text-xl font-bold text-white">
               {isEditing ? 'Edit Automation Rule' : 'Create New Automation Rule'}
             </h2>
-            <button
+            <Button
               onClick={() => {
                 setIsCreating(false);
                 setIsEditing(false);
                 setSelectedRule(null);
               }}
-              className="btn-secondary flex items-center space-x-2"
+              variant="secondary"
+              size="lg"
+              className="bg-white/10 border-white/20 text-white hover:bg-white/20 backdrop-blur-md min-w-[120px] h-12"
             >
-              <X className="w-4 h-4" />
-              <span>Cancel</span>
-            </button>
+              <X className="w-4 h-4 mr-2" />
+              Cancel
+            </Button>
           </div>
           
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
             {/* Component Library */}
             <div className="lg:col-span-1">
               <AutomationComponentLibrary 
@@ -501,29 +583,53 @@ const AutomationBuilder: React.FC = () => {
                 
                 <DragOverlay>
                   {activeComponent && (
-                    <div className="p-4 bg-primary-600/90 backdrop-blur-sm border border-primary-500 rounded-lg shadow-lg text-white max-w-xs">
+                    <div className="p-3 bg-primary-600/90 backdrop-blur-sm border border-primary-500 rounded-lg shadow-lg text-white max-w-xs">
                       <div className="flex items-center space-x-2">
-                        {activeComponent.icon && <activeComponent.icon className="w-5 h-5" />}
-                        <span className="font-medium">{activeComponent.name}</span>
+                        {activeComponent.icon && <activeComponent.icon className="w-4 h-4" />}
+                        <span className="text-sm">{activeComponent.name}</span>
                       </div>
                     </div>
                   )}
                 </DragOverlay>
               </DndContext>
-              
-              {/* Rule Form */}
-              <div className="mt-6">
-                <AutomationRuleForm
-                  rule={selectedRule}
-                  isValid={!!currentFlow.trigger && currentFlow.actions.length > 0}
-                  onSave={handleSaveRule}
-                />
-              </div>
             </div>
+          </div>
+          
+          {/* Save Button - Aligned with Component Library bottom */}
+          <div className="flex justify-end space-x-3 mt-4 mb-8 px-4 md:px-6 lg:px-8 xl:px-12">
+            <Button
+              onClick={() => {
+                setIsCreating(false);
+                setIsEditing(false);
+                setSelectedRule(null);
+              }}
+              variant="secondary"
+              size="lg"
+              className="bg-white/10 border-white/20 text-white hover:bg-white/20 backdrop-blur-md min-w-[120px] h-12"
+            >
+              <X className="w-4 h-4 mr-2" />
+              Cancel
+            </Button>
+            <Button
+              onClick={() => handleSaveRule({
+                name: selectedRule?.name || 'New Automation Rule',
+                description: selectedRule?.description || '',
+                trigger: currentFlow.trigger!,
+                conditions: currentFlow.conditions,
+                actions: currentFlow.actions,
+                is_active: true
+              })}
+              size="lg"
+              className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white backdrop-blur-md min-w-[120px] h-12"
+              disabled={!currentFlow.trigger || currentFlow.actions.length === 0}
+            >
+              <Save className="w-4 h-4 mr-2" />
+              Save Rule
+            </Button>
           </div>
         </div>
       );
-    } else if (isTesting && selectedRule) {
+    } else if (isTesting) {
       return (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
@@ -540,56 +646,68 @@ const AutomationBuilder: React.FC = () => {
             </button>
           </div>
           
-          <AutomationTestPanel rule={selectedRule} />
+          <AutomationTestPanel rule={selectedRule!} />
         </div>
       );
     } else {
+      // Main dashboard view
       return (
         <div className="space-y-6">
           {/* Tabs */}
-          <div className="flex space-x-2">
-            <button
-              onClick={() => setActiveTab('my-rules')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                activeTab === 'my-rules'
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-secondary-700 text-secondary-300 hover:bg-secondary-600'
-              }`}
-            >
-              My Rules
-            </button>
-            <button
-              onClick={() => setActiveTab('templates')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                activeTab === 'templates'
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-secondary-700 text-secondary-300 hover:bg-secondary-600'
-              }`}
-            >
-              Templates
-            </button>
-          </div>
-          
-          {/* Search and Filters */}
           <div className="flex items-center justify-between">
-            <div className="relative max-w-md">
-              <input
-                type="text"
-                placeholder="Search automation rules..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-secondary-700 border border-secondary-600 rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-600"
-              />
-              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-secondary-400" />
+            <div className="flex space-x-1 bg-white/10 backdrop-blur-md rounded-lg p-1">
+              <button
+                onClick={() => setActiveTab('my-rules')}
+                className={`px-6 py-3 rounded-md text-sm font-medium transition-all duration-200 min-w-[100px] h-10 flex items-center justify-center ${
+                  activeTab === 'my-rules'
+                    ? 'bg-white/20 text-white shadow-sm'
+                    : 'text-secondary-400 hover:text-white'
+                }`}
+              >
+                My Rules
+              </button>
+              <button
+                onClick={() => setActiveTab('templates')}
+                className={`px-6 py-3 rounded-md text-sm font-medium transition-all duration-200 min-w-[100px] h-10 flex items-center justify-center ${
+                  activeTab === 'templates'
+                    ? 'bg-white/20 text-white shadow-sm'
+                    : 'text-secondary-400 hover:text-white'
+                }`}
+              >
+                Templates
+              </button>
+              <button
+                onClick={() => setActiveTab('analytics')}
+                className={`px-6 py-3 rounded-md text-sm font-medium transition-all duration-200 min-w-[100px] h-10 flex items-center justify-center ${
+                  activeTab === 'analytics'
+                    ? 'bg-white/20 text-white shadow-sm'
+                    : 'text-secondary-400 hover:text-white'
+                }`}
+              >
+                Analytics
+              </button>
             </div>
             
-            <div className="flex items-center space-x-2">
-              <div className="flex space-x-1 bg-secondary-700 rounded-lg p-1">
+            <div className="flex items-center space-x-3">
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-secondary-400" />
+                <input
+                  type="text"
+                  placeholder="Search rules..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-3 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-purple-500 h-10 min-w-[200px]"
+                />
+              </div>
+              
+              {/* View Mode Toggle */}
+              <div className="flex bg-white/10 backdrop-blur-md rounded-lg p-1">
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`p-2 rounded-md transition-colors ${
+                  className={`p-2 rounded-md transition-all duration-200 w-10 h-10 flex items-center justify-center ${
                     viewMode === 'grid'
-                      ? 'bg-primary-600 text-white'
+                      ? 'bg-white/20 text-white'
                       : 'text-secondary-400 hover:text-white'
                   }`}
                 >
@@ -597,9 +715,9 @@ const AutomationBuilder: React.FC = () => {
                 </button>
                 <button
                   onClick={() => setViewMode('list')}
-                  className={`p-2 rounded-md transition-colors ${
+                  className={`p-2 rounded-md transition-all duration-200 w-10 h-10 flex items-center justify-center ${
                     viewMode === 'list'
-                      ? 'bg-primary-600 text-white'
+                      ? 'bg-white/20 text-white'
                       : 'text-secondary-400 hover:text-white'
                   }`}
                 >
@@ -607,66 +725,62 @@ const AutomationBuilder: React.FC = () => {
                 </button>
               </div>
               
+              {/* Refresh */}
               <button
                 onClick={handleRefreshRules}
                 disabled={isRefreshing}
-                className="btn-secondary flex items-center space-x-2"
+                className="p-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg text-white hover:bg-white/20 transition-all duration-200 disabled:opacity-50 w-10 h-10 flex items-center justify-center"
               >
                 <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                <span>{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
-              </button>
-              
-              <button
-                onClick={handleCreateRule}
-                className="btn-primary flex items-center space-x-2"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Create Rule</span>
               </button>
             </div>
           </div>
           
-          {/* Rules or Templates */}
-          {activeTab === 'my-rules' ? (
-            isLoading ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="text-center">
-                  <div className="w-8 h-8 border-2 border-primary-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                  <p className="text-secondary-400">Loading automation rules...</p>
+          {/* Content based on active tab */}
+          {activeTab === 'my-rules' && (
+            <div className="space-y-6">
+              {isLoading ? (
+                <div className="flex items-center justify-center h-64">
+                  <div className="text-center">
+                    <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-secondary-400">Loading automation rules...</p>
+                  </div>
                 </div>
-              </div>
-            ) : filteredRules.length > 0 ? (
-              <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4'}>
-                {filteredRules.map(rule => (
-                  <AutomationRuleCard
-                    key={rule.id}
-                    rule={rule}
-                    viewMode={viewMode}
-                    onEdit={() => handleEditRule(rule)}
-                    onTest={() => handleTestRule(rule)}
-                    onDuplicate={() => handleDuplicateRule(rule)}
-                    onDelete={() => handleDeleteRule(rule.id!)}
-                    onToggleStatus={(isActive) => handleToggleRuleStatus(rule.id!, isActive)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-16">
-                <Zap className="w-16 h-16 text-secondary-600 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-white mb-2">No Automation Rules Yet</h3>
-                <p className="text-secondary-400 mb-6">
-                  Create your first automation rule to streamline your workflow
-                </p>
-                <button
-                  onClick={handleCreateRule}
-                  className="btn-primary flex items-center space-x-2 mx-auto"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Create Your First Rule</span>
-                </button>
-              </div>
-            )
-          ) : (
+              ) : rules.length > 0 ? (
+                <div className={viewMode === 'grid' ? 'grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-8' : 'space-y-6'}>
+                  {rules.map(rule => (
+                    <AutomationRuleCard
+                      key={rule.id}
+                      rule={rule}
+                      viewMode={viewMode}
+                      onEdit={() => handleEditRule(rule)}
+                      onTest={() => handleTestRule(rule)}
+                      onDuplicate={() => handleDuplicateRule(rule)}
+                      onDelete={() => handleDeleteRule(rule.id!)}
+                      onToggleStatus={(isActive) => handleToggleRuleStatus(rule.id!, isActive)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-16">
+                  <Zap className="w-16 h-16 text-secondary-600 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-white mb-2">No Automation Rules Yet</h3>
+                  <p className="text-secondary-400 mb-6">
+                    Create your first automation rule to streamline your workflow
+                  </p>
+                  <Button
+                    onClick={handleCreateRule}
+                    className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white backdrop-blur-md px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 mx-auto h-12 min-w-[200px] justify-center"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Create Your First Rule</span>
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+          
+          {activeTab === 'templates' && (
             <AutomationRuleTemplates
               onUseTemplate={(template) => {
                 setCurrentFlow({
@@ -675,6 +789,7 @@ const AutomationBuilder: React.FC = () => {
                   actions: template.actions
                 });
                 setSelectedRule({
+                  id: undefined, // Will be set when saved
                   name: template.name,
                   description: template.description,
                   is_active: true,
@@ -682,7 +797,12 @@ const AutomationBuilder: React.FC = () => {
                   conditions: template.conditions,
                   actions: template.actions,
                   created_at: new Date(),
-                  updated_at: new Date()
+                  updated_at: new Date(),
+                  last_executed: undefined,
+                  execution_count: 0,
+                  success_count: 0,
+                  failure_count: 0,
+                  average_execution_time: 0
                 });
                 setIsCreating(true);
               }}
@@ -694,74 +814,183 @@ const AutomationBuilder: React.FC = () => {
   };
   
   return (
-    <Container>
-      <div className="space-y-6 animate-fade-in">
+    <div className="min-h-screen relative overflow-hidden">
+      {/* 3D Spline Background */}
+      <div className="fixed inset-0 z-0">
+        <Spline scene="https://prod.spline.design/n0GFhlzrcT-MOycs/scene.splinecode" />
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 space-y-6 px-4 md:px-6 lg:px-8 xl:px-12 pt-6 transition-all duration-300">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
           <div>
-            <h1 className="text-3xl font-bold text-white">Automation Builder</h1>
-            <p className="text-secondary-400 mt-1">Create custom workflows to automate your sales process</p>
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-blue-500 rounded-xl flex items-center justify-center">
+                <Workflow className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-white to-secondary-300 bg-clip-text text-transparent">
+                  Automation Builder
+                </h1>
+                <p className="text-secondary-400 mt-1 text-sm">AI-powered workflow automation to streamline your sales process</p>
+              </div>
+            </div>
           </div>
-          <div className="flex space-x-2">
-            <button 
-              onClick={openGuru}
-              className="btn-secondary flex items-center space-x-2"
+          
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button 
+              onClick={() => askGuru("How can I optimize my automation workflows?")}
+              variant="secondary" 
+              size="lg"
+              className="bg-white/10 border-white/20 text-white hover:bg-white/20 backdrop-blur-md min-w-[140px] h-12"
             >
-              <Bot className="w-4 h-4" />
-              <span>Ask Guru</span>
-            </button>
+              <Brain className="w-4 h-4 mr-2" />
+              Ask AI Guru
+            </Button>
             {!isCreating && !isEditing && !isTesting && (
-              <button
+              <Button
                 onClick={handleCreateRule}
-                className="btn-primary flex items-center space-x-2"
+                size="lg"
+                className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white backdrop-blur-md min-w-[140px] h-12"
               >
-                <Plus className="w-4 h-4" />
-                <span>Create Rule</span>
-              </button>
+                <Plus className="w-4 h-4 mr-2" />
+                Create Rule
+              </Button>
             )}
           </div>
         </div>
-        
-        {/* Stats Overview */}
+
+        {/* Enhanced Stats Overview */}
         {!isCreating && !isEditing && !isTesting && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card className="bg-white/10 backdrop-blur-md">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-white">{rules.length}</div>
-                <div className="text-secondary-400 text-sm">Total Rules</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-6 hover:bg-[#23233a]/60 transition-all duration-300">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-secondary-400 text-sm font-medium">Total Rules</p>
+                  <p className="text-3xl font-bold text-white mt-1">{stats.totalRules}</p>
+                </div>
+                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
+                  <Zap className="w-6 h-6 text-white" />
+                </div>
+              </div>
+              <div className="mt-4 flex items-center text-sm">
+                <TrendingUp className="w-4 h-4 text-green-400 mr-1" />
+                <span className="text-green-400">+12% this month</span>
               </div>
             </Card>
-            <Card className="bg-white/10 backdrop-blur-md">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-500">
-                  {rules.filter(r => r.is_active).length}
+
+            <Card className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-6 hover:bg-[#23233a]/60 transition-all duration-300">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-secondary-400 text-sm font-medium">Active Rules</p>
+                  <p className="text-3xl font-bold text-green-400 mt-1">{stats.activeRules}</p>
                 </div>
-                <div className="text-secondary-400 text-sm">Active</div>
+                <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
+                  <CheckCircle className="w-6 h-6 text-white" />
+                </div>
+              </div>
+              <div className="mt-4 flex items-center text-sm">
+                <Activity className="w-4 h-4 text-green-400 mr-1" />
+                <span className="text-green-400">{stats.automationEfficiency}% efficiency</span>
               </div>
             </Card>
-            <Card className="bg-white/10 backdrop-blur-md">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-yellow-500">
-                  {rules.filter(r => r.trigger?.type === 'deal_stage_changed').length}
+
+            <Card className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-6 hover:bg-[#23233a]/60 transition-all duration-300">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-secondary-400 text-sm font-medium">Total Executions</p>
+                  <p className="text-3xl font-bold text-blue-400 mt-1">{stats.totalExecutions.toLocaleString()}</p>
                 </div>
-                <div className="text-secondary-400 text-sm">Deal Rules</div>
+                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center">
+                  <PlayCircle className="w-6 h-6 text-white" />
+                </div>
+              </div>
+              <div className="mt-4 flex items-center text-sm">
+                <Clock className="w-4 h-4 text-blue-400 mr-1" />
+                <span className="text-blue-400">{stats.averageExecutionTime}s avg</span>
               </div>
             </Card>
-            <Card className="bg-white/10 backdrop-blur-md">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-500">
-                  {rules.filter(r => r.trigger?.type === 'task_deadline_missed' || r.trigger?.type === 'task_completed').length}
+
+            <Card className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-6 hover:bg-[#23233a]/60 transition-all duration-300">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-secondary-400 text-sm font-medium">Time Saved</p>
+                  <p className="text-3xl font-bold text-purple-400 mt-1">{stats.timeSaved}h</p>
                 </div>
-                <div className="text-secondary-400 text-sm">Task Rules</div>
+                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
+                  <DollarSign className="w-6 h-6 text-white" />
+                </div>
+              </div>
+              <div className="mt-4 flex items-center text-sm">
+                <TrendingUp className="w-4 h-4 text-purple-400 mr-1" />
+                <span className="text-purple-400">${stats.costSavings} saved</span>
               </div>
             </Card>
           </div>
         )}
-        
+
+        {/* Analytics Tab */}
+        {!isCreating && !isEditing && !isTesting && activeTab === 'analytics' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-6">
+              <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                <BarChart3 className="w-5 h-5 mr-2 text-blue-400" />
+                Execution Performance
+              </h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-secondary-400">Success Rate</span>
+                  <span className="text-green-400 font-semibold">
+                    {((stats.successfulExecutions / stats.totalExecutions) * 100).toFixed(1)}%
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-secondary-400">Failed Executions</span>
+                  <span className="text-red-400 font-semibold">{stats.failedExecutions}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-secondary-400">Top Trigger</span>
+                  <span className="text-white font-semibold">{stats.topTriggerType}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-secondary-400">Most Used Action</span>
+                  <span className="text-white font-semibold">{stats.mostUsedAction}</span>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-6">
+              <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                <TrendingUp className="w-5 h-5 mr-2 text-green-400" />
+                Efficiency Metrics
+              </h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-secondary-400">Automation Efficiency</span>
+                  <span className="text-green-400 font-semibold">{stats.automationEfficiency}%</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-secondary-400">Time Saved This Month</span>
+                  <span className="text-blue-400 font-semibold">{stats.timeSaved} hours</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-secondary-400">Cost Savings</span>
+                  <span className="text-purple-400 font-semibold">${stats.costSavings}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-secondary-400">Active Rules</span>
+                  <span className="text-white font-semibold">{stats.activeRules}/{stats.totalRules}</span>
+                </div>
+              </div>
+            </Card>
+          </div>
+        )}
+
         {/* Main Content */}
         {renderContent()}
       </div>
-    </Container>
+    </div>
   );
 };
 

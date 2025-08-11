@@ -1,20 +1,47 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Plus, Mail, Send, Reply, Forward, Paperclip, Star, Archive, Trash2, Eye, Edit, MoreHorizontal, Bot, Check, X } from 'lucide-react';
+import { 
+  Search, 
+  Filter, 
+  Plus, 
+  Mail, 
+  Send, 
+  Reply, 
+  Forward, 
+  Paperclip, 
+  Star, 
+  Archive, 
+  Trash2, 
+  Eye, 
+  Edit, 
+  MoreHorizontal, 
+  Bot, 
+  Check, 
+  X,
+  Clock,
+  Users,
+  Target,
+  AlertTriangle,
+  TrendingUp,
+  Settings,
+  RefreshCw,
+  List,
+  Grid,
+  MessageSquare,
+  ChevronUp,
+  ChevronDown
+} from 'lucide-react';
+import Spline from '@splinetool/react-spline';
 import Container from '../components/layout/Container';
 import Card from '../components/ui/Card';
+import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import EmptyState from '../components/common/EmptyState';
-import EmailComposer from '../components/emails/EmailComposer';
-import { useGuru } from '../contexts/GuruContext';
+import { useGuruContext } from '../contexts/GuruContext';
 import { useToastContext } from '../contexts/ToastContext';
-import { createClient } from '@supabase/supabase-js';
+import { useEmailIntegration } from '../hooks/useEmailIntegration';
+import EnhancedEmailComposer from '../components/emails/EnhancedEmailComposer';
+import { supabase } from '../services/supabase';
 import { v4 as uuidv4 } from 'uuid';
-
-// Initialize Supabase client
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL || '',
-  import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-);
 
 interface Email {
   id: string;
@@ -33,20 +60,238 @@ interface Email {
   thread?: string;
   tracking_id?: string;
   status?: string;
+  category?: 'primary' | 'social' | 'promotions' | 'updates' | 'forums';
+  ai_insights?: string;
+  sentiment?: 'positive' | 'negative' | 'neutral';
+  action_required?: boolean;
+  follow_up_date?: Date;
+  tags?: string[];
 }
 
+// AI Email Insights Component
+interface AIEmailInsightsProps {
+  onInsightClick: (insight: any) => void;
+}
+
+const AIEmailInsights: React.FC<AIEmailInsightsProps> = ({ onInsightClick }) => {
+  const insights = [
+    {
+      id: 1,
+      type: 'sentiment',
+      title: 'Positive Customer Feedback',
+      description: 'Email from John Smith shows high satisfaction with our proposal',
+      icon: TrendingUp,
+      priority: 'high',
+      action: 'Follow Up',
+      color: '#43e7ad'
+    },
+    {
+      id: 2,
+      type: 'action',
+      title: 'Action Required',
+      description: 'Sarah Johnson needs contract terms discussion - schedule call',
+      icon: AlertTriangle,
+      priority: 'urgent',
+      action: 'Schedule Call',
+      color: '#ef4444'
+    },
+    {
+      id: 3,
+      type: 'opportunity',
+      title: 'Deal Opportunity',
+      description: 'Mike Wilson shows interest in expanding services',
+      icon: Target,
+      priority: 'medium',
+      action: 'Create Deal',
+      color: '#a259ff'
+    }
+  ];
+
+  return (
+    <Card className="bg-[#23233a]/40 backdrop-blur-sm border border-[#23233a]/50">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center space-x-2">
+          <Bot className="w-5 h-5 text-[#a259ff]" />
+          <h3 className="text-lg font-semibold text-white">AI Email Insights</h3>
+          <Badge variant="success" size="sm">Active</Badge>
+        </div>
+        <Button variant="secondary" size="sm" icon={Settings}>
+          Settings
+        </Button>
+      </div>
+      
+      <div className="space-y-3">
+        {insights.map((insight) => (
+          <div 
+            key={insight.id}
+            className="bg-[#23233a]/30 rounded-lg p-3 border border-[#23233a]/30 hover:border-[#a259ff]/30 transition-colors cursor-pointer"
+            onClick={() => onInsightClick(insight)}
+          >
+            <div className="flex items-start justify-between">
+              <div className="flex items-start space-x-3">
+                <div 
+                  className="w-8 h-8 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: `${insight.color}20` }}
+                >
+                  <insight.icon className="w-4 h-4" style={{ color: insight.color }} />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-medium text-white text-sm">{insight.title}</h4>
+                  <p className="text-[#b0b0d0] text-xs mt-1">{insight.description}</p>
+                </div>
+              </div>
+              <Button 
+                variant="gradient" 
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onInsightClick(insight);
+                }}
+              >
+                {insight.action}
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+};
+
+// Email Statistics Component
+const EmailStats: React.FC = () => {
+  const stats = [
+    {
+      label: 'Total Emails',
+      value: '1,247',
+      icon: Mail,
+      color: 'text-[#a259ff]',
+      bgColor: 'bg-[#a259ff]/20'
+    },
+    {
+      label: 'Unread',
+      value: '23',
+      icon: Mail, // Changed from UnreadIcon to Mail as UnreadIcon is no longer imported
+      color: 'text-[#ef4444]',
+      bgColor: 'bg-[#ef4444]/20'
+    },
+    {
+      label: 'Starred',
+      value: '12',
+      icon: Star,
+      color: 'text-[#f59e0b]',
+      bgColor: 'bg-[#f59e0b]/20'
+    },
+    {
+      label: 'Drafts',
+      value: '5',
+      icon: Mail, // Changed from Draft to Mail as Draft is no longer imported
+      color: 'text-[#6b7280]',
+      bgColor: 'bg-[#6b7280]/20'
+    }
+  ];
+
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {stats.map((stat, index) => (
+        <Card key={index} className="bg-[#23233a]/40 backdrop-blur-sm border border-[#23233a]/50">
+          <div className="flex items-center space-x-3">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${stat.bgColor}`}>
+              <stat.icon className={`w-5 h-5 ${stat.color}`} />
+            </div>
+            <div>
+              <p className="text-[#b0b0d0] text-xs">{stat.label}</p>
+              <p className="text-white font-semibold text-lg">{stat.value}</p>
+            </div>
+          </div>
+        </Card>
+      ))}
+    </div>
+  );
+};
+
+// Email Categories Component
+interface EmailCategoriesProps {
+  activeCategory: string;
+  onCategoryChange: (category: string) => void;
+}
+
+const EmailCategories: React.FC<EmailCategoriesProps> = ({ activeCategory, onCategoryChange }) => {
+  const categories = [
+    { id: 'all', label: 'All Mail', icon: List, count: 1247, color: '#a259ff' }, // Changed from Inbox to List
+    { id: 'primary', label: 'Primary', icon: Mail, count: 892, color: '#43e7ad' },
+    { id: 'social', label: 'Social', icon: Users, count: 156, color: '#377dff' },
+    { id: 'promotions', label: 'Promotions', icon: TrendingUp, count: 89, color: '#f59e0b' },
+    { id: 'updates', label: 'Updates', icon: Mail, count: 67, color: '#6b7280' }, // Changed from Bell to Mail
+    { id: 'forums', label: 'Forums', icon: MessageSquare, count: 43, color: '#ef4444' }
+  ];
+
+  return (
+    <Card className="bg-[#23233a]/40 backdrop-blur-sm border border-[#23233a]/50">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-semibold text-white">Categories</h3>
+        <Button variant="secondary" size="sm" icon={Settings}>
+          Manage
+        </Button>
+      </div>
+      
+      <div className="space-y-2">
+        {categories.map((category) => {
+          const Icon = category.icon;
+          const isActive = activeCategory === category.id;
+          return (
+            <button
+              key={category.id}
+              onClick={() => onCategoryChange(category.id)}
+              className={`w-full flex items-center justify-between p-3 rounded-lg transition-all duration-200 ${
+                isActive 
+                  ? 'bg-[#a259ff]/20 border border-[#a259ff]/30' 
+                  : 'bg-[#23233a]/30 border border-[#23233a]/30 hover:border-[#a259ff]/30'
+              }`}
+            >
+              <div className="flex items-center space-x-3">
+                <div 
+                  className="w-6 h-6 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: `${category.color}20` }}
+                >
+                  <Icon className="w-3 h-3" style={{ color: category.color }} />
+                </div>
+                <span className={`text-sm font-medium ${
+                  isActive ? 'text-white' : 'text-[#b0b0d0]'
+                }`}>
+                  {category.label}
+                </span>
+              </div>
+              <Badge variant="secondary" size="sm">{category.count}</Badge>
+            </button>
+          );
+        })}
+      </div>
+    </Card>
+  );
+};
+
 const Emails: React.FC = () => {
-  const { openGuru } = useGuru();
+  const { openGuru } = useGuruContext();
   const { showToast } = useToastContext();
+  const { 
+    isComposerOpen, 
+    composerData, 
+    openEmailComposer, 
+    closeEmailComposer 
+  } = useEmailIntegration();
   const [activeTab, setActiveTab] = useState<'inbox' | 'sent'>('inbox');
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
-  const [showCompose, setShowCompose] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('all');
   const [replyData, setReplyData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [emails, setEmails] = useState<Email[]>([]);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = useState('all');
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [sortBy, setSortBy] = useState<'date' | 'priority' | 'sender'>('date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   // Fetch emails from Supabase
   useEffect(() => {
@@ -78,7 +323,12 @@ const Emails: React.FC = () => {
             priority: 'medium' as 'low' | 'medium' | 'high',
             thread: email.id,
             tracking_id: email.tracking_id,
-            status: email.status
+            status: email.status,
+            category: 'primary' as 'primary' | 'social' | 'promotions' | 'updates' | 'forums',
+            ai_insights: 'Positive sentiment detected',
+            sentiment: 'positive' as 'positive' | 'negative' | 'neutral',
+            action_required: false,
+            tags: ['proposal', 'follow-up']
           }));
           
           setEmails(formattedEmails);
@@ -100,7 +350,12 @@ const Emails: React.FC = () => {
               linkedContact: 'John Smith',
               priority: 'high',
               thread: 'thread-1',
-              tracking_id: uuidv4()
+              tracking_id: uuidv4(),
+              category: 'primary',
+              ai_insights: 'High priority - requires immediate response',
+              sentiment: 'positive',
+              action_required: true,
+              tags: ['proposal', 'enterprise', 'urgent']
             },
             {
               id: '2',
@@ -117,7 +372,12 @@ const Emails: React.FC = () => {
               linkedContact: 'Sarah Johnson',
               priority: 'medium',
               thread: 'thread-2',
-              tracking_id: uuidv4()
+              tracking_id: uuidv4(),
+              category: 'primary',
+              ai_insights: 'Positive feedback - opportunity for follow-up',
+              sentiment: 'positive',
+              action_required: true,
+              tags: ['demo', 'follow-up', 'cloud']
             },
             {
               id: '3',
@@ -133,7 +393,12 @@ const Emails: React.FC = () => {
               linkedDeal: 'Financial Services',
               linkedContact: 'Mike Wilson',
               priority: 'low',
-              tracking_id: uuidv4()
+              tracking_id: uuidv4(),
+              category: 'primary',
+              ai_insights: 'Neutral tone - standard follow-up',
+              sentiment: 'neutral',
+              action_required: false,
+              tags: ['contract', 'discussion']
             }
           ]);
         }
@@ -157,7 +422,12 @@ const Emails: React.FC = () => {
             linkedContact: 'John Smith',
             priority: 'high',
             thread: 'thread-1',
-            tracking_id: uuidv4()
+            tracking_id: uuidv4(),
+            category: 'primary',
+            ai_insights: 'High priority - requires immediate response',
+            sentiment: 'positive',
+            action_required: true,
+            tags: ['proposal', 'enterprise', 'urgent']
           },
           {
             id: '2',
@@ -174,7 +444,12 @@ const Emails: React.FC = () => {
             linkedContact: 'Sarah Johnson',
             priority: 'medium',
             thread: 'thread-2',
-            tracking_id: uuidv4()
+            tracking_id: uuidv4(),
+            category: 'primary',
+            ai_insights: 'Positive feedback - opportunity for follow-up',
+            sentiment: 'positive',
+            action_required: true,
+            tags: ['demo', 'follow-up', 'cloud']
           },
           {
             id: '3',
@@ -190,7 +465,12 @@ const Emails: React.FC = () => {
             linkedDeal: 'Financial Services',
             linkedContact: 'Mike Wilson',
             priority: 'low',
-            tracking_id: uuidv4()
+            tracking_id: uuidv4(),
+            category: 'primary',
+            ai_insights: 'Neutral tone - standard follow-up',
+            sentiment: 'neutral',
+            action_required: false,
+            tags: ['contract', 'discussion']
           }
         ]);
       } finally {
@@ -202,60 +482,77 @@ const Emails: React.FC = () => {
   }, []);
 
   const filteredEmails = emails.filter(email => {
-    const matchesSearch = email.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         email.from.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         email.body.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = (email.subject?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                         (email.from?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                         (email.body?.toLowerCase() || '').includes(searchTerm.toLowerCase());
     
-    switch (filter) {
-      case 'unread':
-        return !email.isRead && matchesSearch;
-      case 'starred':
-        return email.isStarred && matchesSearch;
+    const matchesCategory = activeCategory === 'all' || email.category === activeCategory;
+    
+    return matchesSearch && matchesCategory;
+  });
+
+  const sortedEmails = [...filteredEmails].sort((a, b) => {
+    switch (sortBy) {
+      case 'date':
+        return sortOrder === 'asc' 
+          ? a.timestamp.getTime() - b.timestamp.getTime()
+          : b.timestamp.getTime() - a.timestamp.getTime();
       case 'priority':
-        return email.priority === 'high' && matchesSearch;
+        const priorityOrder = { high: 3, medium: 2, low: 1 };
+        return sortOrder === 'asc'
+          ? priorityOrder[a.priority] - priorityOrder[b.priority]
+          : priorityOrder[b.priority] - priorityOrder[a.priority];
+      case 'sender':
+        return sortOrder === 'asc'
+          ? a.from.localeCompare(b.from)
+          : b.from.localeCompare(a.from);
       default:
-        return matchesSearch;
+        return 0;
     }
   });
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return 'text-red-500';
-      case 'medium': return 'text-yellow-500';
-      case 'low': return 'text-green-500';
-      default: return 'text-secondary-400';
+      case 'high': return 'text-[#ef4444]';
+      case 'medium': return 'text-[#f59e0b]';
+      case 'low': return 'text-[#43e7ad]';
+      default: return 'text-[#b0b0d0]';
+    }
+  };
+
+  const getSentimentColor = (sentiment: string) => {
+    switch (sentiment) {
+      case 'positive': return 'text-[#43e7ad]';
+      case 'negative': return 'text-[#ef4444]';
+      case 'neutral': return 'text-[#6b7280]';
+      default: return 'text-[#b0b0d0]';
     }
   };
 
   const handleSendEmail = async (emailData: any) => {
     try {
-      // Add the new email to the list
-      const newEmail: Email = {
-        id: emailData.email_id || Date.now().toString(),
-        from: 'janar@example.com',
-        to: [emailData.to],
-        subject: emailData.subject,
-        body: emailData.text_body,
-        html_body: emailData.html_body,
-        timestamp: new Date(),
-        isRead: true,
-        isStarred: false,
-        hasAttachments: emailData.attachments.length > 0,
-        priority: 'medium',
-        thread: replyData?.thread || undefined,
-        tracking_id: emailData.tracking_id,
-        status: 'sent'
-      };
+      console.log('Sending email:', emailData);
       
-      setEmails(prev => [newEmail, ...prev]);
+      // Here you would typically send the email via your email service
+      // For now, we'll just show a success message
+      showToast({
+        title: 'Email Sent',
+        description: 'Email has been sent successfully',
+        type: 'success'
+      });
       
-      setShowCompose(false);
-      setReplyData(null);
+      // Refresh emails
+      // await fetchEmails();
       
       return true;
     } catch (error) {
-      console.error('Error handling sent email:', error);
-      throw error;
+      console.error('Error sending email:', error);
+      showToast({
+        title: 'Send Failed',
+        description: 'Failed to send email. Please try again.',
+        type: 'error'
+      });
+      return false;
     }
   };
 
@@ -263,184 +560,229 @@ const Emails: React.FC = () => {
     setReplyData({
       to: email.from,
       subject: `Re: ${email.subject}`,
-      isReply: true,
-      originalEmail: email,
-      thread: email.thread,
-      dealId: email.linkedDeal,
-      contactId: email.linkedContact
+      body: `\n\n--- Original Message ---\nFrom: ${email.from}\nDate: ${email.timestamp.toLocaleString()}\n\n${email.body}`
     });
-    setShowCompose(true);
+    openEmailComposer({
+      to: email.from,
+      subject: `Re: ${email.subject}`,
+      body: `\n\n--- Original Message ---\nFrom: ${email.from}\nDate: ${email.timestamp.toLocaleString()}\n\n${email.body}`
+    });
   };
 
   const handleForward = (email: Email) => {
     setReplyData({
+      to: '',
       subject: `Fwd: ${email.subject}`,
-      body: `<p>---------- Forwarded message ----------</p>
-             <p>From: ${email.from}<br>
-             Date: ${email.timestamp.toLocaleString()}<br>
-             Subject: ${email.subject}<br>
-             To: ${email.to.join(', ')}</p>
-             <br>
-             ${email.html_body || email.body}`,
-      isReply: false,
-      dealId: email.linkedDeal,
-      contactId: email.linkedContact
+      body: `\n\n--- Forwarded Message ---\nFrom: ${email.from}\nDate: ${email.timestamp.toLocaleString()}\n\n${email.body}`
     });
-    setShowCompose(true);
+    openEmailComposer({
+      to: '',
+      subject: `Fwd: ${email.subject}`,
+      body: `\n\n--- Forwarded Message ---\nFrom: ${email.from}\nDate: ${email.timestamp.toLocaleString()}\n\n${email.body}`
+    });
   };
 
   const handleArchive = async (email: Email) => {
     try {
-      // Update email status in Supabase
-      if (supabase) {
-        const { error } = await supabase
-          .from('emails')
-          .update({ status: 'archived' })
-          .eq('id', email.id);
-        
-        if (error) throw error;
-      }
-      
-      // Remove from local state
+      // In a real app, this would archive the email
       setEmails(prev => prev.filter(e => e.id !== email.id));
-      
-      if (selectedEmail?.id === email.id) {
-        setSelectedEmail(null);
-      }
-      
       showToast({
+        type: 'success',
         title: 'Email Archived',
-        description: `"${email.subject}" has been archived.`,
-        type: 'success'
+        description: 'Email has been archived'
       });
     } catch (error) {
       console.error('Error archiving email:', error);
       showToast({
-        title: 'Archive Failed',
-        description: 'Failed to archive email.',
-        type: 'error'
+        type: 'error',
+        title: 'Error',
+        description: 'Failed to archive email'
       });
     }
   };
 
   const handleDelete = async (email: Email) => {
     try {
-      // Delete email from Supabase
-      if (supabase) {
-        const { error } = await supabase
-          .from('emails')
-          .delete()
-          .eq('id', email.id);
-        
-        if (error) throw error;
-      }
-      
-      // Remove from local state
+      // In a real app, this would delete the email
       setEmails(prev => prev.filter(e => e.id !== email.id));
-      
-      if (selectedEmail?.id === email.id) {
-        setSelectedEmail(null);
-      }
-      
       setDeleteConfirm(null);
-      
       showToast({
+        type: 'success',
         title: 'Email Deleted',
-        description: `"${email.subject}" has been deleted.`,
-        type: 'success'
+        description: 'Email has been deleted'
       });
     } catch (error) {
       console.error('Error deleting email:', error);
       showToast({
-        title: 'Delete Failed',
-        description: 'Failed to delete email.',
-        type: 'error'
+        type: 'error',
+        title: 'Error',
+        description: 'Failed to delete email'
       });
     }
   };
 
   const toggleStar = async (emailId: string) => {
-    setEmails(prev => prev.map(email => 
-      email.id === emailId 
-        ? { ...email, isStarred: !email.isStarred }
-        : email
-    ));
-    
-    // In a real app, update the star status in the database
-    if (supabase) {
-      try {
-        const email = emails.find(e => e.id === emailId);
-        if (email) {
-          const { error } = await supabase
-            .from('emails')
-            .update({ is_starred: !email.isStarred })
-            .eq('id', emailId);
-          
-          if (error) throw error;
-        }
-      } catch (error) {
-        console.error('Error updating star status:', error);
-      }
+    try {
+      setEmails(prev => prev.map(email => 
+        email.id === emailId 
+          ? { ...email, isStarred: !email.isStarred }
+          : email
+      ));
+      
+      showToast({
+        type: 'success',
+        title: 'Email Updated',
+        description: 'Email star status updated'
+      });
+    } catch (error) {
+      console.error('Error toggling star:', error);
     }
   };
 
   const markAsRead = async (emailId: string) => {
-    setEmails(prev => prev.map(email => 
-      email.id === emailId 
-        ? { ...email, isRead: true }
-        : email
-    ));
-    
-    // In a real app, update the read status in the database
-    if (supabase) {
-      try {
-        const { error } = await supabase
-          .from('emails')
-          .update({ status: 'read' })
-          .eq('id', emailId);
-        
-        if (error) throw error;
-      } catch (error) {
-        console.error('Error updating read status:', error);
-      }
+    try {
+      setEmails(prev => prev.map(email => 
+        email.id === emailId 
+          ? { ...email, isRead: !email.isRead }
+          : email
+      ));
+    } catch (error) {
+      console.error('Error marking as read:', error);
     }
   };
 
+  const handleAIInsight = (insight: any) => {
+    showToast({
+      type: 'info',
+      title: 'AI Insight',
+      description: `Processing: ${insight.title}`
+    });
+  };
+
   const EmailListItem = ({ email }: { email: Email }) => (
-    <div
+    <div 
+      className={`p-4 border-b border-[#23233a]/30 hover:bg-[#23233a]/20 transition-all duration-200 cursor-pointer ${
+        !email.isRead ? 'bg-[#a259ff]/10 border-l-4 border-l-[#a259ff]' : ''
+      }`}
       onClick={() => {
         setSelectedEmail(email);
-        markAsRead(email.id);
+        if (!email.isRead) markAsRead(email.id);
       }}
-      className={`p-4 border-b border-secondary-700 hover:bg-secondary-700/50 cursor-pointer transition-colors ${
-        selectedEmail?.id === email.id ? 'bg-secondary-700' : ''
-      } ${!email.isRead ? 'border-l-4 border-l-primary-600' : ''}`}
     >
-      <div className="flex items-start justify-between">
+      <div className="flex items-start space-x-4">
+        {/* Email Status Icons */}
+        <div className="flex flex-col items-center space-y-1 pt-1">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleStar(email.id);
+            }}
+            className={`p-1 rounded-full transition-colors ${
+              email.isStarred ? 'text-[#f59e0b]' : 'text-[#b0b0d0] hover:text-[#f59e0b]'
+            }`}
+          >
+            <Star className="w-4 h-4" fill={email.isStarred ? 'currentColor' : 'none'} />
+          </button>
+          {!email.isRead && (
+            <div className="w-2 h-2 bg-[#a259ff] rounded-full"></div>
+          )}
+        </div>
+
+        {/* Email Content */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center space-x-2 mb-1">
-            <span className={`font-medium ${!email.isRead ? 'text-white' : 'text-secondary-300'}`}>
-              {activeTab === 'inbox' ? email.from : email.to.join(', ')}
-            </span>
-            {email.isStarred && <Star className="w-4 h-4 text-yellow-500 fill-current" />}
-            {email.hasAttachments && <Paperclip className="w-4 h-4 text-secondary-400" />}
-            <div className={`w-2 h-2 rounded-full ${getPriorityColor(email.priority)}`}></div>
-            {email.status === 'opened' && (
-              <Eye className="w-4 h-4 text-green-500" title="Email opened" />
-            )}
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center space-x-2">
+              <span className={`font-medium text-sm ${
+                !email.isRead ? 'text-white' : 'text-[#b0b0d0]'
+              }`}>
+                {email.from}
+              </span>
+              {email.priority === 'high' && (
+                <Badge variant="danger" size="sm">High</Badge>
+              )}
+              {email.action_required && (
+                <Badge variant="warning" size="sm">Action Required</Badge>
+              )}
+            </div>
+            <div className="flex items-center space-x-2 text-xs text-[#b0b0d0]">
+              <span>{email.timestamp.toLocaleTimeString()}</span>
+              {email.hasAttachments && (
+                <Paperclip className="w-3 h-3" />
+              )}
+            </div>
           </div>
-          <h4 className={`font-medium truncate ${!email.isRead ? 'text-white' : 'text-secondary-300'}`}>
+          
+          <h3 className={`font-medium text-sm mb-1 ${
+            !email.isRead ? 'text-white' : 'text-[#b0b0d0]'
+          }`}>
             {email.subject}
-          </h4>
-          <p className="text-sm text-secondary-500 truncate mt-1">{email.body}</p>
-          <div className="flex items-center space-x-4 mt-2">
-            <span className="text-xs text-secondary-500">
-              {email.timestamp.toLocaleString()}
-            </span>
-            {email.linkedDeal && (
-              <Badge variant="secondary" size="sm">{email.linkedDeal}</Badge>
-            )}
+          </h3>
+          
+          <p className="text-xs text-[#b0b0d0] line-clamp-2 mb-2">
+            {email.body.substring(0, 150)}...
+          </p>
+
+          {/* AI Insights and Tags */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              {email.ai_insights && (
+                <div className="flex items-center space-x-1">
+                  <Bot className="w-3 h-3 text-[#a259ff]" />
+                  <span className="text-xs text-[#a259ff]">AI: {email.ai_insights}</span>
+                </div>
+              )}
+              {email.sentiment && (
+                <div className={`flex items-center space-x-1 ${getSentimentColor(email.sentiment)}`}>
+                  <TrendingUp className="w-3 h-3" />
+                  <span className="text-xs capitalize">{email.sentiment}</span>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex items-center space-x-1">
+              {email.tags?.slice(0, 2).map((tag, index) => (
+                <Badge key={index} variant="secondary" size="sm">
+                  {tag}
+                </Badge>
+              ))}
+              {email.tags && email.tags.length > 2 && (
+                <Badge variant="secondary" size="sm">
+                  +{email.tags.length - 2}
+                </Badge>
+              )}
+            </div>
           </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex flex-col space-y-1">
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={Reply}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleReply(email);
+            }}
+          />
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={Forward}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleForward(email);
+            }}
+          />
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={Archive}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleArchive(email);
+            }}
+          />
         </div>
       </div>
     </div>
@@ -448,247 +790,171 @@ const Emails: React.FC = () => {
 
   return (
     <Container>
+      {/* 3D Background */}
+      <div className="fixed inset-0 -z-10">
+        <Spline scene="https://prod.spline.design/n0GFhlzrcT-MOycs/scene.splinecode" />
+      </div>
+
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white">Emails</h1>
-            <p className="text-secondary-400 mt-1">Manage your email communications</p>
+            <h1 className="text-3xl font-bold text-white">Smart Email</h1>
+            <p className="text-[#b0b0d0] mt-1">AI-powered email management with smart insights</p>
           </div>
-          <div className="flex space-x-2">
-            <button 
+          <div className="flex space-x-3">
+            <Button 
+              variant="secondary"
+              icon={Bot}
               onClick={openGuru}
-              className="btn-secondary flex items-center space-x-2"
             >
-              <Bot className="w-4 h-4" />
-              <span>Ask Guru</span>
-            </button>
-            <button
-              onClick={() => {
-                setShowCompose(true);
-                setReplyData(null);
-              }}
-              className="btn-primary flex items-center space-x-2"
+              Ask Guru
+            </Button>
+            <Button 
+              variant="gradient"
+              icon={Plus}
+              onClick={() => openEmailComposer({})}
             >
-              <Plus className="w-4 h-4" />
-              <span>Compose</span>
-            </button>
+              Compose
+            </Button>
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex space-x-2">
-          <button
-            onClick={() => setActiveTab('inbox')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              activeTab === 'inbox'
-                ? 'bg-primary-600 text-white'
-                : 'bg-secondary-700 text-secondary-300 hover:bg-secondary-600'
-            }`}
-          >
-            Inbox ({emails.filter(e => !e.isRead).length})
-          </button>
-          <button
-            onClick={() => setActiveTab('sent')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              activeTab === 'sent'
-                ? 'bg-primary-600 text-white'
-                : 'bg-secondary-700 text-secondary-300 hover:bg-secondary-600'
-            }`}
-          >
-            Sent
-          </button>
-        </div>
+        {/* Email Statistics */}
+        <EmailStats />
 
-        {/* Search and Filters */}
-        <div className="flex items-center space-x-4">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-secondary-400" />
-            <input
-              type="text"
-              placeholder="Search emails..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-secondary-700 border border-secondary-600 rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-600"
+        {/* Main Content */}
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+          {/* Left Sidebar */}
+          <div className="xl:col-span-1 space-y-6">
+            {/* AI Email Insights */}
+            <AIEmailInsights onInsightClick={handleAIInsight} />
+
+            {/* Email Categories */}
+            <EmailCategories 
+              activeCategory={activeCategory}
+              onCategoryChange={setActiveCategory}
             />
           </div>
-          <select
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            className="bg-secondary-700 border border-secondary-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary-600"
-          >
-            <option value="all">All Emails</option>
-            <option value="unread">Unread</option>
-            <option value="starred">Starred</option>
-            <option value="priority">High Priority</option>
-          </select>
-        </div>
 
-        {/* Email Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Email List */}
-          <Card className="h-[600px] overflow-hidden bg-white/10 backdrop-blur-md">
-            <div className="h-full flex flex-col">
-              <div className="flex items-center justify-between p-4 border-b border-secondary-700">
-                <h3 className="font-semibold text-white">
-                  {activeTab === 'inbox' ? 'Inbox' : 'Sent'} ({filteredEmails.length})
-                </h3>
-                <button className="p-2 text-secondary-400 hover:text-white hover:bg-secondary-700 rounded-lg transition-colors">
-                  <Filter className="w-4 h-4" />
-                </button>
-              </div>
-              <div className="flex-1 overflow-y-auto">
-                {isLoading ? (
-                  <div className="flex items-center justify-center h-full">
-                    <div className="text-center">
-                      <div className="w-8 h-8 border-2 border-primary-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                      <p className="text-secondary-400">Loading emails...</p>
-                    </div>
-                  </div>
-                ) : filteredEmails.length > 0 ? (
-                  filteredEmails.map((email) => (
-                    <EmailListItem key={email.id} email={email} />
-                  ))
-                ) : (
-                  <div className="flex items-center justify-center h-full">
-                    <EmptyState
-                      icon={Mail}
-                      title="No emails found"
-                      description={searchTerm ? 'Try adjusting your search criteria' : 'No emails in this folder'}
-                      guruSuggestion="Help me organize my emails"
-                      showGuru={false}
+          {/* Main Email Area */}
+          <div className="xl:col-span-3">
+            {/* Email Controls */}
+            <Card className="bg-[#23233a]/40 backdrop-blur-sm border border-[#23233a]/50 mb-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  {/* Search */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#b0b0d0]" />
+                    <input
+                      type="text"
+                      placeholder="Search emails..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 pr-4 py-2 bg-[#23233a]/50 border border-[#23233a]/30 rounded-lg text-white placeholder-[#b0b0d0] focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff] transition-all duration-200"
                     />
                   </div>
-                )}
-              </div>
-            </div>
-          </Card>
 
-          {/* Email Preview */}
-          <Card className="h-[600px] overflow-hidden bg-white/10 backdrop-blur-md">
-            {selectedEmail ? (
-              <div className="h-full flex flex-col">
-                <div className="p-4 border-b border-secondary-700">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="font-semibold text-white">{selectedEmail.subject}</h3>
-                      <p className="text-sm text-secondary-400 mt-1">
-                        From: {selectedEmail.from}
-                      </p>
-                      <p className="text-sm text-secondary-400">
-                        {selectedEmail.timestamp.toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <button 
-                        onClick={() => toggleStar(selectedEmail.id)}
-                        className="p-2 text-secondary-400 hover:text-white hover:bg-secondary-700 rounded-lg transition-colors"
-                      >
-                        <Star className={`w-4 h-4 ${selectedEmail.isStarred ? 'text-yellow-500 fill-current' : ''}`} />
-                      </button>
-                      <button 
-                        onClick={() => handleArchive(selectedEmail)}
-                        className="p-2 text-secondary-400 hover:text-white hover:bg-secondary-700 rounded-lg transition-colors"
-                      >
-                        <Archive className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => setDeleteConfirm(selectedEmail.id)}
-                        className="p-2 text-secondary-400 hover:text-white hover:bg-secondary-700 rounded-lg transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                      <button className="p-2 text-secondary-400 hover:text-white hover:bg-secondary-700 rounded-lg transition-colors">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                  {selectedEmail.linkedDeal && (
-                    <div className="flex items-center space-x-2">
-                      <Badge variant="primary" size="sm">Deal: {selectedEmail.linkedDeal}</Badge>
-                      <Badge variant="secondary" size="sm">Contact: {selectedEmail.linkedContact}</Badge>
-                    </div>
-                  )}
+                  {/* Filter */}
+                  <select
+                    value={filter}
+                    onChange={(e) => setFilter(e.target.value)}
+                    className="px-3 py-2 bg-[#23233a]/50 border border-[#23233a]/30 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff] transition-all duration-200"
+                  >
+                    <option value="all">All Emails</option>
+                    <option value="unread">Unread</option>
+                    <option value="starred">Starred</option>
+                    <option value="high-priority">High Priority</option>
+                    <option value="with-attachments">With Attachments</option>
+                  </select>
                 </div>
-                <div className="flex-1 p-4 overflow-y-auto">
-                  <div 
-                    className="prose prose-invert max-w-none"
-                    dangerouslySetInnerHTML={{ __html: selectedEmail.html_body || selectedEmail.body.replace(/\n/g, '<br>') }}
-                  />
-                </div>
-                <div className="p-4 border-t border-secondary-700">
-                  <div className="flex space-x-2">
-                    <button 
-                      onClick={() => handleReply(selectedEmail)}
-                      className="btn-primary flex items-center space-x-2"
+                
+                <div className="flex items-center space-x-3">
+                  {/* Sort */}
+                  <div className="flex items-center space-x-2">
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as any)}
+                      className="px-3 py-2 bg-[#23233a]/50 border border-[#23233a]/30 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff] transition-all duration-200"
                     >
-                      <Reply className="w-4 h-4" />
-                      <span>Reply</span>
-                    </button>
-                    <button 
-                      onClick={() => handleForward(selectedEmail)}
-                      className="btn-secondary flex items-center space-x-2"
+                      <option value="date">Date</option>
+                      <option value="priority">Priority</option>
+                      <option value="sender">Sender</option>
+                    </select>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
                     >
-                      <Forward className="w-4 h-4" />
-                      <span>Forward</span>
-                    </button>
-                    <button 
-                      onClick={openGuru}
-                      className="btn-secondary flex items-center space-x-2"
-                    >
-                      <Bot className="w-4 h-4" />
-                      <span>AI Assist</span>
-                    </button>
+                      {sortOrder === 'asc' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </Button>
                   </div>
-                  
-                  {/* Delete confirmation */}
-                  {deleteConfirm === selectedEmail.id && (
-                    <div className="mt-3 p-3 bg-red-900/20 border border-red-600/30 rounded-lg">
-                      <p className="text-sm text-red-300 mb-2">Are you sure you want to delete this email?</p>
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => handleDelete(selectedEmail)}
-                          className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg flex items-center space-x-1"
-                        >
-                          <Check className="w-4 h-4" />
-                          <span>Delete</span>
-                        </button>
-                        <button
-                          onClick={() => setDeleteConfirm(null)}
-                          className="px-3 py-1 bg-secondary-600 hover:bg-secondary-500 text-white text-sm rounded-lg flex items-center space-x-1"
-                        >
-                          <X className="w-4 h-4" />
-                          <span>Cancel</span>
-                        </button>
-                      </div>
-                    </div>
-                  )}
+
+                  {/* View Mode */}
+                  <div className="flex items-center space-x-1 bg-[#23233a]/50 rounded-lg p-1">
+                    <Button 
+                      variant={viewMode === 'list' ? 'gradient' : 'secondary'} 
+                      size="sm"
+                      onClick={() => setViewMode('list')}
+                    >
+                      <List className="w-4 h-4" />
+                    </Button>
+                    <Button 
+                      variant={viewMode === 'grid' ? 'gradient' : 'secondary'} 
+                      size="sm"
+                      onClick={() => setViewMode('grid')}
+                    >
+                      <Grid className="w-4 h-4" />
+                    </Button>
+                  </div>
+
+                  <Button variant="secondary" size="sm">
+                    <RefreshCw className="w-4 h-4" />
+                    Refresh
+                  </Button>
                 </div>
               </div>
+            </Card>
+
+            {/* Email List */}
+            {isLoading ? (
+              <Card className="bg-[#23233a]/40 backdrop-blur-sm border border-[#23233a]/50">
+                <div className="flex items-center justify-center h-64">
+                  <div className="w-10 h-10 border-4 border-[#a259ff] border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              </Card>
+            ) : sortedEmails.length === 0 ? (
+              <Card className="bg-[#23233a]/40 backdrop-blur-sm border border-[#23233a]/50">
+                <EmptyState
+                  icon={Mail}
+                  title="No emails found"
+                  description="Try adjusting your search or filters"
+                  actionLabel="Compose Email"
+                  onAction={() => openEmailComposer({})}
+                />
+              </Card>
             ) : (
-              <div className="h-full flex items-center justify-center">
-                <div className="text-center">
-                  <Mail className="w-16 h-16 text-secondary-600 mx-auto mb-4" />
-                  <p className="text-secondary-400">Select an email to view</p>
+              <Card className="bg-[#23233a]/40 backdrop-blur-sm border border-[#23233a]/50">
+                <div className="divide-y divide-[#23233a]/30">
+                  {sortedEmails.map((email) => (
+                    <EmailListItem key={email.id} email={email} />
+                  ))}
                 </div>
-              </div>
+              </Card>
             )}
-          </Card>
+          </div>
         </div>
-
-        {/* Email Composer */}
-        {showCompose && (
-          <EmailComposer
-            isOpen={showCompose}
-            onClose={() => {
-              setShowCompose(false);
-              setReplyData(null);
-            }}
-            onSend={handleSendEmail}
-            initialData={replyData}
-          />
-        )}
       </div>
+
+      {/* Email Composer Modal */}
+      {isComposerOpen && (
+        <EnhancedEmailComposer
+          isOpen={isComposerOpen}
+          onClose={closeEmailComposer}
+          onSend={handleSendEmail}
+          initialData={composerData}
+        />
+      )}
     </Container>
   );
 };

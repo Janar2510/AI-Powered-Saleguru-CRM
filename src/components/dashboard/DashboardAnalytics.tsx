@@ -2,14 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AnalyticsChart from '../analytics/AnalyticsChart';
-import { createClient } from '@supabase/supabase-js';
-import Card from '../ui/Card';
-
-// Initialize Supabase client
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL || '',
-  import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-);
+import Bar3DChart from '../analytics/3DBarChart';
+import { supabase } from '../../services/supabase';
+import Button from '../ui/Button';
 
 interface DashboardAnalyticsProps {
   className?: string;
@@ -111,38 +106,49 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
   
   return (
     <div className={`grid grid-cols-1 lg:grid-cols-2 gap-5 ${className}`}>
-      <Card className="bg-white/10 backdrop-blur-md">
+      <div className="bg-[#23233a]/40 backdrop-blur-sm border border-[#23233a]/50 rounded-xl shadow-lg p-4 lg:p-6 min-h-[340px]">
         <AnalyticsChart
           title="Pipeline Breakdown"
-          description="Distribution of deals across stages"
-          data={analyticsData.pipeline}
-          type="funnel"
-          height={250}
-          isLoading={isLoading}
-          showControls={false}
-        />
-      </Card>
-      
-      <Card className="bg-white/10 backdrop-blur-md">
-        <AnalyticsChart
-          title="Stage Conversion"
-          description="Success rate between pipeline stages"
-          data={analyticsData.conversion}
+          data={analyticsData.pipeline.length ? analyticsData.pipeline : [
+            { id: '1', name: 'Qualified', value: 10 },
+            { id: '2', name: 'Lead', value: 7 },
+            { id: '3', name: 'Proposal', value: 5 },
+            { id: '4', name: 'Negotiation', value: 3 },
+            { id: '5', name: 'Closed Won', value: 2 }
+          ]}
           type="bar"
           height={250}
-          isLoading={isLoading}
-          showControls={false}
+          showControls={true}
+          disableCardStyling={true}
         />
-      </Card>
+      </div>
+      
+      <div className="bg-[#23233a]/40 backdrop-blur-sm border border-[#23233a]/50 rounded-xl shadow-lg p-4 lg:p-6 min-h-[340px]">
+        <AnalyticsChart
+          title="Stage Conversion"
+          data={analyticsData.conversion.length ? analyticsData.conversion : [
+            { id: '1', name: 'Qualified → Lead', value: 60 },
+            { id: '2', name: 'Lead → Proposal', value: 40 },
+            { id: '3', name: 'Proposal → Negotiation', value: 30 },
+            { id: '4', name: 'Negotiation → Closed Won', value: 20 }
+          ]}
+          type="bar"
+          height={250}
+          showControls={true}
+          disableCardStyling={true}
+        />
+      </div>
       
       <div className="lg:col-span-2 flex justify-center">
-        <button
+        <Button
           onClick={() => navigate('/analytics')}
-          className="btn-primary flex items-center space-x-2"
+          variant="gradient"
+          size="lg"
+          icon={ArrowRight}
+          iconPosition="right"
         >
-          <span>View Full Analytics Dashboard</span>
-          <ArrowRight className="w-4 h-4" />
-        </button>
+          View Full Analytics Dashboard
+        </Button>
       </div>
     </div>
   );

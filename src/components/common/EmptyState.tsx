@@ -1,7 +1,7 @@
 import React from 'react';
 import { Bot, Plus } from 'lucide-react';
 import { useGuru } from '../../contexts/GuruContext';
-import Card from '../ui/Card';
+import Button from '../ui/Button';
 
 interface EmptyStateProps {
   icon: React.ComponentType<{ className?: string }>;
@@ -35,43 +35,41 @@ const EmptyState: React.FC<EmptyStateProps> = ({
   };
 
   return (
-    <Card 
-      className="text-center" 
-      padding="lg"
-      variant="glass"
-    >
-      <Icon className="w-16 h-16 text-secondary-600 mx-auto mb-6" />
+    <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-8 text-center">
+      <Icon className="w-16 h-16 text-[#b0b0d0] mx-auto mb-6" />
       <h3 className="text-lg font-semibold text-white mb-3">{title}</h3>
-      <p className="text-secondary-400 mb-8 max-w-md mx-auto">{description}</p>
+      <p className="text-[#b0b0d0] mb-8 max-w-md mx-auto">{description}</p>
       
-      <div className="flex items-center justify-center space-x-4">
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
         {onAction && actionLabel && (
-          <button 
+          <Button 
             onClick={onAction} 
-            className="btn-primary flex items-center space-x-2 px-6 py-3"
+            variant="gradient"
+            size="lg"
+            icon={Plus}
           >
-            <Plus className="w-4 h-4" />
-            <span>{actionLabel}</span>
-          </button>
+            {actionLabel}
+          </Button>
         )}
         
         {showGuru && (
-          <button 
+          <Button 
             onClick={handleGuruHelp}
-            className="btn-secondary flex items-center space-x-2 px-6 py-3"
+            variant="secondary"
+            size="lg"
+            icon={Bot}
           >
-            <Bot className="w-4 h-4" />
-            <span>Ask Guru for Help</span>
-          </button>
+            Ask Guru for Help
+          </Button>
         )}
       </div>
       
       {guruSuggestion && (
-        <p className="text-xs text-secondary-500 mt-6">
+        <p className="text-xs text-[#b0b0d0] mt-6">
           Guru can help with: "{guruSuggestion}"
         </p>
       )}
-    </Card>
+    </div>
   );
 };
 

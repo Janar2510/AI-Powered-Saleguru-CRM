@@ -4,13 +4,7 @@ import Card from '../ui/Card';
 import Badge from '../ui/Badge';
 import { AutomationRule } from '../../types/automation';
 import { useToastContext } from '../../contexts/ToastContext';
-import { createClient } from '@supabase/supabase-js';
-
-// Initialize Supabase client
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL || '',
-  import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-);
+import { supabase } from '../../services/supabase';
 
 interface AutomationRuleCardProps {
   rule: AutomationRule;
@@ -103,7 +97,7 @@ const AutomationRuleCard: React.FC<AutomationRuleCardProps> = ({
       showToast({
         type: 'error',
         title: 'Execution Failed',
-        message: 'Rule ID is missing'
+        description: 'Rule ID is missing'
       });
       return;
     }
@@ -129,14 +123,14 @@ const AutomationRuleCard: React.FC<AutomationRuleCardProps> = ({
       showToast({
         type: 'success',
         title: 'Rule Executed',
-        message: `${rule.name} was executed successfully`
+        description: `${rule.name} was executed successfully`
       });
     } catch (error) {
       console.error('Error executing rule:', error);
       showToast({
         type: 'error',
         title: 'Execution Failed',
-        message: error instanceof Error ? error.message : 'Failed to execute rule'
+        description: error instanceof Error ? error.message : 'Failed to execute rule'
       });
     } finally {
       setIsExecuting(false);
@@ -145,29 +139,32 @@ const AutomationRuleCard: React.FC<AutomationRuleCardProps> = ({
   
   if (viewMode === 'list') {
     return (
-      <Card className="bg-white/10 backdrop-blur-md hover:shadow-lg transition-shadow">
+      <Card className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 hover:bg-[#23233a]/60 transition-all duration-300 p-8">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-6">
             <div className="flex-shrink-0">
-              {getTriggerIcon()}
+              <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-blue-500 rounded-xl flex items-center justify-center">
+                {getTriggerIcon()}
+              </div>
             </div>
             <div>
-              <h3 className="font-semibold text-white">{rule.name}</h3>
-              <p className="text-sm text-secondary-400 mt-1">{rule.description}</p>
-              <div className="flex items-center space-x-3 mt-2">
+              <h3 className="text-xl font-bold text-white mb-2">{rule.name}</h3>
+              <p className="text-base text-secondary-300 mb-3">{rule.description}</p>
+              <div className="flex items-center space-x-4">
                 <Badge 
                   variant={rule.is_active ? 'success' : 'secondary'} 
-                  size="sm"
+                  size="md"
+                  className="px-3 py-1"
                 >
                   {rule.is_active ? 'Active' : 'Inactive'}
                 </Badge>
                 {getConditionBadge()}
                 {getActionBadge()}
-                <span className="text-xs text-secondary-500">
+                <span className="text-sm text-secondary-400">
                   Updated {rule.updated_at.toLocaleDateString()}
                 </span>
                 {rule.last_executed && (
-                  <span className="text-xs text-secondary-500">
+                  <span className="text-sm text-secondary-400">
                     Last run: {new Date(rule.last_executed).toLocaleString()}
                   </span>
                 )}
@@ -175,55 +172,55 @@ const AutomationRuleCard: React.FC<AutomationRuleCardProps> = ({
             </div>
           </div>
           
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3">
             <button
               onClick={() => onToggleStatus(!rule.is_active)}
-              className={`p-2 rounded-lg transition-colors ${
+              className={`p-3 rounded-xl transition-colors ${
                 rule.is_active 
                   ? 'text-green-400 hover:bg-green-900/20' 
                   : 'text-secondary-400 hover:bg-secondary-700'
               }`}
               title={rule.is_active ? 'Deactivate' : 'Activate'}
             >
-              {rule.is_active ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+              {rule.is_active ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
             </button>
             <button
               onClick={onEdit}
-              className="p-2 text-secondary-400 hover:text-white hover:bg-secondary-700 rounded-lg transition-colors"
+              className="p-3 text-secondary-400 hover:text-white hover:bg-secondary-700 rounded-xl transition-colors"
               title="Edit"
             >
-              <Edit className="w-4 h-4" />
+              <Edit className="w-5 h-5" />
             </button>
             <button
               onClick={handleManualExecution}
               disabled={isExecuting || !rule.is_active}
-              className={`p-2 text-secondary-400 hover:text-white hover:bg-secondary-700 rounded-lg transition-colors ${
+              className={`p-3 text-secondary-400 hover:text-white hover:bg-secondary-700 rounded-xl transition-colors ${
                 isExecuting || !rule.is_active ? 'opacity-50 cursor-not-allowed' : ''
               }`}
               title="Execute Now"
             >
               {isExecuting ? (
-                <div className="w-4 h-4 border-2 border-secondary-400 border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-5 h-5 border-2 border-secondary-400 border-t-transparent rounded-full animate-spin"></div>
               ) : (
-                <Zap className="w-4 h-4" />
+                <Zap className="w-5 h-5" />
               )}
             </button>
             <button
               onClick={onTest}
-              className="p-2 text-secondary-400 hover:text-white hover:bg-secondary-700 rounded-lg transition-colors"
+              className="p-3 text-secondary-400 hover:text-white hover:bg-secondary-700 rounded-xl transition-colors"
               title="Test"
             >
-              <Eye className="w-4 h-4" />
+              <Eye className="w-5 h-5" />
             </button>
             <button
               onClick={onDuplicate}
-              className="p-2 text-secondary-400 hover:text-white hover:bg-secondary-700 rounded-lg transition-colors"
+              className="p-3 text-secondary-400 hover:text-white hover:bg-secondary-700 rounded-xl transition-colors"
               title="Duplicate"
             >
-              <Copy className="w-4 h-4" />
+              <Copy className="w-5 h-5" />
             </button>
             {showDeleteConfirm ? (
-              <div className="flex items-center space-x-1 bg-red-900/20 p-1 rounded-lg">
+              <div className="flex items-center space-x-1 bg-red-900/20 p-2 rounded-xl">
                 <button
                   onClick={handleCancelDelete}
                   className="p-1 text-secondary-400 hover:text-white transition-colors"
@@ -240,10 +237,10 @@ const AutomationRuleCard: React.FC<AutomationRuleCardProps> = ({
             ) : (
               <button
                 onClick={handleDeleteClick}
-                className="p-2 text-secondary-400 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-colors"
+                className="p-3 text-secondary-400 hover:text-red-400 hover:bg-red-900/20 rounded-xl transition-colors"
                 title="Delete"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-5 h-5" />
               </button>
             )}
           </div>
@@ -253,90 +250,97 @@ const AutomationRuleCard: React.FC<AutomationRuleCardProps> = ({
   }
   
   return (
-    <Card className="bg-white/10 backdrop-blur-md hover:shadow-lg transition-shadow">
-      <div className="space-y-4">
+    <Card className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 hover:bg-[#23233a]/60 transition-all duration-300 p-8">
+      <div className="space-y-6">
         <div className="flex items-start justify-between">
-          <div className="flex items-center space-x-3">
-            {getTriggerIcon()}
-            <h3 className="font-semibold text-white">{rule.name}</h3>
+          <div className="flex items-center space-x-4">
+            <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-blue-500 rounded-xl flex items-center justify-center">
+              {getTriggerIcon()}
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-white mb-2">{rule.name}</h3>
+              <Badge 
+                variant={rule.is_active ? 'success' : 'secondary'} 
+                size="md"
+                className="px-3 py-1"
+              >
+                {rule.is_active ? 'Active' : 'Inactive'}
+              </Badge>
+            </div>
           </div>
-          <Badge 
-            variant={rule.is_active ? 'success' : 'secondary'} 
-            size="sm"
-          >
-            {rule.is_active ? 'Active' : 'Inactive'}
-          </Badge>
         </div>
         
-        <p className="text-sm text-secondary-400">{rule.description}</p>
+        <p className="text-base text-secondary-300 leading-relaxed">{rule.description}</p>
         
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-4">
           {getConditionBadge()}
           {getActionBadge()}
         </div>
         
-        <div className="flex items-center justify-between text-xs text-secondary-500">
-          <div className="flex items-center space-x-1">
-            <Calendar className="w-3 h-3" />
-            <span>Created {rule.created_at.toLocaleDateString()}</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <Clock className="w-3 h-3" />
-            <span>Updated {rule.updated_at.toLocaleDateString()}</span>
+        <div className="flex items-center justify-between text-sm text-secondary-400">
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-1">
+              <Calendar className="w-4 h-4" />
+              <span>Created {rule.created_at.toLocaleDateString()}</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <Clock className="w-4 h-4" />
+              <span>Updated {rule.updated_at.toLocaleDateString()}</span>
+            </div>
           </div>
         </div>
         
-        <div className="flex items-center justify-between pt-3 border-t border-secondary-700">
+        <div className="flex items-center justify-between pt-4 border-t border-[#23233a]/50">
           <button
             onClick={() => onToggleStatus(!rule.is_active)}
-            className={`p-2 rounded-lg transition-colors ${
+            className={`p-3 rounded-xl transition-colors ${
               rule.is_active 
                 ? 'text-green-400 hover:bg-green-900/20' 
                 : 'text-secondary-400 hover:bg-secondary-700'
             }`}
             title={rule.is_active ? 'Deactivate' : 'Activate'}
           >
-            {rule.is_active ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+            {rule.is_active ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
           </button>
           
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3">
             <button
               onClick={onEdit}
-              className="p-2 text-secondary-400 hover:text-white hover:bg-secondary-700 rounded-lg transition-colors"
+              className="p-3 text-secondary-400 hover:text-white hover:bg-secondary-700 rounded-xl transition-colors"
               title="Edit"
             >
-              <Edit className="w-4 h-4" />
+              <Edit className="w-5 h-5" />
             </button>
             <button
               onClick={handleManualExecution}
               disabled={isExecuting || !rule.is_active}
-              className={`p-2 text-secondary-400 hover:text-white hover:bg-secondary-700 rounded-lg transition-colors ${
+              className={`p-3 text-secondary-400 hover:text-white hover:bg-secondary-700 rounded-xl transition-colors ${
                 isExecuting || !rule.is_active ? 'opacity-50 cursor-not-allowed' : ''
               }`}
               title="Execute Now"
             >
               {isExecuting ? (
-                <div className="w-4 h-4 border-2 border-secondary-400 border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-5 h-5 border-2 border-secondary-400 border-t-transparent rounded-full animate-spin"></div>
               ) : (
-                <Zap className="w-4 h-4" />
+                <Zap className="w-5 h-5" />
               )}
             </button>
             <button
               onClick={onTest}
-              className="p-2 text-secondary-400 hover:text-white hover:bg-secondary-700 rounded-lg transition-colors"
+              className="p-3 text-secondary-400 hover:text-white hover:bg-secondary-700 rounded-xl transition-colors"
               title="Test"
             >
-              <Eye className="w-4 h-4" />
+              <Eye className="w-5 h-5" />
             </button>
             <button
               onClick={onDuplicate}
-              className="p-2 text-secondary-400 hover:text-white hover:bg-secondary-700 rounded-lg transition-colors"
+              className="p-3 text-secondary-400 hover:text-white hover:bg-secondary-700 rounded-xl transition-colors"
               title="Duplicate"
             >
-              <Copy className="w-4 h-4" />
+              <Copy className="w-5 h-5" />
             </button>
             {showDeleteConfirm ? (
-              <div className="flex items-center space-x-1 bg-red-900/20 p-1 rounded-lg">
+              <div className="flex items-center space-x-1 bg-red-900/20 p-2 rounded-xl">
                 <button
                   onClick={handleCancelDelete}
                   className="p-1 text-secondary-400 hover:text-white transition-colors"
@@ -353,10 +357,10 @@ const AutomationRuleCard: React.FC<AutomationRuleCardProps> = ({
             ) : (
               <button
                 onClick={handleDeleteClick}
-                className="p-2 text-secondary-400 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-colors"
+                className="p-3 text-secondary-400 hover:text-red-400 hover:bg-red-900/20 rounded-xl transition-colors"
                 title="Delete"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-5 h-5" />
               </button>
             )}
           </div>

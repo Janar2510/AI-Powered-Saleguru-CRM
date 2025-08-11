@@ -1,13 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../services/supabase';
 import { CalendarEvent, CalendarEventFormData, CalendarFilter, CalendarViewDate } from '../types/calendar';
 import { useToastContext } from '../contexts/ToastContext';
-
-// Initialize Supabase client
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL || '',
-  import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-);
 
 export const useCalendar = (initialFilter?: CalendarFilter) => {
   const [events, setEvents] = useState<CalendarEvent[]>([]);

@@ -1,0 +1,28 @@
+<svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#a855f7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#c084fc;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background circle with gradient -->
+  <circle cx="28" cy="28" r="28" fill="url(#logoGradient)" filter="url(#glow)"/>
+  
+  <!-- Letter S -->
+  <path d="M18 16C18 14.8954 18.8954 14 20 14H24C25.1046 14 26 14.8954 26 16V20C26 21.1046 25.1046 22 24 22H22C21.4477 22 21 22.4477 21 23V25C21 25.5523 21.4477 26 22 26H26C27.1046 26 28 26.8954 28 28V32C28 33.1046 27.1046 34 26 34H22C20.8954 34 20 33.1046 20 32V28C20 26.8954 20.8954 26 22 26H24C24.5523 26 25 25.5523 25 25V23C25 22.4477 24.5523 22 24 22H20C18.8954 22 18 21.1046 18 20V16Z" fill="white"/>
+  
+  <!-- Letter T -->
+  <path d="M30 14H42C43.1046 14 44 14.8954 44 16V20C44 21.1046 43.1046 22 42 22H38V32C38 33.1046 37.1046 34 36 34H32C30.8954 34 30 33.1046 30 32V22H30C28.8954 22 28 21.1046 28 20V16C28 14.8954 28.8954 14 30 14Z" fill="white"/>
+  
+  <!-- Subtle inner glow -->
+  <circle cx="28" cy="28" r="24" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+</svg>

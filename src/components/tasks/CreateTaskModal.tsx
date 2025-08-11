@@ -1,15 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Plus, Calendar, Clock, User, Target, AlertCircle, Tag, CheckSquare, Phone, Mail, Bell, ArrowRight, Edit, Users } from 'lucide-react';
 import { TaskFormData } from '../../types/task';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../../services/supabase';
 import Badge from '../ui/Badge';
+import Button from '../ui/Button';
 import { useToastContext } from '../../contexts/ToastContext';
-
-// Initialize Supabase client
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL || '',
-  import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-);
+import { useModal } from '../../contexts/ModalContext';
 
 interface CreateTaskModalProps {
   isOpen: boolean;
@@ -29,6 +26,15 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   isEditing = false
 }) => {
   const { showToast } = useToastContext();
+  const { openModal, closeModal } = useModal();
+
+  // Open modal when component mounts
+  useEffect(() => {
+    if (isOpen) {
+      openModal();
+      return () => closeModal();
+    }
+  }, [isOpen, openModal, closeModal]);
   
   const [formData, setFormData] = useState<TaskFormData>({
     title: '',
@@ -83,8 +89,7 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
         try {
           const { data: contactsData, error: contactsError } = await supabase
             .from('contacts')
-            .select('id, name')
-            .order('name');
+            .select('*');
           
           if (contactsError) throw contactsError;
           
@@ -213,19 +218,13 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
         });
       }
       
-      showToast({
-        title: isEditing ? 'Task Updated' : 'Task Created',
-        description: `${formData.title} has been ${isEditing ? 'updated' : 'created'} successfully`,
-        type: 'success'
-      });
-      
       onClose();
-    } catch (error) {
-      console.error('Error submitting task:', error);
+    } catch (err) {
+      console.error('Error creating task:', err);
       showToast({
-        title: 'Error',
-        description: `Failed to ${isEditing ? 'update' : 'create'} task`,
-        type: 'error'
+        type: 'error',
+        title: 'Creation Failed',
+        description: 'Failed to create task. Please try again.'
       });
     } finally {
       setIsSubmitting(false);
@@ -234,34 +233,32 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
 
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'call':
-        return <Phone className="w-4 h-4" />;
-      case 'meeting':
-        return <Users className="w-4 h-4" />;
-      case 'email':
-        return <Mail className="w-4 h-4" />;
-      case 'follow-up':
-        return <ArrowRight className="w-4 h-4" />;
-      case 'reminder':
-        return <Bell className="w-4 h-4" />;
-      default:
-        return <CheckSquare className="w-4 h-4" />;
+      case 'call': return <Phone className="w-4 h-4" />;
+      case 'email': return <Mail className="w-4 h-4" />;
+      case 'meeting': return <Users className="w-4 h-4" />;
+      case 'follow_up': return <Bell className="w-4 h-4" />;
+      default: return <CheckSquare className="w-4 h-4" />;
     }
   };
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-secondary-800 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+  const modalContent = (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-lg flex items-center justify-center z-[9999999] !z-[9999999] p-4">
+      <div className="bg-[#23233a]/99 backdrop-blur-2xl rounded-xl w-full max-w-2xl max-h-[95vh] overflow-y-auto border border-[#23233a]/60 shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-secondary-700">
-          <h3 className="text-xl font-semibold text-white">
-            {isEditing ? 'Edit Task' : 'Create New Task'}
-          </h3>
+        <div className="flex items-center justify-between p-6 border-b border-[#23233a]/30">
+          <div>
+            <h3 className="text-xl font-semibold text-white">
+              {isEditing ? 'Edit Task' : 'Create New Task'}
+            </h3>
+            <p className="text-[#b0b0d0] text-sm mt-1">
+              {isEditing ? 'Update task details and assignments' : 'Create a new task to track your work'}
+            </p>
+          </div>
           <button
             onClick={onClose}
-            className="p-2 text-secondary-400 hover:text-white hover:bg-secondary-700 rounded-lg transition-colors"
+            className="p-2 text-[#b0b0d0] hover:text-white hover:bg-[#23233a]/50 rounded-lg transition-colors"
             disabled={isSubmitting}
           >
             <X className="w-5 h-5" />
@@ -269,109 +266,102 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Basic Information */}
+          {/* Task Title */}
           <div>
-            <label className="block text-sm font-medium text-secondary-300 mb-2">
+            <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
               Task Title *
             </label>
-            <div className="relative">
-              {errors.title && (
-                <div className="absolute -top-6 left-0 text-xs text-red-400 flex items-center">
-                  <AlertCircle className="w-3 h-3 mr-1" />
-                  {errors.title}
-                </div>
-              )}
-              <input
-                type="text"
-                required
-                value={formData.title}
-                onChange={(e) => handleInputChange('title', e.target.value)}
-                placeholder="Enter task title..."
-                className={`w-full px-4 py-3 bg-secondary-700 border ${
-                  errors.title ? 'border-red-500' : 'border-secondary-600'
-                } rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-600`}
-                disabled={isSubmitting}
-              />
-            </div>
+            <input
+              type="text"
+              required
+              value={formData.title}
+              onChange={(e) => handleInputChange('title', e.target.value)}
+              placeholder="Enter task title..."
+              className={`w-full px-4 py-3 bg-[#23233a]/50 border-2 rounded-lg text-white placeholder-[#b0b0d0] focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff] ${
+                errors.title ? 'border-[#ef4444]' : 'border-white/20'
+              }`}
+              disabled={isSubmitting}
+            />
+            {errors.title && (
+              <p className="text-[#ef4444] text-sm mt-1">{errors.title}</p>
+            )}
           </div>
 
+          {/* Task Description */}
           <div>
-            <label className="block text-sm font-medium text-secondary-300 mb-2">
+            <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
               Description
             </label>
             <textarea
-              rows={4}
+              rows={3}
               value={formData.description}
               onChange={(e) => handleInputChange('description', e.target.value)}
-              placeholder="Describe the task..."
-              className="w-full px-4 py-3 bg-secondary-700 border border-secondary-600 rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-600"
+              placeholder="Describe what needs to be done..."
+              className="w-full px-4 py-3 bg-[#23233a]/50 border-2 border-white/20 rounded-lg text-white placeholder-[#b0b0d0] focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]"
               disabled={isSubmitting}
             />
           </div>
 
           {/* Task Type */}
           <div>
-            <label className="block text-sm font-medium text-secondary-300 mb-2">
+            <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
               Task Type
             </label>
-            <div className="grid grid-cols-3 gap-2">
-              {(['task', 'call', 'meeting', 'email', 'follow-up', 'reminder'] as const).map((type) => (
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+              {(['task', 'call', 'email', 'meeting', 'follow_up'] as const).map((type) => (
                 <button
                   key={type}
                   type="button"
                   onClick={() => handleInputChange('type', type)}
-                  className={`flex items-center justify-center space-x-2 p-3 rounded-lg border ${
+                  className={`px-3 py-3 rounded-lg font-medium transition-colors capitalize flex items-center justify-center space-x-2 ${
                     formData.type === type
-                      ? 'bg-primary-600 border-primary-500 text-white'
-                      : 'bg-secondary-700 border-secondary-600 text-secondary-300 hover:bg-secondary-600'
-                  } transition-colors`}
+                      ? 'bg-[#a259ff] text-white'
+                      : 'bg-[#23233a]/50 border-2 border-white/20 text-[#b0b0d0] hover:bg-[#23233a]/70 hover:text-white'
+                  }`}
                   disabled={isSubmitting}
                 >
                   {getTypeIcon(type)}
-                  <span className="capitalize">{type}</span>
+                  <span className="text-xs">{type.replace('_', ' ')}</span>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Date and Time */}
+          {/* Due Date and Time */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-secondary-300 mb-2">
+              <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
                 Due Date *
               </label>
               <div className="relative">
-                {errors.due_date && (
-                  <div className="absolute -top-6 left-0 text-xs text-red-400 flex items-center">
-                    <AlertCircle className="w-3 h-3 mr-1" />
-                    {errors.due_date}
-                  </div>
-                )}
-                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-secondary-400" />
+                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#b0b0d0]" />
                 <input
                   type="date"
                   required
                   value={formData.due_date}
                   onChange={(e) => handleInputChange('due_date', e.target.value)}
-                  className={`w-full pl-10 pr-4 py-3 bg-secondary-700 border ${
-                    errors.due_date ? 'border-red-500' : 'border-secondary-600'
-                  } rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-600`}
+                  className={`w-full pl-10 pr-4 py-3 bg-[#23233a]/50 border-2 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff] ${
+                    errors.due_date ? 'border-[#ef4444]' : 'border-white/20'
+                  }`}
                   disabled={isSubmitting}
                 />
               </div>
+              {errors.due_date && (
+                <p className="text-[#ef4444] text-sm mt-1">{errors.due_date}</p>
+              )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-secondary-300 mb-2">
+              <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
                 Due Time
               </label>
               <div className="relative">
-                <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-secondary-400" />
+                <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#b0b0d0]" />
                 <input
                   type="time"
                   value={formData.due_time}
                   onChange={(e) => handleInputChange('due_time', e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-secondary-700 border border-secondary-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-600"
+                  className="w-full pl-10 pr-4 py-3 bg-[#23233a]/50 border-2 border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]"
                   disabled={isSubmitting}
                 />
               </div>
@@ -380,7 +370,7 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
 
           {/* Priority */}
           <div>
-            <label className="block text-sm font-medium text-secondary-300 mb-2">
+            <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
               Priority
             </label>
             <div className="grid grid-cols-4 gap-2">
@@ -392,11 +382,11 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
                   className={`px-4 py-3 rounded-lg font-medium transition-colors capitalize ${
                     formData.priority === priority
                       ? priority === 'urgent' || priority === 'high'
-                        ? 'bg-red-600 text-white'
+                        ? 'bg-[#ef4444] text-white'
                         : priority === 'medium'
-                          ? 'bg-yellow-600 text-white'
-                          : 'bg-green-600 text-white'
-                      : 'bg-secondary-700 text-secondary-300 hover:bg-secondary-600'
+                          ? 'bg-[#f59e0b] text-white'
+                          : 'bg-[#43e7ad] text-white'
+                      : 'bg-[#23233a]/50 border-2 border-white/20 text-[#b0b0d0] hover:bg-[#23233a]/70 hover:text-white'
                   }`}
                   disabled={isSubmitting}
                 >
@@ -408,15 +398,15 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
 
           {/* Assign To */}
           <div>
-            <label className="block text-sm font-medium text-secondary-300 mb-2">
+            <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
               Assign To
             </label>
             <div className="relative">
-              <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-secondary-400" />
+              <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#b0b0d0]" />
               <select
                 value={formData.assigned_to}
                 onChange={(e) => handleInputChange('assigned_to', e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-secondary-700 border border-secondary-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-600"
+                className="w-full pl-10 pr-4 py-3 bg-[#23233a]/50 border-2 border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]"
                 disabled={isSubmitting}
               >
                 <option value="">Select assignee...</option>
@@ -431,15 +421,15 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
 
           {/* Related Deal */}
           <div>
-            <label className="block text-sm font-medium text-secondary-300 mb-2">
+            <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
               Related Deal (Optional)
             </label>
             <div className="relative">
-              <Target className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-secondary-400" />
+              <Target className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#b0b0d0]" />
               <select
                 value={formData.deal_id || ''}
                 onChange={(e) => handleInputChange('deal_id', e.target.value || undefined)}
-                className="w-full pl-10 pr-4 py-3 bg-secondary-700 border border-secondary-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-600"
+                className="w-full pl-10 pr-4 py-3 bg-[#23233a]/50 border-2 border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]"
                 disabled={isSubmitting}
               >
                 <option value="">Select a deal...</option>
@@ -455,15 +445,15 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
           {/* Related Contact */}
           {contacts.length > 0 && (
             <div>
-              <label className="block text-sm font-medium text-secondary-300 mb-2">
+              <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
                 Related Contact (Optional)
               </label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-secondary-400" />
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#b0b0d0]" />
                 <select
                   value={formData.contact_id || ''}
                   onChange={(e) => handleInputChange('contact_id', e.target.value || undefined)}
-                  className="w-full pl-10 pr-4 py-3 bg-secondary-700 border border-secondary-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-600"
+                  className="w-full pl-10 pr-4 py-3 bg-[#23233a]/50 border-2 border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]"
                   disabled={isSubmitting}
                 >
                   <option value="">Select a contact...</option>
@@ -479,7 +469,7 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
 
           {/* Tags */}
           <div>
-            <label className="block text-sm font-medium text-secondary-300 mb-2">
+            <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
               Tags
             </label>
             <div className="flex items-center space-x-2 mb-3">
@@ -489,17 +479,19 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
                 onChange={(e) => setNewTag(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
                 placeholder="Add a tag..."
-                className="flex-1 px-4 py-2 bg-secondary-700 border border-secondary-600 rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-600"
+                className="flex-1 px-4 py-2 bg-[#23233a]/50 border-2 border-white/20 rounded-lg text-white placeholder-[#b0b0d0] focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]"
                 disabled={isSubmitting}
               />
-              <button
+              <Button
                 type="button"
                 onClick={addTag}
-                className="btn-secondary px-3 py-2"
+                variant="secondary"
+                size="sm"
+                icon={Plus}
                 disabled={isSubmitting}
               >
-                <Plus className="w-4 h-4" />
-              </button>
+                Add
+              </Button>
             </div>
             <div className="flex flex-wrap gap-2">
               {formData.tags.map((tag, index) => (
@@ -514,7 +506,7 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
                   <button
                     type="button"
                     onClick={() => removeTag(tag)}
-                    className="ml-1 hover:text-red-400"
+                    className="ml-1 hover:text-[#ef4444]"
                     disabled={isSubmitting}
                   >
                     <X className="w-3 h-3" />
@@ -525,18 +517,21 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
           </div>
 
           {/* Form Actions */}
-          <div className="flex space-x-3 pt-4 border-t border-secondary-700">
-            <button
+          <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-[#23233a]/30">
+            <Button
               type="button"
               onClick={onClose}
-              className="flex-1 btn-secondary"
+              variant="secondary"
+              size="lg"
               disabled={isSubmitting}
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              className="flex-1 btn-primary flex items-center justify-center space-x-2"
+              variant="gradient"
+              size="lg"
+              icon={isSubmitting ? undefined : (isEditing ? Edit : Plus)}
               disabled={isSubmitting}
             >
               {isSubmitting ? (
@@ -545,17 +540,16 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
                   <span>{isEditing ? 'Updating...' : 'Creating...'}</span>
                 </>
               ) : (
-                <>
-                  {isEditing ? <Edit className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                  <span>{isEditing ? 'Update Task' : 'Create Task'}</span>
-                </>
+                <span>{isEditing ? 'Update Task' : 'Create Task'}</span>
               )}
-            </button>
+            </Button>
           </div>
         </form>
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default CreateTaskModal;

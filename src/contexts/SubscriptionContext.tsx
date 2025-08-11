@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useAuth } from './AuthContext';
-import { getSupabaseClient } from '../lib/supabase';
+import { supabase } from '../services/supabase';
 
 // Define types
 export interface PricingPlan {
@@ -53,9 +52,14 @@ interface SubscriptionContextType {
 // Create context
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
 
-// Provider component
+// Move demo session outside the component
+const demoSession = { user: { id: '00000000-0000-0000-0000-000000000000' } };
+
 export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { session, userProfile } = useAuth();
+  // Use the demo session
+  const session = demoSession;
+  const profile = null;
+  
   const [currentPlan, setCurrentPlan] = useState<UserSubscription | null>(null);
   const [featureFlags, setFeatureFlags] = useState<FeatureFlags>({
     ai_guru_enabled: true,
@@ -67,12 +71,32 @@ export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ childr
   });
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize Supabase client
-  const supabase = getSupabaseClient();
-
   // Fetch user's subscription and feature flags
   const fetchSubscriptionData = async () => {
     if (!session?.user) {
+      setIsLoading(false);
+      return;
+    }
+
+    // For demo mode, skip API calls and use default values
+    if (session.user.id === '00000000-0000-0000-0000-000000000000') {
+      setCurrentPlan({
+        plan_id: 'pro',
+        plan_name: 'Pro',
+        price_monthly: 49,
+        features: {
+          ai_limit: 100,
+          contacts_limit: 1000,
+          deals_limit: 100,
+          email_templates: 10,
+          automation: true,
+          analytics: true,
+          lead_scoring: true,
+          email_integration: true,
+          calendar_integration: true
+        },
+        billing_status: 'active'
+      });
       setIsLoading(false);
       return;
     }
@@ -137,10 +161,10 @@ export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ childr
     }
   };
 
-  // Fetch subscription data on mount and when session changes
+  // Fetch subscription data on mount only
   useEffect(() => {
     fetchSubscriptionData();
-  }, [session]);
+  }, []); // Only run once on mount
 
   // Check if user has access to a feature
   const hasFeatureAccess = (feature: string): boolean => {

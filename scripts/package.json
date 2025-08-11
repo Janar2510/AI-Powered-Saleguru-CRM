@@ -1,0 +1,20 @@
+{
+  "name": "saleguru-scripts",
+  "version": "1.0.0",
+  "description": "Scripts for Saleguru CRM social media integration",
+  "main": "index.js",
+  "scripts": {
+    "fetch-twitter": "node fetchTwitterMentions.js",
+    "test-connection": "node test-connection.js",
+    "setup": "node setup.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "@supabase/supabase-js": "^2.38.0",
+    "dotenv": "^16.3.0"
+  },
+  "keywords": ["crm", "social-media", "twitter", "supabase"],
+  "author": "Saleguru Team",
+  "license": "MIT"
+} 

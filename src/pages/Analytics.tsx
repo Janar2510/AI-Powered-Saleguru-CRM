@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -20,24 +20,28 @@ import {
   RefreshCw,
   Sliders,
   Check,
-  X
+  X,
+  BarChart3,
+  Activity,
+  Heart,
+  MessageSquare,
+  Phone
 } from 'lucide-react';
+import Spline from '@splinetool/react-spline';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
+import Button from '../components/ui/Button';
 import { useGuru } from '../contexts/GuruContext';
 import { useToastContext } from '../contexts/ToastContext';
-import { createClient } from '@supabase/supabase-js';
+import { useNavigate } from 'react-router-dom';
 import Container from '../components/layout/Container';
 import AnalyticsChart from '../components/analytics/AnalyticsChart';
 import PerformanceMetricsCard from '../components/analytics/PerformanceMetricsCard';
 import InsightsPanel from '../components/analytics/InsightsPanel';
+import ProductivityInsightsPanel from '../components/analytics/ProductivityInsightsPanel';
 import * as d3 from 'd3';
-
-// Initialize Supabase client
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL || '',
-  import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-);
+import Bar3DChart from '../components/analytics/3DBarChart';
+import { ProductivityInsight } from '../types/ai';
 
 // Chart types
 type ChartType = 'funnel' | 'bar' | 'line' | 'pie' | '3d';
@@ -48,9 +52,19 @@ type TimePeriod = 'week' | 'month' | 'quarter' | 'year' | 'all';
 // Data sources
 type DataSource = 'deals' | 'leads' | 'revenue';
 
+interface AnalyticsData {
+  sales: Array<{ name: string; value: number; color?: string }>;
+  leads: Array<{ name: string; value: number; color?: string }>;
+  conversions: Array<{ name: string; value: number; color?: string }>;
+  revenue: Array<{ name: string; value: number; color?: string }>;
+  pipeline: Array<{ name: string; value: number; color?: string }>;
+  activities: Array<{ name: string; value: number; color?: string }>;
+}
+
 const Analytics: React.FC = () => {
   const { openGuru, sendMessage } = useGuru();
   const { showToast } = useToastContext();
+  const navigate = useNavigate();
   
   // State
   const [isLoading, setIsLoading] = useState(true);
@@ -64,6 +78,7 @@ const Analytics: React.FC = () => {
   const [distributionChartType, setDistributionChartType] = useState<ChartType>('pie');
   const [forecastChartType, setForecastChartType] = useState<ChartType>('line');
   const [sourceChartType, setSourceChartType] = useState<ChartType>('pie');
+  const [activeTab, setActiveTab] = useState('overview');
   
   // Filters
   const [filters, setFilters] = useState({
@@ -77,239 +92,145 @@ const Analytics: React.FC = () => {
     }
   });
   
-  // Analytics data
-  const [analyticsData, setAnalyticsData] = useState({
-    metrics: [
-      { title: 'Total Deals', value: 0, change: '+0%', trend: 'up' as const, icon: Target, color: 'text-blue-500' },
-      { title: 'Total Value', value: '$0', change: '+0%', trend: 'up' as const, icon: DollarSign, color: 'text-green-500' },
-      { title: 'Avg Deal Size', value: '$0', change: '+0%', trend: 'up' as const, icon: TrendingUp, color: 'text-purple-500' },
-      { title: 'Conversion Rate', value: '0.0%', change: '+0%', trend: 'up' as const, icon: Users, color: 'text-yellow-500' },
-      { title: 'Avg Deal Cycle', value: '0 days', change: '+0%', trend: 'up' as const, icon: Clock, color: 'text-orange-500' }
+  // Analytics data with dashboard colors
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData>({
+    sales: [
+      { name: 'Jan', value: 120, color: '#8b5cf6' }, // purple-500
+      { name: 'Feb', value: 180, color: '#10b981' }, // emerald-500
+      { name: 'Mar', value: 150, color: '#3b82f6' }, // blue-500
+      { name: 'Apr', value: 220, color: '#f97316' }, // orange-500
+      { name: 'May', value: 280, color: '#8b5cf6' }, // purple-500
+      { name: 'Jun', value: 320, color: '#10b981' }  // emerald-500
     ],
-    pipeline: {
-      stages: [] as {id: string, name: string, count: number, value: number, color: string}[],
-      conversion: [] as {id: string, name: string, value: number, color: string}[]
-    },
-    velocity: {
-      data: [] as {id: string, name: string, value: number, color: string}[]
-    },
-    distribution: {
-      data: [] as {id: string, name: string, value: number, color: string}[]
-    },
-    forecast: {
-      data: [] as {id: string, name: string, value: number, color: string}[]
-    },
-    source: {
-      data: [] as {id: string, name: string, value: number, color: string}[]
-    },
-    insights: [
-      {
-        title: 'Conversion bottleneck detected',
-        description: 'Your conversion rate from Proposal to Negotiation (50%) is below industry average (65%). Consider reviewing your proposal templates.',
-        type: 'deal' as const,
-        priority: 'high' as const,
-        action: {
-          label: 'Analyze bottleneck',
-          query: 'Analyze why deals are getting stuck in the proposal stage'
-        }
-      },
-      {
-        title: 'Deal cycle improvement',
-        description: 'Deal cycle time has improved by 8% compared to last month, showing your process optimizations are working.',
-        type: 'performance' as const,
-        priority: 'medium' as const,
-        action: {
-          label: 'View cycle analysis',
-          query: 'Show me detailed deal cycle analysis'
-        }
-      },
-      {
-        title: 'Industry performance insight',
-        description: 'The Technology sector has your highest win rate at 72%, while Financial Services is lowest at 45%.',
-        type: 'lead' as const,
-        priority: 'medium' as const,
-        action: {
-          label: 'Industry breakdown',
-          query: 'Show me performance by industry'
-        }
-      }
+    leads: [
+      { name: 'Website', value: 45, color: '#8b5cf6' },
+      { name: 'Referrals', value: 25, color: '#10b981' },
+      { name: 'Social', value: 20, color: '#3b82f6' },
+      { name: 'Email', value: 10, color: '#f97316' }
+    ],
+    conversions: [
+      { name: 'Lead to Opportunity', value: 35, color: '#8b5cf6' },
+      { name: 'Opportunity to Deal', value: 25, color: '#10b981' },
+      { name: 'Deal to Won', value: 40, color: '#3b82f6' }
+    ],
+    revenue: [
+      { name: 'Q1', value: 125000, color: '#8b5cf6' },
+      { name: 'Q2', value: 180000, color: '#10b981' },
+      { name: 'Q3', value: 220000, color: '#3b82f6' },
+      { name: 'Q4', value: 280000, color: '#f97316' }
+    ],
+    pipeline: [
+      { name: 'Lead', value: 150, color: '#8b5cf6' },
+      { name: 'Qualified', value: 120, color: '#10b981' },
+      { name: 'Proposal', value: 80, color: '#3b82f6' },
+      { name: 'Negotiation', value: 45, color: '#f97316' },
+      { name: 'Closed Won', value: 35, color: '#8b5cf6' }
+    ],
+    activities: [
+      { name: 'Calls', value: 85, color: '#8b5cf6' },
+      { name: 'Emails', value: 120, color: '#10b981' },
+      { name: 'Meetings', value: 45, color: '#3b82f6' },
+      { name: 'Tasks', value: 65, color: '#f97316' }
     ]
   });
+
+  // Productivity insights state
+  const [showProductivityInsights, setShowProductivityInsights] = useState(false);
+  const [productivityInsights, setProductivityInsights] = useState<ProductivityInsight[]>([
+    {
+      id: '1',
+      category: 'time_management',
+      title: 'Focus Time Optimization',
+      description: 'Your most productive hours are between 9-11 AM. Schedule important tasks during this window.',
+      metric_value: 85,
+      metric_unit: '%',
+      metric_change: 12,
+      action_url: '/tasks',
+      action_label: 'Schedule Tasks',
+      priority: 'high',
+      created_at: new Date().toISOString()
+    },
+    {
+      id: '2',
+      category: 'deal_progress',
+      title: 'Pipeline Velocity',
+      description: 'Deals are moving 15% faster through your pipeline compared to last month.',
+      metric_value: 12,
+      metric_unit: 'days',
+      metric_change: -15,
+      action_url: '/deals',
+      action_label: 'View Deals',
+      priority: 'medium',
+      created_at: new Date().toISOString()
+    },
+    {
+      id: '3',
+      category: 'contact_engagement',
+      title: 'Response Rate Improvement',
+      description: 'Your email response rate has increased by 8% this week.',
+      metric_value: 92,
+      metric_unit: '%',
+      metric_change: 8,
+      action_url: '/emails',
+      action_label: 'Check Emails',
+      priority: 'medium',
+      created_at: new Date().toISOString()
+    },
+    {
+      id: '4',
+      category: 'task_completion',
+      title: 'Task Completion Rate',
+      description: 'You\'ve completed 78% of scheduled tasks this week, up from 65% last week.',
+      metric_value: 78,
+      metric_unit: '%',
+      metric_change: 13,
+      action_url: '/tasks',
+      action_label: 'View Tasks',
+      priority: 'high',
+      created_at: new Date().toISOString()
+    }
+  ]);
+
+  // Demographics filters
+  const [selectedRegion, setSelectedRegion] = useState<string>('all');
+  const [selectedCountry, setSelectedCountry] = useState<string>('all');
+  const [selectedProduct, setSelectedProduct] = useState<string>('all');
+
+  // Mock data for selectors
+  const regions = ['all', 'Europe', 'North America', 'Asia', 'Australia'];
+  const countries = ['all', 'Estonia', 'USA', 'Germany', 'Finland', 'UK'];
+  const products = ['all', 'CRM', 'AI Assistant', 'Analytics', 'Integrations'];
+
+  // Mock data for analytics widgets
+  const userClosingRate = 68;
+  const companyClosingRate = 74;
+  const productClosingRates = [
+    { name: 'CRM', value: 80 },
+    { name: 'AI Assistant', value: 65 },
+    { name: 'Analytics', value: 72 },
+    { name: 'Integrations', value: 60 }
+  ];
+
+  // Productivity insights handlers
+  const handleProductivityInsightAction = (url: string) => {
+    navigate(url);
+    setShowProductivityInsights(false);
+  };
+
+  const handleCloseProductivityInsights = () => {
+    setShowProductivityInsights(false);
+  };
 
   // Fetch analytics data
   useEffect(() => {
     const fetchAnalyticsData = async () => {
       setIsLoading(true);
       try {
-        // Fetch deals
-        const { data: deals, error: dealsError } = await supabase
-          .from('deals')
-          .select('*');
-        
-        if (dealsError) throw dealsError;
-        
-        // Fetch stages
-        const { data: stages, error: stagesError } = await supabase
-          .from('stages')
-          .select('*')
-          .order('sort_order');
-        
-        if (stagesError) throw stagesError;
-        
-        // Process data
-        const dealsData = deals || [];
-        const stagesData = stages || [];
-        
-        // Calculate deals by stage
-        const dealsByStage = stagesData.map((stage, index) => {
-          const stageDeals = dealsData.filter(deal => deal.stage_id === stage.id);
-          
-          // Determine color based on stage
-          let color;
-          if (stage.id === 'lead') color = '#6b7280'; // gray-500
-          else if (stage.id === 'qualified') color = '#3b82f6'; // blue-500
-          else if (stage.id === 'proposal') color = '#eab308'; // yellow-500
-          else if (stage.id === 'negotiation') color = '#f97316'; // orange-500
-          else if (stage.id === 'closed-won') color = '#22c55e'; // green-500
-          else if (stage.id === 'closed-lost') color = '#ef4444'; // red-500
-          else color = `hsl(${index * 360 / stagesData.length}, 70%, 60%)`;
-          
-          return {
-            id: stage.id,
-            name: stage.name,
-            count: stageDeals.length,
-            value: stageDeals.reduce((sum, deal) => sum + (deal.value || 0), 0),
-            color
-          };
-        });
-        
-        // Calculate stage conversion rates
-        const stageConversions = [];
-        for (let i = 0; i < stagesData.length - 1; i++) {
-          const fromStage = stagesData[i];
-          const toStage = stagesData[i + 1];
-          
-          const fromCount = dealsData.filter(deal => deal.stage_id === fromStage.id).length;
-          const toCount = dealsData.filter(deal => deal.stage_id === toStage.id).length;
-          
-          const conversionRate = fromCount > 0 ? (toCount / fromCount) * 100 : 0;
-          
-          stageConversions.push({
-            id: `${fromStage.id}-to-${toStage.id}`,
-            name: `${fromStage.name} → ${toStage.name}`,
-            value: Math.round(conversionRate),
-            color: '#7c3aed' // primary-600
-          });
-        }
-        
-        // Generate velocity data (mock data for demonstration)
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-        const velocityData = months.map((month, index) => ({
-          id: `month-${index}`,
-          name: month,
-          value: Math.floor(Math.random() * 15) + 5, // 5-20 days
-          color: '#7c3aed' // primary-600
-        }));
-        
-        // Generate distribution data (mock data for demonstration)
-        const industries = ['Technology', 'Finance', 'Healthcare', 'Retail', 'Manufacturing'];
-        const distributionData = industries.map((industry, index) => ({
-          id: `industry-${index}`,
-          name: industry,
-          value: Math.floor(Math.random() * 200000) + 50000, // $50K-$250K
-          color: `hsl(${index * 360 / industries.length}, 70%, 60%)`
-        }));
-        
-        // Generate forecast data (mock data for demonstration)
-        const forecastData = months.map((month, index) => ({
-          id: `forecast-${index}`,
-          name: month,
-          value: Math.floor(Math.random() * 300000) + 100000, // $100K-$400K
-          color: '#10b981' // accent-500
-        }));
-        
-        // Generate source data (mock data for demonstration)
-        const sources = ['Website', 'Referral', 'Cold Call', 'LinkedIn', 'Event'];
-        const sourceData = sources.map((source, index) => ({
-          id: `source-${index}`,
-          name: source,
-          value: Math.floor(Math.random() * 20) + 5, // 5-25 deals
-          color: `hsl(${index * 360 / sources.length}, 70%, 60%)`
-        }));
-        
-        // Calculate metrics
-        const totalDeals = dealsData.length;
-        const totalValue = dealsData.reduce((sum, deal) => sum + (deal.value || 0), 0);
-        const avgDealSize = totalDeals > 0 ? Math.round(totalValue / totalDeals) : 0;
-        
-        const closedDeals = dealsData.filter(deal => deal.stage_id === 'closed-won').length;
-        const conversionRate = totalDeals > 0 ? Math.round((closedDeals / totalDeals) * 100) : 0;
-        
-        // Update analytics data
-        setAnalyticsData({
-          metrics: [
-            { 
-              title: 'Total Deals', 
-              value: totalDeals, 
-              change: '+10% vs previous month', 
-              trend: 'up', 
-              icon: Target, 
-              color: 'text-blue-500' 
-            },
-            { 
-              title: 'Total Value', 
-              value: `$${(totalValue / 1000).toFixed(0)}K`, 
-              change: '+15% vs previous month', 
-              trend: 'up', 
-              icon: DollarSign, 
-              color: 'text-green-500' 
-            },
-            { 
-              title: 'Avg Deal Size', 
-              value: `$${(avgDealSize / 1000).toFixed(0)}K`, 
-              change: '+5% vs previous month', 
-              trend: 'up', 
-              icon: TrendingUp, 
-              color: 'text-purple-500' 
-            },
-            { 
-              title: 'Conversion Rate', 
-              value: `${conversionRate}%`, 
-              change: '-2% vs previous month', 
-              trend: 'down', 
-              icon: Users, 
-              color: 'text-yellow-500' 
-            },
-            { 
-              title: 'Avg Deal Cycle', 
-              value: '28 days', 
-              change: '-8% vs previous month', 
-              trend: 'down', 
-              icon: Clock, 
-              color: 'text-orange-500' 
-            }
-          ],
-          pipeline: {
-            stages: dealsByStage,
-            conversion: stageConversions
-          },
-          velocity: {
-            data: velocityData
-          },
-          distribution: {
-            data: distributionData
-          },
-          forecast: {
-            data: forecastData
-          },
-          source: {
-            data: sourceData
-          },
-          insights: analyticsData.insights // Keep existing insights
-        });
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        setIsLoading(false);
       } catch (error) {
         console.error('Error fetching analytics data:', error);
-      } finally {
         setIsLoading(false);
       }
     };
@@ -323,7 +244,7 @@ const Analytics: React.FC = () => {
     showToast({
       type: 'info',
       title: 'Time Period Changed',
-      message: `Showing data for ${period}`
+      description: `Showing data for ${period}`
     });
   };
 
@@ -333,7 +254,7 @@ const Analytics: React.FC = () => {
     showToast({
       type: 'info',
       title: 'Data Source Changed',
-      message: `Showing ${source} data`
+      description: `Showing ${source} data`
     });
   };
 
@@ -363,7 +284,7 @@ const Analytics: React.FC = () => {
     showToast({
       type: 'info',
       title: 'Chart Type Changed',
-      message: `Changed to ${type} chart`
+      description: `Changed to ${type} chart`
     });
   };
 
@@ -372,7 +293,7 @@ const Analytics: React.FC = () => {
     showToast({
       type: 'success',
       title: 'Export Started',
-      message: `Exporting analytics data as ${format.toUpperCase()}`
+      description: `Exporting analytics data as ${format.toUpperCase()}`
     });
   };
 
@@ -381,17 +302,16 @@ const Analytics: React.FC = () => {
     showToast({
       type: 'info',
       title: 'Refreshing Data',
-      message: 'Updating analytics with latest information'
+      description: 'Updating analytics with latest information'
     });
     
-    // Re-fetch data
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
       showToast({
         type: 'success',
         title: 'Data Refreshed',
-        message: 'Analytics data has been updated'
+        description: 'Analytics data has been updated'
       });
     }, 1500);
   };
@@ -419,481 +339,545 @@ const Analytics: React.FC = () => {
     }, 300);
   };
 
-  // Team members for filter
-  const teamMembers = [
-    { id: 'all', name: 'All Team Members' },
-    { id: 'current-user', name: 'Janar Kuusk (You)' },
-    { id: 'sarah-wilson', name: 'Sarah Wilson' },
-    { id: 'mike-chen', name: 'Mike Chen' },
-    { id: 'lisa-park', name: 'Lisa Park' }
+  const tabs = [
+    { id: 'overview', label: 'Overview', icon: Activity },
+    { id: 'sales', label: 'Sales', icon: TrendingUp },
+    { id: 'leads', label: 'Leads', icon: Users },
+    { id: 'revenue', label: 'Revenue', icon: DollarSign },
+    { id: 'pipeline', label: 'Pipeline', icon: Target },
+    { id: 'productivity', label: 'Productivity', icon: Clock },
+    { id: 'pulse', label: 'Pulse', icon: Heart },
+    { id: 'demographics', label: 'Demographics', icon: PieChart },
   ];
+
+  const renderOverview = () => (
+    <div className="space-y-6">
+      {/* Key Metrics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[#b0b0d0] text-sm font-medium">Total Revenue</p>
+              <p className="text-2xl font-bold text-white">$805,000</p>
+              <p className="text-[#8a8a8a] text-xs">+12.5% vs last month</p>
+            </div>
+            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 via-purple-600 to-indigo-700 rounded-full flex items-center justify-center">
+              <DollarSign className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[#b0b0d0] text-sm font-medium">New Leads</p>
+              <p className="text-2xl font-bold text-white">1,247</p>
+              <p className="text-[#8a8a8a] text-xs">+8.2% vs last month</p>
+            </div>
+            <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-700 rounded-full flex items-center justify-center">
+              <Users className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[#b0b0d0] text-sm font-medium">Conversion Rate</p>
+              <p className="text-2xl font-bold text-white">24.8%</p>
+              <p className="text-[#8a8a8a] text-xs">+2.1% vs last month</p>
+            </div>
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 via-blue-600 to-cyan-700 rounded-full flex items-center justify-center">
+              <Target className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[#b0b0d0] text-sm font-medium">Active Deals</p>
+              <p className="text-2xl font-bold text-white">89</p>
+              <p className="text-[#8a8a8a] text-xs">+15.3% vs last month</p>
+            </div>
+            <div className="w-12 h-12 bg-gradient-to-br from-orange-500 via-orange-600 to-red-600 rounded-full flex items-center justify-center">
+              <TrendingUp className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-6">
+          <h3 className="text-lg font-semibold text-white mb-4">Sales Performance</h3>
+          <Bar3DChart
+            data={analyticsData.sales.map(d => ({ id: d.name, ...d }))}
+            title=""
+            height={350}
+          />
+        </div>
+        <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-6">
+          <h3 className="text-lg font-semibold text-white mb-4">Revenue Trend</h3>
+          <AnalyticsChart
+            data={analyticsData.revenue.map(d => ({ id: d.name, ...d }))}
+            type="line"
+            title=""
+            height={350}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-6">
+          <h3 className="text-lg font-semibold text-white mb-4">Lead Sources</h3>
+          <AnalyticsChart
+            data={analyticsData.leads.map(d => ({ id: d.name, ...d }))}
+            type="pie"
+            title=""
+            height={350}
+          />
+        </div>
+        <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-6">
+          <h3 className="text-lg font-semibold text-white mb-4">Activity Breakdown</h3>
+          <AnalyticsChart
+            data={analyticsData.activities.map(d => ({ id: d.name, ...d }))}
+            type="bar"
+            title=""
+            height={350}
+          />
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderSales = () => (
+    <div className="space-y-6">
+      <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-6">
+        <h3 className="text-lg font-semibold text-white mb-4">Sales Performance (3D Visualization)</h3>
+        <Bar3DChart
+          data={analyticsData.sales.map(d => ({ id: d.name, ...d }))}
+          title=""
+          height={400}
+        />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-6">
+          <h3 className="text-lg font-semibold text-white mb-4">Conversion Funnel</h3>
+          <AnalyticsChart
+            data={analyticsData.conversions.map(d => ({ id: d.name, ...d }))}
+            type="pie"
+            title=""
+            height={350}
+          />
+        </div>
+        <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-6">
+          <h3 className="text-lg font-semibold text-white mb-4">Revenue Growth</h3>
+          <AnalyticsChart
+            data={analyticsData.revenue.map(d => ({ id: d.name, ...d }))}
+            type="line"
+            title=""
+            height={350}
+          />
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderLeads = () => (
+    <div className="space-y-6">
+      <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-6">
+        <h3 className="text-lg font-semibold text-white mb-4">Lead Source Distribution</h3>
+        <AnalyticsChart
+          data={analyticsData.leads.map(d => ({ id: d.name, ...d }))}
+          type="pie"
+          title=""
+          height={400}
+        />
+      </div>
+      <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-6">
+        <h3 className="text-lg font-semibold text-white mb-4">Lead Activities (3D)</h3>
+        <Bar3DChart
+          data={analyticsData.activities.map(d => ({ id: d.name, ...d }))}
+          title=""
+          height={350}
+        />
+      </div>
+    </div>
+  );
+
+  const renderRevenue = () => (
+    <div className="space-y-6">
+      <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-6">
+        <h3 className="text-lg font-semibold text-white mb-4">Revenue Trend Analysis</h3>
+        <AnalyticsChart
+          data={analyticsData.revenue.map(d => ({ id: d.name, ...d }))}
+          type="line"
+          title=""
+          height={400}
+        />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-6">
+          <h3 className="text-lg font-semibold text-white mb-4">Monthly Sales (3D)</h3>
+          <Bar3DChart
+            data={analyticsData.sales.map(d => ({ id: d.name, ...d }))}
+            title=""
+            height={350}
+          />
+        </div>
+        <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-6">
+          <h3 className="text-lg font-semibold text-white mb-4">Revenue by Conversion Stage</h3>
+          <AnalyticsChart
+            data={analyticsData.conversions.map(d => ({ id: d.name, ...d }))}
+            type="bar"
+            title=""
+            height={350}
+          />
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderPipeline = () => (
+    <div className="space-y-6">
+      <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-6">
+        <h3 className="text-lg font-semibold text-white mb-4">Pipeline Stages (3D)</h3>
+        <Bar3DChart
+          data={analyticsData.pipeline.map(d => ({ id: d.name, ...d }))}
+          title=""
+          height={400}
+        />
+      </div>
+      <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-6">
+        <h3 className="text-lg font-semibold text-white mb-4">Pipeline Conversion Rates</h3>
+        <AnalyticsChart
+          data={analyticsData.conversions.map(d => ({ id: d.name, ...d }))}
+          type="pie"
+          title=""
+          height={350}
+        />
+      </div>
+    </div>
+  );
+
+  const renderProductivity = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-white mb-2">Productivity Insights</h2>
+          <p className="text-[#b0b0d0]">AI-powered recommendations to boost your performance</p>
+        </div>
+        <Button
+          onClick={() => setShowProductivityInsights(true)}
+          variant="gradient"
+          size="sm"
+          icon={Zap}
+        >
+          View All Insights
+        </Button>
+      </div>
+
+      <ProductivityInsightsPanel
+        insights={productivityInsights}
+        onClose={handleCloseProductivityInsights}
+        onAction={handleProductivityInsightAction}
+      />
+
+      {/* Additional productivity metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[#b0b0d0] text-sm font-medium">Focus Time</p>
+              <p className="text-2xl font-bold text-white">6.2h</p>
+              <p className="text-[#8a8a8a] text-xs">Today's deep work</p>
+            </div>
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 via-blue-600 to-cyan-700 rounded-full flex items-center justify-center">
+              <Clock className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[#b0b0d0] text-sm font-medium">Task Completion</p>
+              <p className="text-2xl font-bold text-white">78%</p>
+              <p className="text-[#8a8a8a] text-xs">+13% vs last week</p>
+            </div>
+            <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-700 rounded-full flex items-center justify-center">
+              <Check className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[#b0b0d0] text-sm font-medium">Response Time</p>
+              <p className="text-2xl font-bold text-white">2.1h</p>
+              <p className="text-[#8a8a8a] text-xs">Avg. email response</p>
+            </div>
+            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 via-purple-600 to-indigo-700 rounded-full flex items-center justify-center">
+              <TrendingUp className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderPulse = () => (
+    <div className="space-y-6">
+      <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-6">
+        <div className="flex items-center space-x-3 mb-6">
+          <div className="w-10 h-10 bg-gradient-to-r from-[#a259ff] to-[#377dff] rounded-lg flex items-center justify-center">
+            <Heart className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-white">Live Sentiment Replay™</h3>
+            <p className="text-[#b0b0d0]">Emotional timeline analysis across all deal interactions</p>
+          </div>
+        </div>
+        
+        {/* Pulse Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-[#23233a]/60 rounded-lg p-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[#b0b0d0] text-sm">Avg Sentiment</span>
+              <span className="text-white font-bold">78%</span>
+            </div>
+          </div>
+          <div className="bg-[#23233a]/60 rounded-lg p-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[#b0b0d0] text-sm">Interactions</span>
+              <span className="text-white font-bold">1,247</span>
+            </div>
+          </div>
+          <div className="bg-[#23233a]/60 rounded-lg p-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[#b0b0d0] text-sm">Trend</span>
+              <span className="text-green-400 font-bold">↗ Improving</span>
+            </div>
+          </div>
+          <div className="bg-[#23233a]/60 rounded-lg p-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[#b0b0d0] text-sm">Dominant</span>
+              <span className="text-white font-bold capitalize">Excited</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Sentiment Timeline Chart */}
+        <div className="h-64 bg-[#23233a]/60 rounded-lg p-4">
+          <h4 className="text-white font-medium mb-4">Sentiment Timeline</h4>
+          <div className="w-full h-48 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-lg flex items-center justify-center">
+            <div className="text-center">
+              <Heart className="w-12 h-12 text-[#a259ff] mx-auto mb-2" />
+              <p className="text-[#b0b0d0]">Sentiment timeline visualization</p>
+              <p className="text-[#8a8a8a] text-sm">Powered by AI analysis</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Recent Interactions */}
+        <div className="mt-6">
+          <h4 className="text-white font-medium mb-4">Recent Interactions</h4>
+          <div className="space-y-3">
+            <div className="flex items-center space-x-3 p-3 bg-[#23233a]/60 rounded-lg">
+              <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
+                <MessageSquare className="w-4 h-4 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="text-white font-medium">Email: "Very excited about your product!"</p>
+                <p className="text-[#b0b0d0] text-sm">Sentiment: Positive (95%)</p>
+              </div>
+              <div className="text-green-400 font-bold">95%</div>
+            </div>
+            <div className="flex items-center space-x-3 p-3 bg-[#23233a]/60 rounded-lg">
+              <div className="w-8 h-8 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full flex items-center justify-center">
+                <Phone className="w-4 h-4 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="text-white font-medium">Call: "Need to think about pricing"</p>
+                <p className="text-[#b0b0d0] text-sm">Sentiment: Neutral (45%)</p>
+              </div>
+              <div className="text-yellow-400 font-bold">45%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Demographics tab render function
+  const renderDemographics = () => (
+    <div className="space-y-8">
+      <div className="flex flex-wrap gap-4 items-center mb-6">
+        <div>
+          <label className="block text-xs text-[#b0b0d0] mb-1">Region</label>
+          <select
+            className="bg-[#23233a]/60 text-white rounded-lg px-3 py-2 border border-[#23233a]/50"
+            value={selectedRegion}
+            onChange={e => setSelectedRegion(e.target.value)}
+          >
+            {regions.map(region => (
+              <option key={region} value={region}>{region}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs text-[#b0b0d0] mb-1">Country</label>
+          <select
+            className="bg-[#23233a]/60 text-white rounded-lg px-3 py-2 border border-[#23233a]/50"
+            value={selectedCountry}
+            onChange={e => setSelectedCountry(e.target.value)}
+          >
+            {countries.map(country => (
+              <option key={country} value={country}>{country}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs text-[#b0b0d0] mb-1">Product</label>
+          <select
+            className="bg-[#23233a]/60 text-white rounded-lg px-3 py-2 border border-[#23233a]/50"
+            value={selectedProduct}
+            onChange={e => setSelectedProduct(e.target.value)}
+          >
+            {products.map(product => (
+              <option key={product} value={product}>{product}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+      {/* Analytics Widgets */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-6">
+          <p className="text-[#b0b0d0] text-sm font-medium">User Closing Rate</p>
+          <p className="text-2xl font-bold text-white">{userClosingRate}%</p>
+        </div>
+        <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-6">
+          <p className="text-[#b0b0d0] text-sm font-medium">Company Closing Rate</p>
+          <p className="text-2xl font-bold text-white">{companyClosingRate}%</p>
+        </div>
+        <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-6 col-span-2">
+          <p className="text-[#b0b0d0] text-sm font-medium mb-2">Product Closing Rates</p>
+          <AnalyticsChart
+            data={productClosingRates.map(p => ({ id: p.name, name: p.name, value: p.value }))}
+            type="bar"
+            title=""
+            height={120}
+            showControls={false}
+            disableCardStyling={true}
+          />
+        </div>
+      </div>
+      {/* Map Placeholder */}
+      <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-6">
+        <p className="text-[#b0b0d0] text-sm font-medium mb-2">Deal Demographics Map</p>
+        <div className="w-full h-80 bg-[#23233a]/60 rounded-lg flex items-center justify-center text-[#b0b0d0]">
+          [Map visualization coming soon: pins for closed deals by address]
+        </div>
+      </div>
+    </div>
+  );
 
   if (isLoading) {
     return (
-      <Container>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="w-8 h-8 border-2 border-primary-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-secondary-400">Loading analytics data...</p>
-          </div>
+      <div className="relative z-10 min-h-screen">
+        <div className="fixed inset-0 z-0">
+          <Spline scene="https://prod.spline.design/n0GFhlzrcT-MOycs/scene.splinecode" />
         </div>
-      </Container>
+        <div className="fixed inset-0 bg-gradient-to-b from-[#18182c]/50 to-[#18182c]/70 z-0"></div>
+        <div className="relative z-10">
+          <Container>
+            <div className="flex items-center justify-center min-h-[400px]">
+              <div className="w-8 h-8 border-2 border-[#a259ff] border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          </Container>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Container>
-      <div className="space-y-6 animate-fade-in">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-white">Analytics</h1>
-            <p className="text-secondary-400 mt-1">Track your sales performance with interactive visualizations</p>
-          </div>
-          <div className="flex space-x-2">
-            <div className="relative">
-              <button 
-                onClick={() => setShowCustomize(!showCustomize)}
-                className={`btn-secondary flex items-center space-x-2 ${showCustomize ? 'bg-primary-600 text-white' : ''}`}
-              >
-                <Settings className="w-4 h-4" />
-                <span>Customize</span>
-                <ChevronDown className={`w-4 h-4 transition-transform ${showCustomize ? 'rotate-180' : ''}`} />
-              </button>
-              
-              {showCustomize && (
-                <div className="absolute right-0 mt-2 w-72 bg-secondary-800 border border-secondary-700 rounded-lg shadow-xl z-10">
-                  <div className="p-3 border-b border-secondary-700">
-                    <h4 className="font-medium text-white text-sm">Customize Analytics</h4>
-                  </div>
-                  <div className="p-3 space-y-3">
-                    <div>
-                      <label className="block text-sm font-medium text-secondary-300 mb-1">
-                        Time Period
-                      </label>
-                      <select
-                        value={timePeriod}
-                        onChange={(e) => handleTimePeriodChange(e.target.value as TimePeriod)}
-                        className="w-full px-3 py-2 bg-secondary-700 border border-secondary-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-600"
-                      >
-                        <option value="week">This Week</option>
-                        <option value="month">This Month</option>
-                        <option value="quarter">This Quarter</option>
-                        <option value="year">This Year</option>
-                        <option value="all">All Time</option>
-                      </select>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-secondary-300 mb-1">
-                        Data Source
-                      </label>
-                      <select
-                        value={dataSource}
-                        onChange={(e) => handleDataSourceChange(e.target.value as DataSource)}
-                        className="w-full px-3 py-2 bg-secondary-700 border border-secondary-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-600"
-                      >
-                        <option value="deals">Deals</option>
-                        <option value="leads">Leads</option>
-                        <option value="revenue">Revenue</option>
-                      </select>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-secondary-300 mb-1">
-                        Pipeline Chart Type
-                      </label>
-                      <select
-                        value={pipelineChartType}
-                        onChange={(e) => handleChartTypeChange('pipeline', e.target.value as ChartType)}
-                        className="w-full px-3 py-2 bg-secondary-700 border border-secondary-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-600"
-                      >
-                        <option value="funnel">Funnel</option>
-                        <option value="bar">Bar Chart</option>
-                        <option value="pie">Pie Chart</option>
-                        <option value="3d">3D Chart</option>
-                      </select>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-secondary-300 mb-1">
-                        Conversion Chart Type
-                      </label>
-                      <select
-                        value={conversionChartType}
-                        onChange={(e) => handleChartTypeChange('conversion', e.target.value as ChartType)}
-                        className="w-full px-3 py-2 bg-secondary-700 border border-secondary-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-600"
-                      >
-                        <option value="bar">Bar Chart</option>
-                        <option value="line">Line Chart</option>
-                        <option value="pie">Pie Chart</option>
-                        <option value="3d">3D Chart</option>
-                      </select>
-                    </div>
-                    
-                    <button 
-                      onClick={() => setShowCustomize(false)}
-                      className="w-full btn-primary text-sm"
-                    >
-                      Apply Changes
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            <div className="relative">
-              <button 
-                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-                className={`btn-secondary flex items-center space-x-2 ${showAdvancedFilters ? 'bg-primary-600 text-white' : ''}`}
-              >
-                <Sliders className="w-4 h-4" />
-                <span>Filters</span>
-                <ChevronDown className={`w-4 h-4 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} />
-              </button>
-            </div>
-            
-            <div className="relative">
-              <button 
-                onClick={() => handleExportData('csv')}
-                className="btn-secondary flex items-center space-x-2"
-              >
-                <Download className="w-4 h-4" />
-                <span>Export</span>
-              </button>
-            </div>
-            
-            <button 
-              onClick={handleRefreshData}
-              className="btn-secondary flex items-center space-x-2"
-            >
-              <RefreshCw className="w-4 h-4" />
-              <span>Refresh</span>
-            </button>
-            
-            <button 
-              onClick={handleAskGuruInsights}
-              className="btn-primary flex items-center space-x-2"
-            >
-              <Bot className="w-4 h-4" />
-              <span>Ask Guru</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Advanced Filters Panel */}
-        {showAdvancedFilters && (
-          <Card className="bg-secondary-800/80 backdrop-blur-md border border-secondary-700/50">
-            <h3 className="text-lg font-semibold text-white mb-4">Advanced Filters</h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Stage Filter */}
-              <div>
-                <label className="block text-sm font-medium text-secondary-300 mb-2">
-                  Deal Stage
-                </label>
-                <select
-                  value={filters.stage}
-                  onChange={(e) => setFilters(prev => ({ ...prev, stage: e.target.value }))}
-                  className="w-full px-3 py-2 bg-secondary-700 border border-secondary-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-600"
-                >
-                  <option value="all">All Stages</option>
-                  {analyticsData.pipeline.stages.map(stage => (
-                    <option key={stage.id} value={stage.id}>{stage.name}</option>
-                  ))}
-                </select>
-              </div>
-              
-              {/* Owner Filter */}
-              <div>
-                <label className="block text-sm font-medium text-secondary-300 mb-2">
-                  Deal Owner
-                </label>
-                <select
-                  value={filters.owner}
-                  onChange={(e) => setFilters(prev => ({ ...prev, owner: e.target.value }))}
-                  className="w-full px-3 py-2 bg-secondary-700 border border-secondary-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-600"
-                >
-                  {teamMembers.map(member => (
-                    <option key={member.id} value={member.id}>{member.name}</option>
-                  ))}
-                </select>
-              </div>
-              
-              {/* Date Range Filter */}
-              <div>
-                <label className="block text-sm font-medium text-secondary-300 mb-2">
-                  Date Range
-                </label>
-                <div className="flex items-center space-x-2">
-                  <div className="relative flex-1">
-                    <Calendar className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-secondary-400" />
-                    <input
-                      type="date"
-                      value={filters.dateRange.start?.toISOString().split('T')[0] || ''}
-                      onChange={(e) => setFilters(prev => ({ 
-                        ...prev, 
-                        dateRange: {
-                          ...prev.dateRange,
-                          start: e.target.value ? new Date(e.target.value) : null
-                        }
-                      }))}
-                      className="w-full pl-8 pr-2 py-2 bg-secondary-700 border border-secondary-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-600"
-                    />
-                  </div>
-                  <span className="text-secondary-400">to</span>
-                  <div className="relative flex-1">
-                    <Calendar className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-secondary-400" />
-                    <input
-                      type="date"
-                      value={filters.dateRange.end?.toISOString().split('T')[0] || ''}
-                      onChange={(e) => setFilters(prev => ({ 
-                        ...prev, 
-                        dateRange: {
-                          ...prev.dateRange,
-                          end: e.target.value ? new Date(e.target.value) : null
-                        }
-                      }))}
-                      className="w-full pl-8 pr-2 py-2 bg-secondary-700 border border-secondary-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-600"
-                    />
-                  </div>
-                </div>
-              </div>
-              
-              {/* Value Range Filter */}
-              <div>
-                <label className="block text-sm font-medium text-secondary-300 mb-2">
-                  Deal Value Range
-                </label>
-                <div className="flex items-center space-x-2">
-                  <div className="relative flex-1">
-                    <DollarSign className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-secondary-400" />
-                    <input
-                      type="number"
-                      min="0"
-                      value={filters.minValue}
-                      onChange={(e) => setFilters(prev => ({ ...prev, minValue: parseInt(e.target.value) || 0 }))}
-                      className="w-full pl-8 pr-2 py-2 bg-secondary-700 border border-secondary-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-600"
-                    />
-                  </div>
-                  <span className="text-secondary-400">to</span>
-                  <div className="relative flex-1">
-                    <DollarSign className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-secondary-400" />
-                    <input
-                      type="number"
-                      min="0"
-                      value={filters.maxValue}
-                      onChange={(e) => setFilters(prev => ({ ...prev, maxValue: parseInt(e.target.value) || 0 }))}
-                      className="w-full pl-8 pr-2 py-2 bg-secondary-700 border border-secondary-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-600"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex justify-end mt-4 pt-4 border-t border-secondary-700">
-              <div className="flex space-x-2">
-                <button 
-                  onClick={resetFilters}
-                  className="btn-secondary"
-                >
-                  Reset Filters
-                </button>
-                <button 
-                  onClick={() => setShowAdvancedFilters(false)}
-                  className="btn-primary flex items-center space-x-2"
-                >
-                  <Check className="w-4 h-4" />
-                  <span>Apply Filters</span>
-                </button>
-              </div>
-            </div>
-          </Card>
-        )}
-
-        {/* Time Period Selector */}
-        <div className="flex items-center space-x-2 overflow-x-auto pb-2">
-          {[
-            { value: 'week', label: 'This Week' },
-            { value: 'month', label: 'This Month' },
-            { value: 'quarter', label: 'This Quarter' },
-            { value: 'year', label: 'This Year' },
-            { value: 'all', label: 'All Time' }
-          ].map((period) => (
-            <button
-              key={period.value}
-              onClick={() => handleTimePeriodChange(period.value as TimePeriod)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                timePeriod === period.value
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-secondary-800 text-secondary-300 hover:bg-secondary-700'
-              }`}
-            >
-              {period.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Key Metrics */}
-        <PerformanceMetricsCard metrics={analyticsData.metrics} />
-
-        {/* Charts Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Pipeline Analysis */}
-          <Card className="bg-secondary-800/80 backdrop-blur-md border border-secondary-700/50">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white">Pipeline Analysis</h3>
-              <div className="flex items-center space-x-2">
-                <select
-                  value={pipelineChartType}
-                  onChange={(e) => handleChartTypeChange('pipeline', e.target.value as ChartType)}
-                  className="px-2 py-1 bg-secondary-700 border border-secondary-600 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-600"
-                >
-                  <option value="funnel">Funnel</option>
-                  <option value="bar">Bar Chart</option>
-                  <option value="pie">Pie Chart</option>
-                  <option value="3d">3D Chart</option>
-                </select>
-              </div>
-            </div>
-            <AnalyticsChart
-              type={pipelineChartType}
-              data={analyticsData.pipeline.stages}
-              height={300}
-            />
-          </Card>
-
-          {/* Conversion Rates */}
-          <Card className="bg-secondary-800/80 backdrop-blur-md border border-secondary-700/50">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white">Conversion Rates</h3>
-              <div className="flex items-center space-x-2">
-                <select
-                  value={conversionChartType}
-                  onChange={(e) => handleChartTypeChange('conversion', e.target.value as ChartType)}
-                  className="px-2 py-1 bg-secondary-700 border border-secondary-600 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-600"
-                >
-                  <option value="bar">Bar Chart</option>
-                  <option value="line">Line Chart</option>
-                  <option value="pie">Pie Chart</option>
-                  <option value="3d">3D Chart</option>
-                </select>
-              </div>
-            </div>
-            <AnalyticsChart
-              type={conversionChartType}
-              data={analyticsData.pipeline.conversion}
-              height={300}
-            />
-          </Card>
-
-          {/* Deal Velocity */}
-          <Card className="bg-secondary-800/80 backdrop-blur-md border border-secondary-700/50">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white">Deal Velocity</h3>
-              <div className="flex items-center space-x-2">
-                <select
-                  value={velocityChartType}
-                  onChange={(e) => handleChartTypeChange('velocity', e.target.value as ChartType)}
-                  className="px-2 py-1 bg-secondary-700 border border-secondary-600 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-600"
-                >
-                  <option value="line">Line Chart</option>
-                  <option value="bar">Bar Chart</option>
-                  <option value="pie">Pie Chart</option>
-                  <option value="3d">3D Chart</option>
-                </select>
-              </div>
-            </div>
-            <AnalyticsChart
-              type={velocityChartType}
-              data={analyticsData.velocity.data}
-              height={300}
-            />
-          </Card>
-
-          {/* Revenue Distribution */}
-          <Card className="bg-secondary-800/80 backdrop-blur-md border border-secondary-700/50">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white">Revenue Distribution</h3>
-              <div className="flex items-center space-x-2">
-                <select
-                  value={distributionChartType}
-                  onChange={(e) => handleChartTypeChange('distribution', e.target.value as ChartType)}
-                  className="px-2 py-1 bg-secondary-700 border border-secondary-600 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-600"
-                >
-                  <option value="pie">Pie Chart</option>
-                  <option value="bar">Bar Chart</option>
-                  <option value="line">Line Chart</option>
-                  <option value="3d">3D Chart</option>
-                </select>
-              </div>
-            </div>
-            <AnalyticsChart
-              type={distributionChartType}
-              data={analyticsData.distribution.data}
-              height={300}
-            />
-          </Card>
-        </div>
-
-        {/* Full Width Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Revenue Forecast */}
-          <Card className="bg-secondary-800/80 backdrop-blur-md border border-secondary-700/50">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white">Revenue Forecast</h3>
-              <div className="flex items-center space-x-2">
-                <select
-                  value={forecastChartType}
-                  onChange={(e) => handleChartTypeChange('forecast', e.target.value as ChartType)}
-                  className="px-2 py-1 bg-secondary-700 border border-secondary-600 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-600"
-                >
-                  <option value="line">Line Chart</option>
-                  <option value="bar">Bar Chart</option>
-                  <option value="pie">Pie Chart</option>
-                  <option value="3d">3D Chart</option>
-                </select>
-              </div>
-            </div>
-            <AnalyticsChart
-              type={forecastChartType}
-              data={analyticsData.forecast.data}
-              height={300}
-            />
-          </Card>
-
-          {/* Lead Sources */}
-          <Card className="bg-secondary-800/80 backdrop-blur-md border border-secondary-700/50">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white">Lead Sources</h3>
-              <div className="flex items-center space-x-2">
-                <select
-                  value={sourceChartType}
-                  onChange={(e) => handleChartTypeChange('source', e.target.value as ChartType)}
-                  className="px-2 py-1 bg-secondary-700 border border-secondary-600 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-600"
-                >
-                  <option value="pie">Pie Chart</option>
-                  <option value="bar">Bar Chart</option>
-                  <option value="line">Line Chart</option>
-                  <option value="3d">3D Chart</option>
-                </select>
-              </div>
-            </div>
-            <AnalyticsChart
-              type={sourceChartType}
-              data={analyticsData.source.data}
-              height={300}
-            />
-          </Card>
-        </div>
-
-        {/* AI Insights Panel */}
-        <InsightsPanel
-          insights={analyticsData.insights}
-          onAskGuru={handleAskGuruInsights}
-        />
+    <div className="relative z-10 min-h-screen">
+      {/* 3D Spline Background */}
+      <div className="fixed inset-0 z-0">
+        <Spline scene="https://prod.spline.design/n0GFhlzrcT-MOycs/scene.splinecode" />
       </div>
-    </Container>
+      {/* Gradient Overlay */}
+      <div className="fixed inset-0 bg-gradient-to-b from-[#18182c]/50 to-[#18182c]/70 z-0"></div>
+      <div className="relative z-10">
+        <Container>
+          <div className="space-y-8 animate-fade-in">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-white mb-2">Analytics Dashboard</h1>
+                <p className="text-[#b0b0d0]">Comprehensive insights into your sales performance</p>
+              </div>
+              <Button
+                onClick={() => navigate('/dashboard')}
+                variant="secondary"
+                size="sm"
+                icon={ArrowRight}
+              >
+                Back to Dashboard
+              </Button>
+            </div>
+
+            {/* Tab Navigation */}
+            <div className="flex space-x-1 bg-[#23233a]/50 rounded-lg p-1">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                      activeTab === tab.id
+                        ? 'bg-gradient-to-r from-[#a259ff] to-[#377dff] text-white shadow-lg'
+                        : 'text-[#b0b0d0] hover:text-white hover:bg-[#23233a]/50'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Tab Content */}
+            <div className="animate-fade-in">
+              {activeTab === 'overview' && renderOverview()}
+              {activeTab === 'sales' && renderSales()}
+              {activeTab === 'leads' && renderLeads()}
+              {activeTab === 'revenue' && renderRevenue()}
+              {activeTab === 'pipeline' && renderPipeline()}
+              {activeTab === 'productivity' && renderProductivity()}
+              {activeTab === 'pulse' && renderPulse()}
+              {activeTab === 'demographics' && renderDemographics()}
+            </div>
+
+            {/* Productivity Insights Modal */}
+            {showProductivityInsights && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+                  <ProductivityInsightsPanel
+                    insights={productivityInsights}
+                    onClose={handleCloseProductivityInsights}
+                    onAction={handleProductivityInsightAction}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </Container>
+      </div>
+    </div>
   );
 };
 

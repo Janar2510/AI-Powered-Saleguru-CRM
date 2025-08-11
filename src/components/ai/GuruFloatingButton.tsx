@@ -4,12 +4,16 @@ import clsx from 'clsx';
 import { useGuru } from '../../contexts/GuruContext';
 import { useLocation } from 'react-router-dom';
 import GuruAISettings from './GuruAISettings';
+import { useFeatureLock } from '../../hooks/useFeatureLock';
+import { useDevMode } from '../../contexts/DevModeContext';
 
 const GuruFloatingButton: React.FC = () => {
-  const { isOpen, openGuru, usageCount, usageLimit } = useGuru();
+  const { isOpen, openGuru, usageCount, usageLimit } = useGuru() as any;
   const [showTooltip, setShowTooltip] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const location = useLocation();
+  const { currentPlan } = useDevMode();
+  const { withFeatureAccess, FeatureLockModal } = useFeatureLock(currentPlan);
 
   // Remove API key initialization from localStorage
   useEffect(() => {
@@ -80,83 +84,59 @@ const GuruFloatingButton: React.FC = () => {
     console.log('API key management is now handled server-side');
   };
 
+  // Gate the ability to open the AI assistant
+  const handleOpenGuru = () => {
+    withFeatureAccess('ai_assistant', openGuru);
+  };
+
   return (
-    <div className="fixed bottom-6 right-6 z-40">
-      {/* Contextual Tooltip */}
-      {showTooltip && (
-        <div className="absolute bottom-16 right-0 mb-2 px-4 py-3 bg-secondary-800/95 backdrop-blur-sm border border-secondary-700 rounded-lg shadow-xl whitespace-nowrap max-w-xs animate-slide-up">
-          <div className="text-sm text-white font-medium mb-1">{tooltip.title}</div>
-          <div className="text-xs text-secondary-400">{tooltip.suggestion}</div>
-          <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-secondary-700"></div>
-        </div>
-      )}
-
-      {/* Settings Button */}
-      <div className="absolute bottom-0 right-20 mb-2">
-        <button
-          onClick={() => setShowSettings(true)}
-          className="p-3 bg-secondary-700 hover:bg-secondary-600 rounded-full shadow-lg text-secondary-300 hover:text-white transition-all duration-300"
-          title="AI Settings"
-        >
-          <Settings className="w-5 h-5" />
-        </button>
-      </div>
-
-      {/* Floating Action Button */}
+    <div className="fixed bottom-6 right-6 z-40 pointer-events-none">
+      {/* Floating Action Button with enhanced animation */}
       <button
-        onClick={openGuru}
+        onClick={handleOpenGuru}
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
         className={clsx(
-          'relative w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-r from-primary-600 to-purple-700 hover:from-primary-700 hover:to-purple-800',
-          'rounded-full shadow-lg hover:shadow-xl transition-all duration-300',
+          'relative w-16 h-16 bg-gradient-to-r from-primary-600 to-purple-700 hover:from-primary-700 hover:to-purple-800',
+          'rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300',
           'flex items-center justify-center text-white',
           'hover:scale-110 active:scale-95',
           'group touch-target-lg',
-          'border-2 border-white/10 hover:border-white/20'
+          'border-2 border-white/10 hover:border-white/20',
+          'animate-bounce-slow'
         )}
         aria-label="Open AI Assistant"
+        style={{ pointerEvents: 'auto' }}
       >
         {/* Pulse animation */}
         <div className="absolute inset-0 rounded-full bg-primary-600 animate-ping opacity-20"></div>
-        
+        {/* Glow animation */}
+        <div className="absolute inset-0 rounded-full bg-purple-700/40 blur-xl opacity-40 animate-pulse"></div>
         {/* Logo */}
         <div className="relative">
           <img 
-            src="https://i.imgur.com/Zylpdjy.png" 
-            alt="SaleToruGuru" 
-            className="w-7 h-7 sm:w-8 sm:h-8 object-contain transition-transform group-hover:scale-110"
+            src="/saletoru-logo.png" 
+            alt="SaleToru Logo" 
+            className="w-8 h-8 rounded-lg"
           />
-          
           {/* Online indicator */}
           <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white animate-pulse"></div>
         </div>
-
         {/* Usage counter */}
         <div className="absolute -top-2 -left-2 bg-secondary-800 rounded-full px-2 py-1 text-xs font-bold border border-secondary-700">
           {usageCount}/{usageLimit === Infinity ? '∞' : usageLimit}
         </div>
-
         {/* Sparkle effect */}
         <div className="absolute inset-0 rounded-full overflow-hidden">
           <div className="absolute top-3 right-3 w-1 h-1 bg-white rounded-full opacity-60 animate-pulse"></div>
           <div className="absolute bottom-4 left-4 w-1 h-1 bg-white rounded-full opacity-40 animate-pulse" style={{ animationDelay: '0.5s' }}></div>
           <div className="absolute top-1/2 left-2 w-0.5 h-0.5 bg-white rounded-full opacity-50 animate-pulse" style={{ animationDelay: '1s' }}></div>
         </div>
-
         {/* Hover glow effect */}
         <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary-600 to-purple-700 opacity-0 group-hover:opacity-30 transition-opacity duration-300 blur-sm"></div>
       </button>
-
-      {/* AI Settings Modal */}
-      <GuruAISettings
-        isOpen={showSettings}
-        onClose={() => setShowSettings(false)}
-        apiKey=""  // No longer needed as we're using server-side API key
-        onSaveApiKey={handleApiKeyChange}
-        usageCount={usageCount}
-        usageLimit={usageLimit}
-      />
+      {/* Feature lock modal for AI assistant */}
+      <FeatureLockModal />
     </div>
   );
 };

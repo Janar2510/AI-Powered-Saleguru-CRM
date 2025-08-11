@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Filter, Grid, List, User, Bot, Download, Upload } from 'lucide-react';
+import { Plus, Search, Filter, Grid, List, User, Bot, Download, Upload, AlertTriangle, Kanban } from 'lucide-react';
+import Spline from '@splinetool/react-spline';
 import Container from '../components/layout/Container';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
+import Button from '../components/ui/Button';
+import Dropdown from '../components/ui/Dropdown';
 import EmptyState from '../components/common/EmptyState';
 import ContactList from '../components/contacts/ContactList';
 import ContactDetail from '../components/contacts/ContactDetail';
@@ -17,7 +20,7 @@ const Contacts: React.FC = () => {
   const { showToast } = useToastContext();
   
   // State for UI
-  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+  const [viewMode, setViewMode] = useState<'table' | 'cards' | 'kanban'>('table');
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
@@ -48,7 +51,10 @@ const Contacts: React.FC = () => {
   };
 
   const handleEditContact = (contact: Contact) => {
-    setSelectedContact(contact);
+    // Only set selectedContact if we're not already viewing this contact
+    if (!selectedContact || selectedContact.id !== contact.id) {
+      setSelectedContact(contact);
+    }
     setIsEditing(true);
     setShowCreateModal(true);
   };
@@ -109,144 +115,173 @@ const Contacts: React.FC = () => {
           onEdit={() => handleEditContact(selectedContact)}
           onDelete={() => handleDeleteContact(selectedContact.id)}
         />
+        
+        {/* Create/Edit Contact Modal - also render when in detail view */}
+        <CreateContactModal
+          isOpen={showCreateModal}
+          onClose={() => {
+            setShowCreateModal(false);
+            setIsEditing(false);
+          }}
+          onContactCreated={handleContactCreated}
+          initialData={isEditing ? selectedContact : undefined}
+          isEditing={isEditing}
+        />
       </Container>
     );
   }
 
   return (
     <Container>
+      {/* Spline 3D Background */}
+      <div className="fixed inset-0 -z-10">
+        <Spline scene="https://prod.spline.design/n0GFhlzrcT-MOycs/scene.splinecode" />
+      </div>
+
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-white">Contacts</h1>
-            <p className="text-secondary-400 mt-1">Manage your contact database</p>
+            <p className="text-[#b0b0d0] mt-1">Manage your contact database</p>
           </div>
-          <div className="flex space-x-2">
-            <button 
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button 
               onClick={openGuru}
-              className="btn-secondary flex items-center space-x-2"
+              variant="secondary"
+              size="lg"
+              icon={Bot}
             >
-              <Bot className="w-4 h-4" />
-              <span>Ask Guru</span>
-            </button>
-            <button 
+              Ask Guru
+            </Button>
+            <Button 
               onClick={() => {
                 setIsEditing(false);
                 setShowCreateModal(true);
               }}
-              className="btn-primary flex items-center space-x-2"
+              variant="gradient"
+              size="lg"
+              icon={Plus}
             >
-              <Plus className="w-4 h-4" />
-              <span>Add Contact</span>
-            </button>
+              Add Contact
+            </Button>
           </div>
         </div>
 
         {/* Search and Filters */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full lg:w-auto">
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-secondary-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#b0b0d0]" />
               <input
                 type="text"
                 placeholder="Search contacts..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-secondary-700 border border-secondary-600 rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-600"
+                className="w-full pl-10 pr-4 py-3 bg-[#23233a]/50 border-2 border-white/20 rounded-lg text-white placeholder-[#b0b0d0] focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]"
               />
             </div>
-            <div className="flex space-x-2">
-              <button 
+            <div className="flex gap-2">
+              <Button 
                 onClick={handleImportContacts}
-                className="btn-secondary flex items-center space-x-2"
+                variant="secondary"
+                size="sm"
+                icon={Upload}
               >
-                <Upload className="w-4 h-4" />
-                <span>Import</span>
-              </button>
-              <button 
+                Import
+              </Button>
+              <Button 
                 onClick={handleExportContacts}
-                className="btn-secondary flex items-center space-x-2"
+                variant="secondary"
+                size="sm"
+                icon={Download}
               >
-                <Download className="w-4 h-4" />
-                <span>Export</span>
-              </button>
+                Export
+              </Button>
             </div>
           </div>
 
-          <div className="flex items-center space-x-4">
-            <select
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <Dropdown
+              options={statusOptions}
               value={filter.status || 'all'}
-              onChange={(e) => setFilter(prev => ({ ...prev, status: e.target.value !== 'all' ? e.target.value : undefined }))}
-              className="bg-secondary-700 border border-secondary-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary-600"
-            >
-              {statusOptions.map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+              onChange={(value) => setFilter(prev => ({ ...prev, status: value !== 'all' ? value : undefined }))}
+              className="w-36"
+            />
             
-            <div className="flex space-x-1 bg-secondary-700 rounded-lg p-1">
+            <div className="flex space-x-1 bg-[#23233a]/50 border-2 border-white/20 rounded-lg p-1">
               <button
                 onClick={() => setViewMode('cards')}
                 className={`p-2 rounded-md transition-colors ${
                   viewMode === 'cards'
-                    ? 'bg-primary-600 text-white'
-                    : 'text-secondary-400 hover:text-white'
+                    ? 'bg-[#a259ff] text-white'
+                    : 'text-[#b0b0d0] hover:text-white'
                 }`}
               >
                 <Grid className="w-4 h-4" />
               </button>
               <button
+                onClick={() => setViewMode('kanban')}
+                className={`p-2 rounded-md transition-colors ${
+                  viewMode === 'kanban'
+                    ? 'bg-[#a259ff] text-white'
+                    : 'text-[#b0b0d0] hover:text-white'
+                }`}
+              >
+                <Kanban className="w-4 h-4" />
+              </button>
+              <button
                 onClick={() => setViewMode('table')}
                 className={`p-2 rounded-md transition-colors ${
                   viewMode === 'table'
-                    ? 'bg-primary-600 text-white'
-                    : 'text-secondary-400 hover:text-white'
+                    ? 'bg-[#a259ff] text-white'
+                    : 'text-[#b0b0d0] hover:text-white'
                 }`}
               >
                 <List className="w-4 h-4" />
               </button>
             </div>
             
-            <button className="btn-secondary flex items-center space-x-2">
-              <Filter className="w-4 h-4" />
-              <span>More Filters</span>
-            </button>
+            <Button 
+              variant="secondary"
+              size="sm"
+              icon={Filter}
+            >
+              More Filters
+            </Button>
           </div>
         </div>
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="bg-white/10 backdrop-blur-md">
+          <Card className="bg-[#23233a]/50 backdrop-blur-md border border-[#23233a]/30">
             <div className="text-center">
               <div className="text-2xl font-bold text-white">{contacts.length}</div>
-              <div className="text-secondary-400 text-sm">Total Contacts</div>
+              <div className="text-[#b0b0d0] text-sm">Total Contacts</div>
             </div>
           </Card>
-          <Card className="bg-white/10 backdrop-blur-md">
+          <Card className="bg-[#23233a]/50 backdrop-blur-md border border-[#23233a]/30">
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-500">
+              <div className="text-2xl font-bold text-[#43e7ad]">
                 {contacts.filter(c => c.status === 'active').length}
               </div>
-              <div className="text-secondary-400 text-sm">Active</div>
+              <div className="text-[#b0b0d0] text-sm">Active</div>
             </div>
           </Card>
-          <Card className="bg-white/10 backdrop-blur-md">
+          <Card className="bg-[#23233a]/50 backdrop-blur-md border border-[#23233a]/30">
             <div className="text-center">
-              <div className="text-2xl font-bold text-yellow-500">
+              <div className="text-2xl font-bold text-[#f59e0b]">
                 {contacts.filter(c => c.status === 'lead').length}
               </div>
-              <div className="text-secondary-400 text-sm">Leads</div>
+              <div className="text-[#b0b0d0] text-sm">Leads</div>
             </div>
           </Card>
-          <Card className="bg-white/10 backdrop-blur-md">
+          <Card className="bg-[#23233a]/50 backdrop-blur-md border border-[#23233a]/30">
             <div className="text-center">
-              <div className="text-2xl font-bold text-primary-500">
+              <div className="text-2xl font-bold text-[#a259ff]">
                 {contacts.filter(c => c.status === 'customer').length}
               </div>
-              <div className="text-secondary-400 text-sm">Customers</div>
+              <div className="text-[#b0b0d0] text-sm">Customers</div>
             </div>
           </Card>
         </div>
@@ -255,15 +290,15 @@ const Contacts: React.FC = () => {
         {isLoading ? (
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
-              <div className="w-8 h-8 border-2 border-primary-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-secondary-400">Loading contacts...</p>
+              <div className="w-8 h-8 border-2 border-[#a259ff] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-[#b0b0d0]">Loading contacts...</p>
             </div>
           </div>
         ) : error ? (
-          <Card className="bg-red-900/20 border border-red-600/30 text-center py-8">
-            <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <Card className="bg-[#ef4444]/10 border border-[#ef4444]/30 text-center py-8">
+            <AlertTriangle className="w-12 h-12 text-[#ef4444] mx-auto mb-4" />
             <h3 className="text-lg font-medium text-white mb-2">Error Loading Contacts</h3>
-            <p className="text-red-300">{error}</p>
+            <p className="text-[#ef4444]">{error}</p>
           </Card>
         ) : contacts.length > 0 ? (
           <ContactList

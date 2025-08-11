@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { User, Mail, Phone, Building, Edit, Trash2, Eye, Star, Check, X, Zap } from 'lucide-react';
+import { User, Mail, Phone, Building, Edit, Trash2, Eye, Star, Check, X, Zap, Clock } from 'lucide-react';
 import { Contact } from '../../types/contact';
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
+import Button from '../ui/Button';
 import { useToastContext } from '../../contexts/ToastContext';
 import EnrichmentStatusBadge from '../enrichment/EnrichmentStatusBadge';
 
@@ -11,7 +12,7 @@ interface ContactListProps {
   onView: (contactId: string) => void;
   onEdit: (contact: Contact) => void;
   onDelete: (contactId: string) => void;
-  viewMode: 'table' | 'cards';
+  viewMode: 'table' | 'cards' | 'kanban';
 }
 
 const ContactList: React.FC<ContactListProps> = ({ 
@@ -54,26 +55,26 @@ const ContactList: React.FC<ContactListProps> = ({
 
   if (viewMode === 'table') {
     return (
-      <Card className="bg-white/10 backdrop-blur-md">
+      <Card className="bg-[#23233a]/50 backdrop-blur-md border border-[#23233a]/30">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-secondary-700">
-                <th className="text-left py-3 px-4 font-medium text-secondary-300">Name</th>
-                <th className="text-left py-3 px-4 font-medium text-secondary-300">Email</th>
-                <th className="text-left py-3 px-4 font-medium text-secondary-300">Phone</th>
-                <th className="text-left py-3 px-4 font-medium text-secondary-300">Company</th>
-                <th className="text-left py-3 px-4 font-medium text-secondary-300">Status</th>
-                <th className="text-left py-3 px-4 font-medium text-secondary-300">Data</th>
-                <th className="text-left py-3 px-4 font-medium text-secondary-300">Actions</th>
+              <tr className="border-b border-[#23233a]/30">
+                <th className="text-left py-3 px-4 font-medium text-[#b0b0d0]">Name</th>
+                <th className="text-left py-3 px-4 font-medium text-[#b0b0d0]">Email</th>
+                <th className="text-left py-3 px-4 font-medium text-[#b0b0d0]">Phone</th>
+                <th className="text-left py-3 px-4 font-medium text-[#b0b0d0]">Company</th>
+                <th className="text-left py-3 px-4 font-medium text-[#b0b0d0]">Status</th>
+                <th className="text-left py-3 px-4 font-medium text-[#b0b0d0]">Data</th>
+                <th className="text-left py-3 px-4 font-medium text-[#b0b0d0]">Actions</th>
               </tr>
             </thead>
             <tbody>
               {contacts.map((contact) => (
-                <tr key={contact.id} className="border-b border-secondary-700 hover:bg-secondary-700/50 transition-colors">
+                <tr key={contact.id} className="border-b border-[#23233a]/30 hover:bg-[#23233a]/30 transition-colors">
                   <td className="py-3 px-4">
                     <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center">
+                      <div className="w-10 h-10 bg-[#a259ff] rounded-full flex items-center justify-center">
                         {contact.avatar_url ? (
                           <img 
                             src={contact.avatar_url} 
@@ -88,37 +89,37 @@ const ContactList: React.FC<ContactListProps> = ({
                         <div className="flex items-center space-x-2">
                           <div className="font-medium text-white">{contact.name}</div>
                           {contact.enrichment_status === 'completed' && (
-                            <Zap className="w-4 h-4 text-primary-400" title="Data Enriched" />
+                            <Zap className="w-4 h-4 text-[#a259ff]" title="Data Enriched" />
                           )}
                         </div>
-                        <div className="text-sm text-secondary-400">{contact.position}</div>
+                        <div className="text-sm text-[#b0b0d0]">{contact.position}</div>
                       </div>
                     </div>
                   </td>
                   <td className="py-3 px-4">
                     <div className="flex items-center space-x-2">
-                      <Mail className="w-4 h-4 text-secondary-400" />
-                      <span className="text-secondary-300">{contact.email}</span>
+                      <Mail className="w-4 h-4 text-[#b0b0d0]" />
+                      <span className="text-white">{contact.email}</span>
                     </div>
                   </td>
                   <td className="py-3 px-4">
                     {contact.phone ? (
                       <div className="flex items-center space-x-2">
-                        <Phone className="w-4 h-4 text-secondary-400" />
-                        <span className="text-secondary-300">{contact.phone}</span>
+                        <Phone className="w-4 h-4 text-[#b0b0d0]" />
+                        <span className="text-white">{contact.phone}</span>
                       </div>
                     ) : (
-                      <span className="text-secondary-500">—</span>
+                      <span className="text-[#b0b0d0]">—</span>
                     )}
                   </td>
                   <td className="py-3 px-4">
                     {contact.company ? (
                       <div className="flex items-center space-x-2">
-                        <Building className="w-4 h-4 text-secondary-400" />
-                        <span className="text-secondary-300">{contact.company}</span>
+                        <Building className="w-4 h-4 text-[#b0b0d0]" />
+                        <span className="text-white">{contact.company}</span>
                       </div>
                     ) : (
-                      <span className="text-secondary-500">—</span>
+                      <span className="text-[#b0b0d0]">—</span>
                     )}
                   </td>
                   <td className="py-3 px-4">
@@ -135,45 +136,47 @@ const ContactList: React.FC<ContactListProps> = ({
                   </td>
                   <td className="py-3 px-4">
                     <div className="flex items-center space-x-2">
-                      <button 
+                      <Button
                         onClick={() => onView(contact.id)}
-                        className="p-1 text-secondary-400 hover:text-white hover:bg-secondary-700 rounded-lg transition-colors"
+                        variant="ghost"
+                        size="sm"
+                        icon={Eye}
                         title="View Contact"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button 
+                      />
+                      <Button
                         onClick={() => onEdit(contact)}
-                        className="p-1 text-secondary-400 hover:text-white hover:bg-secondary-700 rounded-lg transition-colors"
+                        variant="ghost"
+                        size="sm"
+                        icon={Edit}
                         title="Edit Contact"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
+                      />
                       {deletingContactId === contact.id ? (
-                        <div className="flex space-x-1 bg-red-900/20 rounded-lg p-1">
-                          <button 
+                        <div className="flex space-x-1 bg-[#ef4444]/20 rounded-lg p-1">
+                          <Button
                             onClick={() => setDeletingContactId(null)}
-                            className="p-1 text-secondary-400 hover:text-white transition-colors"
+                            variant="ghost"
+                            size="sm"
+                            icon={X}
                             title="Cancel"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                          <button 
+                          />
+                          <Button
                             onClick={() => handleDeleteContact(contact.id)}
-                            className="p-1 text-red-400 hover:text-red-300 transition-colors"
+                            variant="ghost"
+                            size="sm"
+                            icon={Check}
                             title="Confirm Delete"
-                          >
-                            <Check className="w-4 h-4" />
-                          </button>
+                            className="text-[#ef4444] hover:text-[#ef4444]"
+                          />
                         </div>
                       ) : (
-                        <button 
+                        <Button
                           onClick={() => setDeletingContactId(contact.id)}
-                          className="p-1 text-secondary-400 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-colors"
+                          variant="ghost"
+                          size="sm"
+                          icon={Trash2}
                           title="Delete Contact"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                          className="text-[#b0b0d0] hover:text-[#ef4444] hover:bg-[#ef4444]/20"
+                        />
                       )}
                     </div>
                   </td>
@@ -186,18 +189,141 @@ const ContactList: React.FC<ContactListProps> = ({
     );
   }
 
+  if (viewMode === 'kanban') {
+    // Group contacts by status for Kanban view
+    const statusGroups = {
+      'lead': contacts.filter(c => c.status === 'lead'),
+      'active': contacts.filter(c => c.status === 'active'),
+      'customer': contacts.filter(c => c.status === 'customer'),
+      'inactive': contacts.filter(c => c.status === 'inactive')
+    };
+
+    const columns = [
+      { id: 'lead', title: 'Leads', contacts: statusGroups.lead, color: 'border-[#f59e0b]' },
+      { id: 'active', title: 'Active', contacts: statusGroups.active, color: 'border-[#43e7ad]' },
+      { id: 'customer', title: 'Customers', contacts: statusGroups.customer, color: 'border-[#a259ff]' },
+      { id: 'inactive', title: 'Inactive', contacts: statusGroups.inactive, color: 'border-[#6b7280]' }
+    ];
+
+    return (
+      <div className="flex space-x-6 overflow-x-auto pb-6">
+        {columns.map((column) => (
+          <div key={column.id} className="flex-1 min-w-[320px]">
+            <Card className={`bg-[#23233a]/50 backdrop-blur-md border ${column.color}/30 h-full`}>
+              <div className="flex items-center justify-between mb-4 p-4 border-b border-[#23233a]/30">
+                <h3 className="text-lg font-bold text-white">{column.title}</h3>
+                <Badge variant="secondary" size="sm">{column.contacts.length}</Badge>
+              </div>
+              <div className="p-4 space-y-3">
+                {column.contacts.length > 0 ? (
+                  column.contacts.map((contact) => (
+                    <Card 
+                      key={contact.id} 
+                      className="bg-[#23233a]/30 backdrop-blur-md border border-[#23233a]/30 hover:shadow-lg transition-shadow cursor-pointer"
+                      onClick={() => onView(contact.id)}
+                    >
+                      <div className="p-3 space-y-3">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-[#a259ff] rounded-full flex items-center justify-center">
+                            {contact.avatar_url ? (
+                              <img 
+                                src={contact.avatar_url} 
+                                alt={contact.name} 
+                                className="w-10 h-10 rounded-full object-cover"
+                              />
+                            ) : (
+                              <User className="w-5 h-5 text-white" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2">
+                              <h4 className="font-semibold text-white text-sm">{contact.name}</h4>
+                              {contact.enrichment_status === 'completed' && (
+                                <Zap className="w-3 h-3 text-[#a259ff]" title="Data Enriched" />
+                              )}
+                            </div>
+                            <p className="text-[#b0b0d0] text-xs">{contact.position}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-1 text-xs">
+                          <div className="flex items-center space-x-2">
+                            <Mail className="w-3 h-3 text-[#b0b0d0]" />
+                            <span className="text-white truncate">{contact.email}</span>
+                          </div>
+                          {contact.company && (
+                            <div className="flex items-center space-x-2">
+                              <Building className="w-3 h-3 text-[#b0b0d0]" />
+                              <span className="text-[#b0b0d0] truncate">{contact.company}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex items-center justify-between pt-2 border-t border-[#23233a]/30">
+                          <div className="flex space-x-1">
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onEdit(contact);
+                              }}
+                              variant="ghost"
+                              size="sm"
+                              icon={Edit}
+                              className="w-6 h-6 p-0"
+                            />
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onView(contact.id);
+                              }}
+                              variant="ghost"
+                              size="sm"
+                              icon={Eye}
+                              className="w-6 h-6 p-0"
+                            />
+                          </div>
+                          {contact.lead_score && (
+                            <div className="text-xs">
+                              <span className="text-[#b0b0d0]">Score: </span>
+                              <span className={`font-bold ${
+                                contact.lead_score >= 80 ? 'text-[#43e7ad]' :
+                                contact.lead_score >= 60 ? 'text-[#f59e0b]' :
+                                'text-[#ef4444]'
+                              }`}>
+                                {contact.lead_score}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  ))
+                ) : (
+                  <div className="text-center py-8">
+                    <User className="w-8 h-8 text-[#b0b0d0] mx-auto mb-2" />
+                    <p className="text-[#b0b0d0] text-sm">No contacts</p>
+                  </div>
+                )}
+              </div>
+            </Card>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
       {contacts.map((contact) => (
         <Card 
           key={contact.id} 
-          className="bg-white/10 backdrop-blur-md hover:shadow-lg transition-shadow cursor-pointer"
+          className="bg-[#23233a]/50 backdrop-blur-md border border-[#23233a]/30 hover:shadow-lg transition-shadow cursor-pointer"
           onClick={() => onView(contact.id)}
         >
           <div className="space-y-4">
             <div className="flex items-start justify-between">
               <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-primary-600 rounded-full flex items-center justify-center">
+                <div className="w-12 h-12 bg-[#a259ff] rounded-full flex items-center justify-center">
                   {contact.avatar_url ? (
                     <img 
                       src={contact.avatar_url} 
@@ -212,44 +338,44 @@ const ContactList: React.FC<ContactListProps> = ({
                   <div className="flex items-center space-x-2">
                     <h3 className="font-semibold text-white">{contact.name}</h3>
                     {contact.enrichment_status === 'completed' && (
-                      <Zap className="w-4 h-4 text-primary-400" title="Data Enriched" />
+                      <Zap className="w-4 h-4 text-[#a259ff]" title="Data Enriched" />
                     )}
                   </div>
-                  <p className="text-secondary-400 text-sm">{contact.position}</p>
+                  <p className="text-[#b0b0d0] text-sm">{contact.position}</p>
                   {contact.company && (
-                    <p className="text-secondary-500 text-sm">{contact.company}</p>
+                    <p className="text-[#b0b0d0] text-sm">{contact.company}</p>
                   )}
                 </div>
               </div>
               {contact.lead_score && (
                 <div className="text-right">
                   <div className={`text-lg font-bold ${
-                    contact.lead_score >= 80 ? 'text-green-500' :
-                    contact.lead_score >= 60 ? 'text-yellow-500' :
-                    'text-red-500'
+                    contact.lead_score >= 80 ? 'text-[#43e7ad]' :
+                    contact.lead_score >= 60 ? 'text-[#f59e0b]' :
+                    'text-[#ef4444]'
                   }`}>
                     {contact.lead_score}
                   </div>
-                  <div className="text-xs text-secondary-400">Lead Score</div>
+                  <div className="text-xs text-[#b0b0d0]">Lead Score</div>
                 </div>
               )}
             </div>
 
             <div className="space-y-2 text-sm">
               <div className="flex items-center space-x-2">
-                <Mail className="w-4 h-4 text-secondary-400" />
-                <span className="text-secondary-300">{contact.email}</span>
+                <Mail className="w-4 h-4 text-[#b0b0d0]" />
+                <span className="text-white">{contact.email}</span>
               </div>
               {contact.phone && (
                 <div className="flex items-center space-x-2">
-                  <Phone className="w-4 h-4 text-secondary-400" />
-                  <span className="text-secondary-300">{contact.phone}</span>
+                  <Phone className="w-4 h-4 text-[#b0b0d0]" />
+                  <span className="text-white">{contact.phone}</span>
                 </div>
               )}
               {contact.last_contacted_at && (
                 <div className="flex items-center space-x-2">
-                  <Clock className="w-4 h-4 text-secondary-400" />
-                  <span className="text-secondary-300">
+                  <Clock className="w-4 h-4 text-[#b0b0d0]" />
+                  <span className="text-white">
                     Last contacted: {contact.last_contacted_at.toLocaleDateString()}
                   </span>
                 </div>
@@ -270,27 +396,31 @@ const ContactList: React.FC<ContactListProps> = ({
               {getStatusBadge(contact.status)}
             </div>
 
-            <div className="flex space-x-2 pt-2 border-t border-secondary-700">
-              <button 
+            <div className="flex gap-2 pt-2 border-t border-[#23233a]/30">
+              <Button 
                 onClick={(e) => {
                   e.stopPropagation();
                   onEdit(contact);
                 }}
-                className="flex-1 btn-secondary text-sm flex items-center justify-center space-x-1"
+                variant="secondary"
+                size="sm"
+                icon={Edit}
+                className="flex-1"
               >
-                <Edit className="w-3 h-3" />
-                <span>Edit</span>
-              </button>
-              <button 
+                Edit
+              </Button>
+              <Button 
                 onClick={(e) => {
                   e.stopPropagation();
                   onView(contact.id);
                 }}
-                className="flex-1 btn-primary text-sm flex items-center justify-center space-x-1"
+                variant="gradient"
+                size="sm"
+                icon={Eye}
+                className="flex-1"
               >
-                <Eye className="w-3 h-3" />
-                <span>View</span>
-              </button>
+                View
+              </Button>
             </div>
           </div>
         </Card>

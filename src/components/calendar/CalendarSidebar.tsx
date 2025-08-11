@@ -1,7 +1,8 @@
 import React from 'react';
-import { Calendar, CheckSquare, Filter, Plus, Bot } from 'lucide-react';
+import { Calendar, CheckSquare, Filter, Plus, Bot, Clock, Users, Target, Zap, Settings, Eye, EyeOff, AlertTriangle, Bell } from 'lucide-react';
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
+import Button from '../ui/Button';
 import { CalendarFilter } from '../../types/calendar';
 import { Task } from '../../types/task';
 import { useGuru } from '../../contexts/GuruContext';
@@ -54,62 +55,106 @@ const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
     }, 300);
   };
 
+  const eventTypeFilters = [
+    { value: 'meeting', label: 'Meetings', icon: Users, color: '#a259ff' },
+    { value: 'call', label: 'Calls', icon: Clock, color: '#43e7ad' },
+    { value: 'demo', label: 'Demos', icon: Target, color: '#377dff' },
+    { value: 'task', label: 'Tasks', icon: CheckSquare, color: '#f59e0b' },
+    { value: 'follow-up', label: 'Follow-ups', icon: Calendar, color: '#ef4444' },
+    { value: 'internal', label: 'Internal', icon: Users, color: '#6b7280' }
+  ];
+
   return (
     <div className="space-y-6">
       {/* Quick Actions */}
-      <Card className="bg-white/10 backdrop-blur-md">
-        <h3 className="font-medium text-white mb-4">Quick Actions</h3>
-        <div className="space-y-2">
-          <button
+      <Card className="bg-[#23233a]/40 backdrop-blur-sm border border-[#23233a]/50">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-white">Quick Actions</h3>
+          <Badge variant="primary" size="sm">Smart</Badge>
+        </div>
+        <div className="space-y-3">
+          <Button
             onClick={onCreateEvent}
-            className="w-full btn-primary flex items-center justify-center space-x-2 py-3"
+            variant="gradient"
+            icon={Calendar}
+            fullWidth
           >
-            <Calendar className="w-4 h-4" />
-            <span>Create Event</span>
-          </button>
+            Create Event
+          </Button>
           
-          <button
+          <Button
             onClick={onCreateTask}
-            className="w-full btn-secondary flex items-center justify-center space-x-2 py-3"
+            variant="secondary"
+            icon={CheckSquare}
+            fullWidth
           >
-            <CheckSquare className="w-4 h-4" />
-            <span>Create Task</span>
-          </button>
+            Create Task
+          </Button>
         </div>
       </Card>
 
-      {/* Filters */}
-      <Card className="bg-white/10 backdrop-blur-md">
-        <h3 className="font-medium text-white mb-4">Filters</h3>
+      {/* Smart Filters */}
+      <Card className="bg-[#23233a]/40 backdrop-blur-sm border border-[#23233a]/50">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-white">Smart Filters</h3>
+          <Button variant="secondary" size="sm" icon={Settings}>
+            Settings
+          </Button>
+        </div>
         
         <div className="space-y-4">
+          {/* Event Type Filters */}
           <div>
-            <label className="block text-sm font-medium text-secondary-300 mb-2">
-              Event Type
+            <label className="block text-sm font-medium text-[#b0b0d0] mb-3">
+              Event Types
             </label>
-            <select
-              value={filter.event_type || ''}
-              onChange={(e) => onFilterChange({ event_type: e.target.value || undefined })}
-              className="w-full px-3 py-2 bg-secondary-700 border border-secondary-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-600"
-            >
-              <option value="">All Types</option>
-              <option value="meeting">Meetings</option>
-              <option value="call">Calls</option>
-              <option value="demo">Demos</option>
-              <option value="task">Tasks</option>
-              <option value="follow-up">Follow-ups</option>
-              <option value="internal">Internal</option>
-            </select>
+            <div className="space-y-2">
+              {eventTypeFilters.map((type) => {
+                const Icon = type.icon;
+                const isActive = filter.event_type === type.value;
+                return (
+                  <button
+                    key={type.value}
+                    onClick={() => onFilterChange({ 
+                      event_type: isActive ? undefined : type.value 
+                    })}
+                    className={`w-full flex items-center space-x-3 p-2 rounded-lg transition-all duration-200 ${
+                      isActive 
+                        ? 'bg-[#a259ff]/20 border border-[#a259ff]/30' 
+                        : 'bg-[#23233a]/30 border border-[#23233a]/30 hover:border-[#a259ff]/30'
+                    }`}
+                  >
+                    <div 
+                      className="w-6 h-6 rounded-full flex items-center justify-center"
+                      style={{ backgroundColor: `${type.color}20` }}
+                    >
+                      <Icon className="w-3 h-3" style={{ color: type.color }} />
+                    </div>
+                    <span className={`text-sm font-medium ${
+                      isActive ? 'text-white' : 'text-[#b0b0d0]'
+                    }`}>
+                      {type.label}
+                    </span>
+                    {isActive && (
+                      <div className="ml-auto">
+                        <div className="w-2 h-2 rounded-full bg-[#a259ff]"></div>
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
           
+          {/* Related To Filter */}
           <div>
-            <label className="block text-sm font-medium text-secondary-300 mb-2">
+            <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
               Related To
             </label>
             <select
               value={filter.related_to || 'all'}
               onChange={(e) => onFilterChange({ related_to: e.target.value as any })}
-              className="w-full px-3 py-2 bg-secondary-700 border border-secondary-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-600"
+              className="w-full px-3 py-2 bg-[#23233a]/50 border border-[#23233a]/30 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff] transition-all duration-200"
             >
               <option value="all">All Items</option>
               <option value="deals">Deals Only</option>
@@ -118,35 +163,36 @@ const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
             </select>
           </div>
           
-          <button
+          <Button
             onClick={() => onFilterChange({ event_type: undefined, related_to: undefined })}
-            className="w-full btn-secondary text-sm flex items-center justify-center space-x-2"
+            variant="secondary"
+            icon={Filter}
+            fullWidth
           >
-            <Filter className="w-4 h-4" />
-            <span>Reset Filters</span>
-          </button>
+            Reset Filters
+          </Button>
         </div>
       </Card>
 
       {/* Upcoming Tasks */}
-      <Card className="bg-white/10 backdrop-blur-md">
+      <Card className="bg-[#23233a]/40 backdrop-blur-sm border border-[#23233a]/50">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-medium text-white">Upcoming Tasks</h3>
-          <Badge variant="primary" size="sm">{upcomingTasks.length}</Badge>
+          <h3 className="font-semibold text-white">Upcoming Tasks</h3>
+          <Badge variant="warning" size="sm">{upcomingTasks.length}</Badge>
         </div>
         
-        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+        <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
           {upcomingTasks.map((task) => (
             <div 
               key={task.id}
-              className="p-3 bg-secondary-700 rounded-lg hover:bg-secondary-600 transition-colors cursor-pointer"
+              className="p-3 bg-[#23233a]/30 rounded-lg border border-[#23233a]/30 hover:border-[#a259ff]/30 transition-all duration-200 cursor-pointer group"
               onClick={() => onTaskClick(task)}
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <h4 className="font-medium text-white text-sm">{task.title}</h4>
-                  <div className="flex items-center space-x-2 mt-1">
-                    <div className="text-xs text-secondary-400">
+                  <h4 className="font-medium text-white text-sm mb-1">{task.title}</h4>
+                  <div className="flex items-center space-x-2">
+                    <div className="text-xs text-[#b0b0d0]">
                       {formatDueDate(task.due_date)}
                       {task.due_time && ` at ${task.due_time.substring(0, 5)}`}
                     </div>
@@ -164,76 +210,128 @@ const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
                     </Badge>
                   </div>
                 </div>
-                <button
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  icon={CheckSquare}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity"
                   onClick={(e) => {
                     e.stopPropagation();
                     onCompleteTask(task.id);
                   }}
-                  className="p-1 text-secondary-400 hover:text-green-500 transition-colors"
-                  title="Mark as complete"
-                >
-                  <CheckSquare className="w-4 h-4" />
-                </button>
+                />
               </div>
             </div>
           ))}
           
           {upcomingTasks.length === 0 && (
-            <div className="text-center py-4">
-              <CheckSquare className="w-8 h-8 text-secondary-600 mx-auto mb-2" />
-              <p className="text-secondary-400 text-sm">No upcoming tasks</p>
+            <div className="text-center py-6">
+              <CheckSquare className="w-8 h-8 text-[#b0b0d0] mx-auto mb-2" />
+              <p className="text-[#b0b0d0] text-sm">No upcoming tasks</p>
+              <p className="text-[#b0b0d0] text-xs mt-1">Create a task to get started</p>
             </div>
           )}
         </div>
         
-        <div className="mt-3">
-          <button
+        <div className="mt-4">
+          <Button
             onClick={onCreateTask}
-            className="w-full btn-secondary text-sm flex items-center justify-center space-x-2"
+            variant="secondary"
+            icon={Plus}
+            fullWidth
           >
-            <Plus className="w-4 h-4" />
-            <span>Add Task</span>
-          </button>
+            Add Task
+          </Button>
         </div>
       </Card>
 
-      {/* Guru Card */}
-      <Card className="bg-gradient-to-r from-primary-600/10 to-purple-600/10 border border-primary-600/20">
-        <div className="flex items-start space-x-3">
-          <div className="w-10 h-10 bg-primary-600/30 backdrop-blur-sm rounded-full flex items-center justify-center">
-            <Bot className="w-5 h-5 text-primary-400" />
+      {/* Guru AI Assistant */}
+      <Card className="bg-[#23233a]/40 backdrop-blur-sm border border-[#23233a]/50">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-2">
+            <Bot className="w-5 h-5 text-[#a259ff]" />
+            <h3 className="font-semibold text-white">Guru AI</h3>
+            <Badge variant="success" size="sm">Online</Badge>
           </div>
-          <div>
-            <h3 className="font-medium text-white">Guru Suggestions</h3>
-            <p className="text-secondary-300 text-sm mt-2">
-              Try asking SaleToruGuru:
-            </p>
-            <ul className="space-y-2 mt-2">
-              <li>
-                <button 
-                  onClick={() => handleGuruSuggestion("Show me overdue tasks for deals over $10K")}
-                  className="text-sm text-primary-300 hover:text-primary-200 cursor-pointer text-left"
-                >
-                  "Show me overdue tasks for deals over $10K"
-                </button>
-              </li>
-              <li>
-                <button 
-                  onClick={() => handleGuruSuggestion("Summarize my calendar for the next 7 days")}
-                  className="text-sm text-primary-300 hover:text-primary-200 cursor-pointer text-left"
-                >
-                  "Summarize my calendar for the next 7 days"
-                </button>
-              </li>
-              <li>
-                <button 
-                  onClick={() => handleGuruSuggestion("Find conflicts in my schedule this week")}
-                  className="text-sm text-primary-300 hover:text-primary-200 cursor-pointer text-left"
-                >
-                  "Find conflicts in my schedule this week"
-                </button>
-              </li>
-            </ul>
+        </div>
+        
+        <div className="space-y-3">
+          <Button
+            onClick={() => handleGuruSuggestion("What's my best time to schedule meetings this week?")}
+            variant="secondary"
+            icon={Clock}
+            fullWidth
+          >
+            Find Best Times
+          </Button>
+          
+          <Button
+            onClick={() => handleGuruSuggestion("Show me my schedule conflicts for this week")}
+            variant="secondary"
+            icon={AlertTriangle}
+            fullWidth
+          >
+            Check Conflicts
+          </Button>
+          
+          <Button
+            onClick={() => handleGuruSuggestion("Suggest time blocks for deep work")}
+            variant="secondary"
+            icon={Zap}
+            fullWidth
+          >
+            Optimize Schedule
+          </Button>
+          
+          <Button
+            onClick={openGuru}
+            variant="gradient"
+            icon={Bot}
+            fullWidth
+          >
+            Ask Guru Anything
+          </Button>
+        </div>
+      </Card>
+
+      {/* Calendar Settings */}
+      <Card className="bg-[#23233a]/40 backdrop-blur-sm border border-[#23233a]/50">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-white">Calendar Settings</h3>
+          <Button variant="secondary" size="sm" icon={Settings}>
+            Settings
+          </Button>
+        </div>
+        
+        <div className="space-y-3">
+          <div className="flex items-center justify-between p-2 bg-[#23233a]/30 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <Eye className="w-4 h-4 text-[#43e7ad]" />
+              <span className="text-sm text-white">Show Tasks in Calendar</span>
+            </div>
+            <div className="w-10 h-6 bg-[#43e7ad] rounded-full relative">
+              <div className="w-4 h-4 bg-white rounded-full absolute right-1 top-1"></div>
+            </div>
+          </div>
+          
+          <div className="flex items-center justify-between p-2 bg-[#23233a]/30 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <Users className="w-4 h-4 text-[#43e7ad]" />
+              <span className="text-sm text-white">Team Calendar Sync</span>
+            </div>
+            <div className="w-10 h-6 bg-[#43e7ad] rounded-full relative">
+              <div className="w-4 h-4 bg-white rounded-full absolute right-1 top-1"></div>
+            </div>
+          </div>
+          
+          <div className="flex items-center justify-between p-2 bg-[#23233a]/30 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <Bell className="w-4 h-4 text-[#b0b0d0]" />
+              <span className="text-sm text-white">Smart Notifications</span>
+            </div>
+            <div className="w-10 h-6 bg-[#6b7280] rounded-full relative">
+              <div className="w-4 h-4 bg-white rounded-full absolute left-1 top-1"></div>
+            </div>
           </div>
         </div>
       </Card>

@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, AlertTriangle } from 'lucide-react';
 import { Contact, ContactFormData } from '../../types/contact';
 import ContactForm from './ContactForm';
+import Button from '../ui/Button';
 import { useToastContext } from '../../contexts/ToastContext';
+import { useModal } from '../../contexts/ModalContext';
 
 interface CreateContactModalProps {
   isOpen: boolean;
@@ -20,6 +23,15 @@ const CreateContactModal: React.FC<CreateContactModalProps> = ({
   isEditing = false
 }) => {
   const { showToast } = useToastContext();
+  const { openModal, closeModal } = useModal();
+
+  // Open modal when component mounts
+  useEffect(() => {
+    if (isOpen) {
+      openModal();
+      return () => closeModal();
+    }
+  }, [isOpen, openModal, closeModal]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [duplicates, setDuplicates] = useState<Contact[]>([]);
   const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
@@ -126,17 +138,17 @@ const CreateContactModal: React.FC<CreateContactModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-secondary-800 rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+  const modalContent = (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-lg flex items-center justify-center z-[9999999] !z-[9999999] p-4">
+      <div className="bg-[#23233a]/99 backdrop-blur-2xl rounded-xl w-full max-w-4xl max-h-[95vh] overflow-y-auto border border-[#23233a]/60 shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-secondary-700">
+        <div className="flex items-center justify-between p-6 border-b border-[#23233a]/30">
           <h3 className="text-xl font-semibold text-white">
             {isEditing ? 'Edit Contact' : 'Add New Contact'}
           </h3>
           <button
             onClick={onClose}
-            className="p-2 text-secondary-400 hover:text-white hover:bg-secondary-700 rounded-lg transition-colors"
+            className="p-2 text-[#b0b0d0] hover:text-white hover:bg-[#23233a]/50 rounded-lg transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -144,39 +156,41 @@ const CreateContactModal: React.FC<CreateContactModalProps> = ({
 
         {/* Duplicate Warning */}
         {showDuplicateWarning && duplicates.length > 0 && (
-          <div className="p-6 border-b border-secondary-700 bg-yellow-900/20">
+          <div className="p-6 border-b border-[#23233a]/30 bg-[#f59e0b]/10">
             <div className="flex items-start space-x-3">
-              <AlertTriangle className="w-6 h-6 text-yellow-500 mt-1" />
+              <AlertTriangle className="w-6 h-6 text-[#f59e0b] mt-1" />
               <div className="flex-1">
                 <h4 className="font-medium text-white">Potential Duplicate Found</h4>
-                <p className="text-secondary-300 text-sm mt-1">
+                <p className="text-[#b0b0d0] text-sm mt-1">
                   We found {duplicates.length} contact{duplicates.length > 1 ? 's' : ''} with similar information:
                 </p>
                 
                 <div className="mt-3 space-y-3">
                   {duplicates.map((duplicate) => (
-                    <div key={duplicate.id} className="p-3 bg-secondary-700 rounded-lg">
+                    <div key={duplicate.id} className="p-3 bg-[#23233a]/50 rounded-lg border border-[#23233a]/30">
                       <div className="font-medium text-white">{duplicate.name}</div>
-                      <div className="text-sm text-secondary-400 mt-1">
+                      <div className="text-sm text-[#b0b0d0] mt-1">
                         {duplicate.email} • {duplicate.company} • {duplicate.position}
                       </div>
                     </div>
                   ))}
                 </div>
                 
-                <div className="flex space-x-3 mt-4">
-                  <button
+                <div className="flex flex-col sm:flex-row gap-3 mt-4">
+                  <Button
                     onClick={handleMergeDuplicate}
-                    className="btn-primary"
+                    variant="gradient"
+                    size="lg"
                   >
                     Merge Contacts
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={handleContinueWithDuplicate}
-                    className="btn-secondary"
+                    variant="secondary"
+                    size="lg"
                   >
                     Create Anyway
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -196,6 +210,8 @@ const CreateContactModal: React.FC<CreateContactModalProps> = ({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default CreateContactModal;

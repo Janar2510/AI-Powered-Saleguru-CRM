@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { BarChart, PieChart, LineChart, Target, RefreshCw, Settings, ChevronDown } from 'lucide-react';
 import * as d3 from 'd3';
-import * as THREE from 'three';
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
 import { useResizeObserver } from '../../hooks/useResizeObserver';
+import { BRAND } from '../../constants/theme';
+import ChartLegend from './ChartLegend';
 
 interface ChartData {
   id: string;
@@ -13,16 +14,23 @@ interface ChartData {
   color?: string;
 }
 
+interface AreaSeries {
+  name: string;
+  color: string;
+  values: number[];
+}
+
 interface AnalyticsChartProps {
   title?: string;
   description?: string;
-  data: ChartData[];
-  type: 'bar' | 'pie' | 'line' | 'funnel' | '3d';
+  data: ChartData[] | AreaSeries[];
+  type: 'bar' | 'pie' | 'line' | 'funnel' | '3d' | 'area';
   height?: number;
   className?: string;
   isLoading?: boolean;
   showControls?: boolean;
-  onTypeChange?: (type: 'bar' | 'pie' | 'line' | 'funnel' | '3d') => void;
+  disableCardStyling?: boolean;
+  onTypeChange?: (type: 'bar' | 'pie' | 'line' | 'funnel' | '3d' | 'area') => void;
 }
 
 const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
@@ -34,6 +42,7 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
   className = '',
   isLoading = false,
   showControls = true,
+  disableCardStyling = false,
   onTypeChange
 }) => {
   const chartRef = useRef<HTMLDivElement>(null);
@@ -41,18 +50,23 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
   const [showSettings, setShowSettings] = useState(false);
   const dimensions = useResizeObserver(chartRef);
   
-  // CRM color palette from the screenshot
+  // Vibrant color palette inspired by modern dashboards
+  const brandColors = BRAND.CHART_COLORS;
+  const brandGradients = BRAND.CHART_GRADIENTS;
+  
+  // Color palette object for compatibility
   const colorPalette = {
-    primary: '#7c3aed',      // Purple
-    secondary: '#22c55e',    // Green
-    accent: '#3b82f6',       // Blue
-    warning: '#eab308',      // Yellow
-    danger: '#ef4444',       // Red
-    orange: '#f97316',       // Orange
-    gray: '#6b7280',         // Gray
-    teal: '#14b8a6',         // Teal
-    pink: '#ec4899',         // Pink
-    indigo: '#6366f1'        // Indigo
+    primary: BRAND.COLORS.primary,
+    secondary: BRAND.COLORS.secondary,
+    accent: BRAND.COLORS.info,
+    success: BRAND.COLORS.success,
+    warning: BRAND.COLORS.warning,
+    error: BRAND.COLORS.error,
+    info: BRAND.COLORS.info,
+    ...brandColors.reduce((acc, color, index) => {
+      acc[`color${index + 1}`] = color;
+      return acc;
+    }, {} as Record<string, string>)
   };
   
   // Update chart type when prop changes
@@ -63,47 +77,68 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
   // Draw chart when data, dimensions, or chart type changes
   useEffect(() => {
     if (chartRef.current && data.length > 0 && !isLoading && dimensions) {
+      d3.select(chartRef.current).selectAll('*').remove(); // Always clear before drawing
       drawChart();
     }
+    return () => {
+      if (chartRef.current) {
+        d3.select(chartRef.current).selectAll('*').remove();
+      }
+    };
   }, [data, chartType, isLoading, dimensions]);
   
-  const handleTypeChange = (newType: 'bar' | 'pie' | 'line' | 'funnel' | '3d') => {
+  const handleTypeChange = (newType: 'bar' | 'pie' | 'line' | 'funnel' | '3d' | 'area') => {
     setChartType(newType);
     if (onTypeChange) {
       onTypeChange(newType);
     }
   };
   
+  const isAreaChart = chartType === 'area';
+  const chartDataToUse: ChartData[] = React.useMemo(() => {
+    return !isAreaChart ? (data as ChartData[]) : [];
+  }, [data, isAreaChart]);
+  const areaSeriesToUse: AreaSeries[] = React.useMemo(() => {
+    if (!isAreaChart) return [];
+    if (isAreaSeriesArray(data)) {
+      return data as AreaSeries[];
+    } else {
+      const single = data as ChartData[];
+      return single.map((d: ChartData, i: number) => ({
+        name: d.name,
+        color: brandColors[i % brandColors.length],
+        values: [d.value],
+      }));
+    }
+  }, [data, isAreaChart, brandColors]);
+
   const drawChart = () => {
     if (!chartRef.current || !dimensions) return;
-    
-    // Clear previous chart
-    d3.select(chartRef.current).selectAll('*').remove();
     
     const container = chartRef.current;
     const width = dimensions.width;
     
     if (chartType === 'bar') {
-      drawBarChart(container, width, height);
+      drawBarChart(container, width, height, chartDataToUse);
     } else if (chartType === 'pie') {
-      drawPieChart(container, width, height);
+      drawPieChart(container, width, height, chartDataToUse);
     } else if (chartType === 'line') {
-      drawLineChart(container, width, height);
+      drawLineChart(container, width, height, chartDataToUse);
     } else if (chartType === 'funnel') {
-      drawFunnelChart(container, width, height);
+      drawFunnelChart(container, width, height, chartDataToUse);
     } else if (chartType === '3d') {
       draw3DChart(container, width, height);
+    } else if (chartType === 'area') {
+      drawAreaChart(container, width, height, areaSeriesToUse);
     }
   };
   
   const getColorForIndex = (index: number, defaultColor?: string) => {
     if (defaultColor) return defaultColor;
-    
-    const colors = Object.values(colorPalette);
-    return colors[index % colors.length];
+    return brandColors[index % brandColors.length];
   };
   
-  const drawBarChart = (container: HTMLDivElement, width: number, height: number) => {
+  const drawBarChart = (container: HTMLDivElement, width: number, height: number, data: ChartData[]) => {
     const svg = d3.select(container)
       .append('svg')
       .attr('width', width)
@@ -122,6 +157,26 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
       .domain([0, maxValue * 1.1])
       .range([height - 60, 0]);
     
+    // Add gradient definitions for 3D effects
+    const defs = svg.append('defs');
+    
+    // Create gradients for each data point
+    data.forEach((d, i) => {
+      const grad = brandGradients[i % brandGradients.length];
+      // Create a unique gradient for each bar
+      const gradId = `gradient-bar-${i}`;
+      const svgDefs = d3.select(container).select('svg').select('defs');
+      if (svgDefs.empty()) {
+        d3.select(container).select('svg').append('defs');
+      }
+      const gradient = d3.select(container).select('svg').select('defs')
+        .append('linearGradient')
+        .attr('id', gradId)
+        .attr('x1', '0%').attr('y1', '0%').attr('x2', '0%').attr('y2', '100%');
+      gradient.append('stop').attr('offset', '0%').attr('stop-color', grad[0]);
+      gradient.append('stop').attr('offset', '100%').attr('stop-color', grad[1]);
+    });
+    
     // Draw bars
     svg.selectAll('.bar')
       .data(data)
@@ -132,10 +187,10 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
       .attr('width', x.bandwidth())
       .attr('y', height - 60)
       .attr('height', 0)
-      .attr('fill', (d, i) => d.color || getColorForIndex(i))
+      .attr('fill', (d, i) => getColorForIndex(i))
       .attr('rx', 4)
       .attr('ry', 4)
-      .attr('opacity', 0.8)
+      .style('filter', 'drop-shadow(0 4px 16px #a259ff66)')
       .transition()
       .duration(800)
       .delay((d, i) => i * 100)
@@ -160,22 +215,19 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
       });
     
     // Add labels
-    svg.selectAll('.label')
+    svg.selectAll('.bar-label')
       .data(data)
       .enter()
       .append('text')
-      .attr('class', 'label')
+      .attr('class', 'bar-label')
       .attr('x', d => x(d.name)! + x.bandwidth() / 2)
-      .attr('y', d => y(d.value) - 5)
+      .attr('y', d => y(d.value) - 10)
       .attr('text-anchor', 'middle')
       .attr('fill', 'white')
+      .attr('font-weight', 'bold')
       .attr('font-size', '12px')
-      .attr('opacity', 0)
-      .transition()
-      .duration(800)
-      .delay((d, i) => i * 100 + 400)
-      .attr('opacity', 1)
-      .text(d => d.value);
+      .style('text-shadow', '0 1px 2px rgba(0,0,0,0.5)')
+      .text(d => d.value.toLocaleString());
     
     // Add x-axis
     svg.append('g')
@@ -184,10 +236,11 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
       .selectAll('text')
       .attr('fill', '#94a3b8')
       .attr('font-size', '10px')
-      .attr('transform', 'rotate(-45)')
+      .attr('transform', 'rotate(-30)')
       .attr('text-anchor', 'end')
-      .attr('dx', '-.8em')
-      .attr('dy', '.15em');
+      .attr('dx', '-.6em')
+      .attr('dy', '.15em')
+      .style('font-family', 'Inter, sans-serif');
     
     // Add y-axis
     svg.append('g')
@@ -197,7 +250,7 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
       .attr('font-size', '10px');
   };
   
-  const drawPieChart = (container: HTMLDivElement, width: number, height: number) => {
+  const drawPieChart = (container: HTMLDivElement, width: number, height: number, data: ChartData[]) => {
     const svg = d3.select(container)
       .append('svg')
       .attr('width', width)
@@ -232,7 +285,7 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
     
     slices.append('path')
       .attr('d', arc)
-      .attr('fill', (d, i) => d.data.color || getColorForIndex(i))
+      .attr('fill', (d, i) => getColorForIndex(i))
       .attr('stroke', '#1e293b')
       .attr('stroke-width', 2)
       .attr('opacity', 0.8)
@@ -241,7 +294,8 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
       .attrTween('d', function(d) {
         const interpolate = d3.interpolate({startAngle: 0, endAngle: 0}, d);
         return function(t) {
-          return arc(interpolate(t));
+          const path = arc(interpolate(t));
+          return path || '';
         };
       });
     
@@ -298,7 +352,8 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
         const pos = outerArc.centroid(d);
         const midAngle = d.startAngle + (d.endAngle - d.startAngle) / 2;
         pos[0] = radius * 0.8 * (midAngle < Math.PI ? 1 : -1);
-        return [arc.centroid(d), outerArc.centroid(d), pos];
+        const pointsArr = [arc.centroid(d), outerArc.centroid(d), pos];
+        return pointsArr.map(p => p.join(',')).join(' ');
       })
       .attr('stroke', 'white')
       .attr('stroke-width', 1)
@@ -327,7 +382,7 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
       .text('Total');
   };
   
-  const drawLineChart = (container: HTMLDivElement, width: number, height: number) => {
+  const drawLineChart = (container: HTMLDivElement, width: number, height: number, data: ChartData[]) => {
     const svg = d3.select(container)
       .append('svg')
       .attr('width', width)
@@ -469,26 +524,28 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
       .attr('font-size', '10px');
   };
   
-  const drawFunnelChart = (container: HTMLDivElement, width: number, height: number) => {
+  const drawFunnelChart = (container: HTMLDivElement, width: number, height: number, data: ChartData[]) => {
+    if (!data || data.length === 0) return;
     const svg = d3.select(container)
       .append('svg')
       .attr('width', width)
       .attr('height', height)
       .append('g')
       .attr('transform', `translate(${width / 2}, 20)`);
-    
+
     // Calculate max value for scaling
     const maxValue = Math.max(...data.map(d => d.value));
-    
+    const safeMaxValue = isNaN(maxValue) || maxValue === 0 ? 1 : maxValue;
+
     // Calculate funnel dimensions
     const funnelWidth = width * 0.8;
     const stageHeight = (height - 40) / data.length;
-    
+
     // Draw funnel segments
     data.forEach((stage, i) => {
       // Calculate width based on value
-      const stageWidth = (stage.value / maxValue) * funnelWidth;
-      
+      const stageWidth = (stage.value / safeMaxValue) * funnelWidth;
+      if (!isFinite(stageWidth) || isNaN(stageWidth)) return;
       // Get color from data or use color palette
       const color = stage.color || getColorForIndex(i);
       
@@ -496,7 +553,7 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
       svg.append('rect')
         .attr('x', -stageWidth / 2)
         .attr('y', i * stageHeight)
-        .attr('width', 0)
+        .attr('width', stageWidth)
         .attr('height', stageHeight * 0.8)
         .attr('fill', color)
         .attr('rx', 4)
@@ -558,9 +615,101 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
     // In a real implementation, this would use Three.js to render a 3D chart
     // For demonstration purposes, we're just showing a placeholder
   };
+
+  function isAreaSeriesArray(data: any[]): data is AreaSeries[] {
+    return data.length > 0 && typeof data[0] === 'object' && 'values' in data[0];
+  }
+
+  const drawAreaChart = (container: HTMLDivElement, width: number, height: number, data: AreaSeries[]) => {
+    // Use string categories for x-axis
+    const categories = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const svg = d3.select(container)
+      .append('svg')
+      .attr('width', width)
+      .attr('height', height);
+    const margin = { top: 30, right: 30, bottom: 40, left: 50 };
+    const chartWidth = width - margin.left - margin.right;
+    const chartHeight = height - margin.top - margin.bottom;
+    const x = d3.scalePoint()
+      .domain(categories)
+      .range([0, chartWidth]);
+    const maxY = d3.max(data.flatMap(s => s.values)) || 60;
+    const y = d3.scaleLinear()
+      .domain([0, maxY])
+      .range([chartHeight, 0]);
+    const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+    // Draw grid
+    g.append('g')
+      .attr('class', 'grid')
+      .call(d3.axisLeft(y).ticks(6).tickSize(-chartWidth))
+      .selectAll('line')
+      .attr('stroke', '#333')
+      .attr('stroke-opacity', 0.2);
+    // Draw areas and lines
+    data.forEach((s, i) => {
+      const color = brandColors[i % brandColors.length];
+      // Area gradient
+      const gradId = `area-gradient-${i}`;
+      const defs = svg.append('defs');
+      const grad = defs.append('linearGradient')
+        .attr('id', gradId)
+        .attr('x1', '0%').attr('y1', '0%').attr('x2', '0%').attr('y2', '100%');
+      grad.append('stop').attr('offset', '0%').attr('stop-color', color).attr('stop-opacity', 0.7);
+      grad.append('stop').attr('offset', '100%').attr('stop-color', color).attr('stop-opacity', 0.2);
+      // Area
+      const area = d3.area<number>()
+        .x((d, j) => x(categories[j])!)
+        .y0(chartHeight)
+        .y1((d) => y(d))
+        .curve(d3.curveMonotoneX);
+      g.append('path')
+        .datum(s.values)
+        .attr('fill', `url(#${gradId})`)
+        .attr('d', area)
+        .attr('opacity', 0.8);
+      // Line
+      const line = d3.line<number>()
+        .x((d, j) => x(categories[j])!)
+        .y((d) => y(d))
+        .curve(d3.curveMonotoneX);
+      g.append('path')
+        .datum(s.values)
+        .attr('fill', 'none')
+        .attr('stroke', color)
+        .attr('stroke-width', 2.5)
+        .attr('filter', 'drop-shadow(0 0 8px #fff8)')
+        .attr('d', line);
+      // Dots
+      g.selectAll(`.dot-${i}`)
+        .data(s.values)
+        .enter()
+        .append('circle')
+        .attr('class', `dot-${i}`)
+        .attr('cx', (d, j) => x(categories[j])!)
+        .attr('cy', (d) => y(d))
+        .attr('r', 4)
+        .attr('fill', color)
+        .attr('stroke', '#fff')
+        .attr('stroke-width', 1.5)
+        .attr('filter', 'drop-shadow(0 0 6px #fff8)');
+    });
+    // X axis
+    g.append('g')
+      .attr('transform', `translate(0,${chartHeight})`)
+      .call(d3.axisBottom(x))
+      .selectAll('text')
+      .attr('fill', '#94a3b8')
+      .attr('font-size', '12px');
+    // Y axis
+    g.append('g')
+      .call(d3.axisLeft(y).ticks(6))
+      .selectAll('text')
+      .attr('fill', '#94a3b8')
+      .attr('font-size', '12px');
+  };
   
   return (
-    <div className={className}>
+    <div className={`${disableCardStyling ? '' : `${BRAND.DASHBOARD_LAYOUT.cardPadding} ${BRAND.DASHBOARD_LAYOUT.cardRadius} ${BRAND.DASHBOARD_LAYOUT.cardBorder} ${BRAND.DASHBOARD_LAYOUT.cardBg} ${BRAND.DASHBOARD_LAYOUT.cardShadow}`} ${className}`}>
       {title && (
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -614,6 +763,15 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
                         <span>Line Chart</span>
                       </button>
                       <button 
+                        onClick={() => handleTypeChange('area')}
+                        className={`flex items-center space-x-2 w-full p-2 rounded-lg text-left text-sm ${
+                          chartType === 'area' ? 'bg-primary-600 text-white' : 'text-secondary-300 hover:bg-secondary-700'
+                        }`}
+                      >
+                        <LineChart className="w-4 h-4" />
+                        <span>Area Chart</span>
+                      </button>
+                      <button 
                         onClick={() => handleTypeChange('funnel')}
                         className={`flex items-center space-x-2 w-full p-2 rounded-lg text-left text-sm ${
                           chartType === 'funnel' ? 'bg-primary-600 text-white' : 'text-secondary-300 hover:bg-secondary-700'
@@ -655,7 +813,35 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
           </div>
         </div>
       ) : (
-        <div ref={chartRef} style={{ height: `${height}px` }} className="transition-all duration-500"></div>
+        <>
+          <div ref={chartRef} style={{ height: `${height}px` }} className="transition-all duration-500"></div>
+          {chartType === 'bar' && (
+            <ChartLegend
+              items={(data as ChartData[]).map((d, i) => ({
+                id: d.id,
+                name: d.name,
+                color: brandColors[i % brandColors.length],
+                value: d.value,
+              }))}
+              className="mt-4"
+              showValues={true}
+              orientation="horizontal"
+            />
+          )}
+          {chartType === 'area' && (
+            <ChartLegend
+              items={areaSeriesToUse.map((s: AreaSeries, i: number) => ({
+                id: s.name,
+                name: s.name,
+                color: brandColors[i % brandColors.length],
+                value: s.values[0],
+              }))}
+              className="mt-4"
+              showValues={true}
+              orientation="horizontal"
+            />
+          )}
+        </>
       )}
     </div>
   );

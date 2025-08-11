@@ -1,13 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../services/supabase';
 import { Task, TaskFormData, TaskFilter } from '../types/task';
 import { useToastContext } from '../contexts/ToastContext';
-
-// Initialize Supabase client
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL || '',
-  import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-);
 
 export const useTasks = (initialFilter?: TaskFilter) => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -23,22 +17,10 @@ export const useTasks = (initialFilter?: TaskFilter) => {
     try {
       let query = supabase
         .from('tasks')
-        .select(`
-          *,
-          deals!tasks_deal_id_fkey (
-            title
-          ),
-          contacts!tasks_contact_id_fkey (
-            name
-          )
-        `)
+        .select('*')
         .order('due_date', { ascending: true });
       
       // Apply filters
-      if (filter.status) {
-        query = query.eq('status', filter.status);
-      }
-      
       if (filter.type) {
         query = query.eq('type', filter.type);
       }
@@ -97,9 +79,7 @@ export const useTasks = (initialFilter?: TaskFilter) => {
               .lte('due_date', nextWeekEnd.toISOString().split('T')[0]);
             break;
           case 'overdue':
-            query = query
-              .lt('due_date', today.toISOString().split('T')[0])
-              .eq('status', 'overdue');
+            query = query.lt('due_date', today.toISOString().split('T')[0]);
             break;
         }
       }
@@ -112,8 +92,8 @@ export const useTasks = (initialFilter?: TaskFilter) => {
         // Process and format the data
         const formattedTasks = data.map(task => ({
           ...task,
-          deal_title: task.deals?.title,
-          contact_name: task.contacts?.name
+          deal_title: null, // Will be populated when deals table is available
+          contact_name: null // Will be populated when contacts table is available
         }));
         
         // Check for overdue tasks and update their status
@@ -124,11 +104,13 @@ export const useTasks = (initialFilter?: TaskFilter) => {
           const dueDate = new Date(task.due_date);
           dueDate.setHours(0, 0, 0, 0);
           
-          if (dueDate < today && task.status !== 'completed' && task.status !== 'cancelled' && task.status !== 'overdue') {
-            return { ...task, status: 'overdue' as const };
+          // Determine status based on due date and completion
+          let status = task.status || 'pending';
+          if (dueDate < today && status !== 'completed' && status !== 'cancelled') {
+            status = 'overdue';
           }
           
-          return task;
+          return { ...task, status };
         });
         
         setTasks(updatedTasks);
@@ -139,7 +121,7 @@ export const useTasks = (initialFilter?: TaskFilter) => {
       showToast({
         type: 'error',
         title: 'Error',
-        message: 'Failed to load tasks'
+        description: 'Failed to load tasks'
       });
     } finally {
       setIsLoading(false);
@@ -183,7 +165,7 @@ export const useTasks = (initialFilter?: TaskFilter) => {
         showToast({
           type: 'success',
           title: 'Task Created',
-          message: 'Task has been created successfully'
+          description: 'Task has been created successfully'
         });
         
         return data;
@@ -195,7 +177,7 @@ export const useTasks = (initialFilter?: TaskFilter) => {
       showToast({
         type: 'error',
         title: 'Error',
-        message: 'Failed to create task'
+        description: 'Failed to create task'
       });
       return null;
     }
@@ -224,7 +206,7 @@ export const useTasks = (initialFilter?: TaskFilter) => {
         showToast({
           type: 'success',
           title: 'Task Updated',
-          message: 'Task has been updated successfully'
+          description: 'Task has been updated successfully'
         });
         
         return data;
@@ -236,7 +218,7 @@ export const useTasks = (initialFilter?: TaskFilter) => {
       showToast({
         type: 'error',
         title: 'Error',
-        message: 'Failed to update task'
+        description: 'Failed to update task'
       });
       return null;
     }
@@ -266,7 +248,7 @@ export const useTasks = (initialFilter?: TaskFilter) => {
         showToast({
           type: 'success',
           title: 'Task Completed',
-          message: 'Task has been marked as complete'
+          description: 'Task has been marked as complete'
         });
         
         return data;
@@ -278,7 +260,7 @@ export const useTasks = (initialFilter?: TaskFilter) => {
       showToast({
         type: 'error',
         title: 'Error',
-        message: 'Failed to complete task'
+        description: 'Failed to complete task'
       });
       return null;
     }
@@ -299,7 +281,7 @@ export const useTasks = (initialFilter?: TaskFilter) => {
       showToast({
         type: 'success',
         title: 'Task Deleted',
-        message: 'Task has been deleted successfully'
+        description: 'Task has been deleted successfully'
       });
       
       return true;
@@ -308,7 +290,7 @@ export const useTasks = (initialFilter?: TaskFilter) => {
       showToast({
         type: 'error',
         title: 'Error',
-        message: 'Failed to delete task'
+        description: 'Failed to delete task'
       });
       return false;
     }

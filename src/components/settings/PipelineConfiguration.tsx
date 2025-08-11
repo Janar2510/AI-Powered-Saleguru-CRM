@@ -2,10 +2,15 @@ import React, { useState } from 'react';
 import { Settings, Plus, GripVertical, Edit, Trash2, Target } from 'lucide-react';
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
+import Button from '../ui/Button';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { supabase } from '../../services/supabase';
+import { useEffect } from 'react';
+import { BRAND } from '../../constants/theme';
+import Modal from '../ui/Modal';
 
 interface PipelineStage {
   id: string;
@@ -90,26 +95,15 @@ const SortableStage: React.FC<{ stage: PipelineStage; onEdit: () => void; onDele
 };
 
 const PipelineConfiguration: React.FC<PipelineConfigurationProps> = ({ onChanges }) => {
-  const [pipelines, setPipelines] = useState<Pipeline[]>([
-    {
-      id: 'sales-pipeline',
-      name: 'Sales Pipeline',
-      description: 'Standard B2B sales process',
-      isDefault: true,
-      stages: [
-        { id: 'lead', name: 'Lead', color: 'bg-gray-500', probability: 10 },
-        { id: 'qualified', name: 'Qualified', color: 'bg-blue-500', probability: 25 },
-        { id: 'proposal', name: 'Proposal', color: 'bg-yellow-500', probability: 50 },
-        { id: 'negotiation', name: 'Negotiation', color: 'bg-orange-500', probability: 75 },
-        { id: 'closed-won', name: 'Closed Won', color: 'bg-green-500', probability: 100, isDefault: true },
-        { id: 'closed-lost', name: 'Closed Lost', color: 'bg-red-500', probability: 0, isDefault: true }
-      ]
-    }
-  ]);
-
-  const [activePipeline, setActivePipeline] = useState('sales-pipeline');
+  const [pipelines, setPipelines] = useState<Pipeline[]>([]);
+  const [stages, setStages] = useState<PipelineStage[]>([]);
+  const [activePipeline, setActivePipeline] = useState<string | null>(null);
   const [editingStage, setEditingStage] = useState<PipelineStage | null>(null);
   const [showStageModal, setShowStageModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [editingPipeline, setEditingPipeline] = useState<Pipeline | null>(null);
+  const [pipelineForm, setPipelineForm] = useState({ name: '', description: '', isDefault: false });
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -118,50 +112,87 @@ const PipelineConfiguration: React.FC<PipelineConfigurationProps> = ({ onChanges
     })
   );
 
+  // Fetch pipelines and stages from DB
+  useEffect(() => {
+    const fetchPipelines = async () => {
+      const { data, error } = await supabase.from('pipelines').select('*').order('id');
+      setPipelines(data || []);
+      if (data && data.length > 0 && activePipeline === null) setActivePipeline(data[0].id);
+    };
+    fetchPipelines();
+  }, []);
+
+  useEffect(() => {
+    if (activePipeline == null) return;
+    const fetchStages = async () => {
+      const { data, error } = await supabase.from('stages').select('*').eq('pipeline_id', activePipeline).order('sort_order');
+      setStages(data || []);
+    };
+    fetchStages();
+  }, [activePipeline]);
+
   const currentPipeline = pipelines.find(p => p.id === activePipeline);
 
-  const handleDragEnd = (event: any) => {
-    const { active, over } = event;
-
-    if (active.id !== over.id) {
-      const pipeline = pipelines.find(p => p.id === activePipeline);
-      if (pipeline) {
-        const oldIndex = pipeline.stages.findIndex(stage => stage.id === active.id);
-        const newIndex = pipeline.stages.findIndex(stage => stage.id === over.id);
-        
-        const newStages = arrayMove(pipeline.stages, oldIndex, newIndex);
-        
-        setPipelines(prev => prev.map(p => 
-          p.id === activePipeline 
-            ? { ...p, stages: newStages }
-            : p
-        ));
-        onChanges(true);
-      }
+  // Add, edit, delete, reorder handlers
+  const handleAddStage = async (stage: Partial<PipelineStage>) => {
+    if (!activePipeline) return;
+    const { error } = await supabase.from('stages').insert({
+      ...stage,
+      pipeline_id: activePipeline,
+      sort_order: stages.length,
+      color: stage.color || '#6b7280',
+      probability: stage.probability || 0
+    });
+    if (!error) {
+      const { data } = await supabase.from('stages').select('*').eq('pipeline_id', activePipeline).order('sort_order');
+      setStages(data || []);
     }
   };
 
-  const handleAddStage = () => {
-    setEditingStage({
-      id: '',
-      name: '',
-      color: 'bg-blue-500',
-      probability: 50
-    });
-    setShowStageModal(true);
+  const handleEditStage = async (stageId: string, updates: Partial<PipelineStage>) => {
+    const { error } = await supabase.from('stages').update(updates).eq('id', stageId);
+    if (!error) {
+      const { data } = await supabase.from('stages').select('*').eq('pipeline_id', activePipeline).order('sort_order');
+      setStages(data || []);
+    }
   };
 
-  const handleEditStage = (stage: PipelineStage) => {
-    setEditingStage(stage);
-    setShowStageModal(true);
+  const handleDeleteStage = async (stageId: string) => {
+    const { error } = await supabase.from('stages').delete().eq('id', stageId);
+    if (!error) {
+      const { data } = await supabase.from('stages').select('*').eq('pipeline_id', activePipeline).order('sort_order');
+      setStages(data || []);
+    }
   };
 
-  const handleDeleteStage = (stageId: string) => {
-    setPipelines(prev => prev.map(p => 
-      p.id === activePipeline 
-        ? { ...p, stages: p.stages.filter(s => s.id !== stageId) }
-        : p
-    ));
+  const handleDragEnd = async (event: any) => {
+    const { active, over } = event;
+    if (active.id !== over.id) {
+      const oldIndex = stages.findIndex(stage => stage.id === active.id);
+      const newIndex = stages.findIndex(stage => stage.id === over.id);
+      const newStages = arrayMove(stages, oldIndex, newIndex);
+      // Update sort_order in DB
+      for (let i = 0; i < newStages.length; i++) {
+        await supabase.from('stages').update({ sort_order: i }).eq('id', newStages[i].id);
+      }
+      setStages([...newStages]);
+    }
+  };
+
+  // Pipeline settings handlers
+  const openSettingsModal = (pipeline: Pipeline) => {
+    setEditingPipeline(pipeline);
+    setPipelineForm({ name: pipeline.name, description: pipeline.description, isDefault: pipeline.isDefault });
+    setShowSettingsModal(true);
+  };
+  const handlePipelineFormChange = (field: string, value: any) => {
+    setPipelineForm(prev => ({ ...prev, [field]: value }));
+  };
+  const handleSavePipelineSettings = async () => {
+    if (!editingPipeline) return;
+    // Update pipeline in DB (mocked here)
+    // await supabase.from('pipelines').update({ ...pipelineForm }).eq('id', editingPipeline.id);
+    setShowSettingsModal(false);
     onChanges(true);
   };
 
@@ -177,76 +208,91 @@ const PipelineConfiguration: React.FC<PipelineConfigurationProps> = ({ onChanges
   ];
 
   return (
-    <div className="space-y-6">
+    <div className={BRAND.DASHBOARD_LAYOUT.sectionSpacing}>
       {/* Pipeline Selection */}
       <Card>
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
             <Target className="w-6 h-6 text-primary-600" />
-            <h3 className="text-xl font-semibold text-white">Pipeline Configuration</h3>
+            <h3 className={BRAND.DASHBOARD_LAYOUT.headerFont + ' text-white'}>Pipeline Configuration</h3>
           </div>
-          <button className="btn-primary flex items-center space-x-2">
-            <Plus className="w-4 h-4" />
-            <span>New Pipeline</span>
-          </button>
+          <Button onClick={() => setShowCreateModal(true)} variant="gradient" size="lg" icon={Plus} className={BRAND.DASHBOARD_LAYOUT.buttonHeight + ' ' + BRAND.DASHBOARD_LAYOUT.buttonMinWidth}>
+            New Pipeline
+          </Button>
         </div>
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {pipelines.map((pipeline) => (
-            <button
-              key={pipeline.id}
-              onClick={() => setActivePipeline(pipeline.id)}
-              className={`p-4 rounded-lg border-2 text-left transition-all ${
-                activePipeline === pipeline.id
-                  ? 'border-primary-600 bg-primary-600/10'
-                  : 'border-secondary-600 hover:border-secondary-500'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="font-medium text-white">{pipeline.name}</h4>
-                {pipeline.isDefault && <Badge variant="primary" size="sm">Default</Badge>}
-              </div>
-              <p className="text-sm text-secondary-400">{pipeline.description}</p>
-              <p className="text-xs text-secondary-500 mt-2">
-                {pipeline.stages.length} stages
-              </p>
-            </button>
+            <div className="relative group" key={pipeline.id}>
+              <Button
+                onClick={() => setActivePipeline(pipeline.id)}
+                variant={activePipeline === pipeline.id ? 'gradient' : 'secondary'}
+                fullWidth
+                className="p-4 h-full text-left"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-medium text-white">{pipeline.name}</h4>
+                  {pipeline.isDefault && <Badge variant="primary" size="sm">Default</Badge>}
+                </div>
+                <p className="text-sm text-secondary-400">{pipeline.description}</p>
+                <p className="text-xs text-secondary-500 mt-2">
+                  {(pipeline.stages ? pipeline.stages.length : 0)} stages
+                </p>
+              </Button>
+              <button
+                className="absolute top-2 right-2 opacity-70 group-hover:opacity-100 transition-opacity"
+                onClick={() => openSettingsModal(pipeline)}
+                title="Edit Pipeline Settings"
+              >
+                <Settings className="w-5 h-5 text-secondary-400 hover:text-primary-400" />
+              </button>
+            </div>
           ))}
         </div>
       </Card>
-
       {/* Pipeline Stages */}
       {currentPipeline && (
         <Card>
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-xl font-semibold text-white">{currentPipeline.name} Stages</h3>
-              <p className="text-secondary-400 mt-1">Drag and drop to reorder stages</p>
+              <h3 className={BRAND.DASHBOARD_LAYOUT.headerFont + ' text-white'}>{currentPipeline.name} Stages</h3>
+              <p className={BRAND.DASHBOARD_LAYOUT.subheaderFont}>Drag and drop to reorder stages</p>
             </div>
-            <button
-              onClick={handleAddStage}
-              className="btn-primary flex items-center space-x-2"
+            <Button
+              onClick={() => {
+                setEditingStage({
+                  id: '',
+                  name: '',
+                  color: 'bg-blue-500',
+                  probability: 50
+                });
+                setShowStageModal(true);
+              }}
+              variant="gradient"
+              size="lg"
+              icon={Plus}
+              className={BRAND.DASHBOARD_LAYOUT.buttonHeight + ' ' + BRAND.DASHBOARD_LAYOUT.buttonMinWidth}
             >
-              <Plus className="w-4 h-4" />
-              <span>Add Stage</span>
-            </button>
+              Add Stage
+            </Button>
           </div>
-
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
           >
             <SortableContext
-              items={currentPipeline.stages.map(s => s.id)}
+              items={(stages || []).map(s => s.id)}
               strategy={verticalListSortingStrategy}
             >
               <div className="space-y-3">
-                {currentPipeline.stages.map((stage) => (
+                {(stages || []).map((stage) => (
                   <SortableStage
                     key={stage.id}
                     stage={stage}
-                    onEdit={() => handleEditStage(stage)}
+                    onEdit={() => {
+                      setEditingStage(stage);
+                      setShowStageModal(true);
+                    }}
                     onDelete={() => handleDeleteStage(stage.id)}
                   />
                 ))}
@@ -255,8 +301,71 @@ const PipelineConfiguration: React.FC<PipelineConfigurationProps> = ({ onChanges
           </DndContext>
         </Card>
       )}
-
-      {/* Stage Modal */}
+      {/* Analytics Mini Bar Chart */}
+      {currentPipeline && (
+        <Card>
+          <div className="mb-4">
+            <h4 className="font-semibold text-white mb-2">Deals per Stage</h4>
+            <div className="flex items-end space-x-4 h-32">
+              {/* Mock data for now: replace with real data from deals table */}
+              {(stages || []).map((stage, idx) => (
+                <div key={stage.id} className="flex flex-col items-center flex-1">
+                  <div
+                    className={`w-8 rounded-t-lg ${stage.color}`}
+                    style={{ height: `${Math.max(10, Math.random() * 100)}px` }}
+                  ></div>
+                  <span className="text-xs text-white mt-2">{stage.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Card>
+      )}
+      {/* Pipeline Settings Modal */}
+      {showSettingsModal && editingPipeline && (
+        <Modal open={showSettingsModal} onClose={() => setShowSettingsModal(false)}>
+          <div className="space-y-6">
+            <h3 className={BRAND.DASHBOARD_LAYOUT.headerFont + ' text-white'}>Edit Pipeline Settings</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-secondary-300 mb-2">Pipeline Name</label>
+                <input
+                  type="text"
+                  value={pipelineForm.name}
+                  onChange={e => handlePipelineFormChange('name', e.target.value)}
+                  className="w-full px-4 py-3 bg-secondary-700 border border-secondary-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-600"
+                  placeholder="Enter pipeline name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-secondary-300 mb-2">Description</label>
+                <textarea
+                  value={pipelineForm.description}
+                  onChange={e => handlePipelineFormChange('description', e.target.value)}
+                  className="w-full px-4 py-3 bg-secondary-700 border border-secondary-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-600"
+                  placeholder="Enter pipeline description"
+                  rows={3}
+                />
+              </div>
+              <div className="flex items-center space-x-3">
+                <input
+                  type="checkbox"
+                  checked={pipelineForm.isDefault}
+                  onChange={e => handlePipelineFormChange('isDefault', e.target.checked)}
+                  className="form-checkbox h-5 w-5 text-primary-600 rounded"
+                  id="default-pipeline"
+                />
+                <label htmlFor="default-pipeline" className="text-white text-sm">Set as default pipeline</label>
+              </div>
+            </div>
+            <div className="flex space-x-3 justify-end">
+              <Button onClick={() => setShowSettingsModal(false)} variant="secondary" size="lg">Cancel</Button>
+              <Button onClick={handleSavePipelineSettings} variant="gradient" size="lg">Save</Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+      {/* Stage Modal (unchanged) */}
       {showStageModal && editingStage && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-secondary-800 rounded-lg p-6 w-full max-w-md">
@@ -311,22 +420,26 @@ const PipelineConfiguration: React.FC<PipelineConfigurationProps> = ({ onChanges
             </div>
 
             <div className="flex space-x-3 mt-6">
-              <button
+              <Button
                 onClick={() => setShowStageModal(false)}
-                className="flex-1 btn-secondary"
+                variant="secondary"
+                size="lg"
+                className="flex-1"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => {
                   // Save logic here
                   setShowStageModal(false);
                   onChanges(true);
                 }}
-                className="flex-1 btn-primary"
+                variant="gradient"
+                size="lg"
+                className="flex-1"
               >
                 {editingStage.id ? 'Update' : 'Add'} Stage
-              </button>
+              </Button>
             </div>
           </div>
         </div>

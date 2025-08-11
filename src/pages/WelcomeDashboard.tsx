@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Users, Calendar, Target, Bot, Settings, Check, ChevronRight, FileText, Download, Upload, Zap, Sparkles, User, Video, Headset } from 'lucide-react';
+import { Plus, Users, Calendar, Target, Bot, Settings, Check, ChevronRight, FileText, Download, Upload, Zap, Sparkles, User, Video, Mail, Phone } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import { useGuru } from '../contexts/GuruContext';
@@ -284,7 +284,7 @@ const WelcomeDashboard: React.FC = () => {
         <div className="flex flex-col md:flex-row items-center justify-between">
           <div className="flex items-center space-x-4 mb-4 md:mb-0">
             <div className="w-12 h-12 bg-blue-600/30 backdrop-blur-sm rounded-full flex items-center justify-center">
-              <Headset className="w-6 h-6 text-blue-400" />
+              <Phone className="w-6 h-6 text-blue-400" />
             </div>
             <div>
               <h3 className="font-medium text-white">Need Help Getting Started?</h3>

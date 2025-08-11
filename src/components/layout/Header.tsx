@@ -1,6 +1,7 @@
 import React from 'react';
 import { Search, Bell, Menu, Calendar, Code, HelpCircle } from 'lucide-react';
 import { useGuru } from '../../contexts/GuruContext';
+import { usePlan } from '../../contexts/PlanContext';
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -8,6 +9,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const { openGuru } = useGuru();
+  const { demoMode, setDemoMode } = usePlan();
 
   return (
     <header className="bg-secondary-800 border-b border-secondary-700">
@@ -34,34 +36,35 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           </div>
 
           <div className="flex items-center space-x-2 sm:space-x-4">
-            <div className="hidden md:flex items-center space-x-2 bg-primary-600 px-3 py-1.5 rounded-lg">
+            {/* Demo/Real Mode Toggle */}
+            <button
+              onClick={() => setDemoMode(!demoMode)}
+              className={`px-3 py-1 rounded-full text-xs font-bold shadow transition-colors focus:outline-none focus:ring-2 focus:ring-accent mr-2 ${
+                demoMode ? 'bg-yellow-400 text-black' : 'bg-green-600 text-white'
+              }`}
+              title="Toggle Demo Mode"
+            >
+              {demoMode ? 'Demo Mode' : 'Real Mode'}
+            </button>
+            {/* Icons: Remove or disable non-functional ones, add TODOs for future features */}
+            {/* <div className="hidden md:flex items-center space-x-2 bg-primary-600 px-3 py-1.5 rounded-lg">
               <span className="text-white text-sm font-medium">Pro Plan</span>
-            </div>
-
+            </div> */}
             <div className="flex items-center space-x-1 sm:space-x-2">
-              <button className="p-2 rounded-lg hover:bg-secondary-700 text-secondary-400 relative touch-target" aria-label="View code">
-                <Code className="w-5 h-5" />
-              </button>
-              <button className="p-2 rounded-lg hover:bg-secondary-700 text-secondary-400 touch-target" aria-label="View calendar">
-                <Calendar className="w-5 h-5" />
-              </button>
-              <button className="p-2 rounded-lg hover:bg-secondary-700 text-secondary-400 touch-target" aria-label="Help">
-                <HelpCircle className="w-5 h-5" />
-              </button>
-              <button className="p-2 rounded-lg hover:bg-secondary-700 text-secondary-400 relative touch-target" aria-label="Notifications">
-                <Bell className="w-5 h-5" />
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
-              </button>
+              {/* TODO: Add functional icons here in the future (e.g., notifications, help) */}
             </div>
-
             <div className="flex items-center space-x-3">
               <div className="text-right hidden md:block">
                 <div className="text-sm font-medium text-white">Janar Kuusk</div>
                 <div className="text-xs text-secondary-400">janar@example.com</div>
               </div>
-              <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
+              <button
+                className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center hover:scale-105 transition-all"
+                onClick={() => window.location.href = '/settings/account'}
+                title="Account Settings"
+              >
                 <span className="text-sm font-medium text-white">JK</span>
-              </div>
+              </button>
             </div>
           </div>
         </div>
