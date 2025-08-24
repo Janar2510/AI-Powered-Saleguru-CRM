@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { List, Search } from 'lucide-react';
-import Card from '../ui/Card';
+import { Card } from '../ui/Card';
 
 const initialLogs = [
   { id: '1', date: '2024-06-20 10:12', user: 'Janar Kuusk', action: 'Invite User', details: 'Invited sarah@example.com as manager' },

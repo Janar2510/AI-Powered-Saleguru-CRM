@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../services/supabase';
-import Badge from '../ui/Badge';
+import { Badge } from '../ui/Badge';
 import { User as UserIcon, Trophy } from 'lucide-react';
 
 interface Leader {

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { ArrowRight, X, AlertTriangle, Check, Plus, Settings, Clock, GitBranch, Zap, Play, Pause, RotateCcw } from 'lucide-react';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
-import Button from '../ui/Button';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
 import { AutomationTrigger, AutomationCondition, AutomationAction } from '../../types/automation';
 
 interface AutomationFlowDesignerProps {

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Smartphone, Shield, Download, Wifi, Fingerprint, Lock, Settings, RefreshCw, AlertTriangle, Bell } from 'lucide-react';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
-import Button from '../ui/Button';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
 
 interface MobileAppManagementProps {
   onChanges: (hasChanges: boolean) => void;

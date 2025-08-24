@@ -1,521 +1,637 @@
 import React, { useState, useEffect } from 'react';
-import Container from '../components/layout/Container';
-import Card from '../components/ui/Card';
-import Button from '../components/ui/Button';
-import Spline from '@splinetool/react-spline';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { 
-  DollarSign, 
-  TrendingUp, 
-  TrendingDown, 
-  Receipt, 
-  CreditCard, 
-  Banknote,
   Calculator,
   FileText,
-  Download,
-  Upload,
-  RefreshCw,
-  Zap,
-  CheckCircle,
-  AlertCircle,
-  Target,
-  Users,
-  Calendar,
-  CheckSquare,
   BarChart3,
-  TrendingUp as TrendingUpIcon,
-  Activity,
-  Clock,
-  Shield,
-  Lock,
+  BookOpen,
+  TrendingUp,
+  DollarSign,
+  Calendar,
   Settings,
-  Bell,
-  Search,
-  Filter,
-  Eye,
-  Edit,
-  Trash2,
-  Plus,
-  MoreHorizontal,
-  PieChart,
-  LineChart,
-  BarChart,
-  Download as DownloadIcon,
-  Upload as UploadIcon,
-  Bot,
-  Sparkles,
-  Filter as FilterIcon,
-  Settings as SettingsIcon,
-  Eye as EyeIcon,
-  Edit as EditIcon,
-  Trash2 as Trash2Icon,
-  Plus as PlusIcon,
-  MoreHorizontal as MoreHorizontalIcon,
-  PieChart as PieChartIcon,
-  LineChart as LineChartIcon,
-  BarChart as BarChartIcon,
-  Download as DownloadIcon2,
-  Upload as UploadIcon2,
-  Bot as BotIcon,
-  Sparkles as SparklesIcon
+  Download,
+  Brain,
+  AlertTriangle,
+  CheckCircle,
+  RefreshCw,
+  Target,
+  TrendingDown,
+  Zap,
+  Shield,
+  Upload
 } from 'lucide-react';
-import { accountingService } from '../services/accountingService';
-import { useToastContext } from '../contexts/ToastContext';
-import BrandDesigner from '../components/BrandDesigner';
+import {
+  BrandBackground,
+  BrandPageLayout,
+  BrandCard,
+  BrandButton,
+  BrandBadge,
+  BrandStatsGrid,
+  BrandStatCard,
+  BrandInput
+} from '../contexts/BrandDesignContext';
+import { useAccountingPeriods, useFinancialReports } from '../hooks/useAccounting';
 import { useAuth } from '../contexts/AuthContext';
+import { BrandDropdown } from '../components/ui/BrandDropdown';
 
-// Quick Action Button Component
-const QuickActionButton: React.FC<{
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  onClick: () => void;
-  gradient: string;
-}> = ({ icon: Icon, label, onClick, gradient }) => (
-  <button
-    onClick={onClick}
-    className={`${gradient} p-6 rounded-xl text-white font-semibold text-lg transition-all duration-300 hover:scale-105 hover:shadow-2xl flex flex-col items-center justify-center space-y-3 min-h-[120px]`}
-  >
-    <Icon className="w-8 h-8" />
-    <span>{label}</span>
-  </button>
-);
+// Import accounting page components
+import ChartOfAccounts from './accounting/ChartOfAccounts';
+import Journals from './accounting/Journals';
+import JournalDetail from './accounting/JournalDetail';
+import TrialBalance from './accounting/TrialBalance';
+import FinancialStatements from './accounting/FinancialStatements';
+import ClosePeriod from './accounting/ClosePeriod';
+import ManualJournalEntry from './accounting/ManualJournalEntry';
 
-const Accounting: React.FC = () => {
+const AccountingDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'overview' | 'transactions' | 'reports' | 'settings' | 'analytics' | 'branding'>('overview');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [filterDate, setFilterDate] = useState('all');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [selectedTransactions, setSelectedTransactions] = useState<string[]>([]);
-  const [showFilters, setShowFilters] = useState(false);
+  const { periods, loading: periodsLoading } = useAccountingPeriods();
+  const { generateReport } = useFinancialReports();
+  
+  const [selectedPeriod, setSelectedPeriod] = useState('');
+  const [showSettings, setShowSettings] = useState(false);
+  const [aiInsights, setAiInsights] = useState<any[]>([]);
+  const [financialData, setFinancialData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [aiLoading, setAiLoading] = useState(false);
-  const [invoices, setInvoices] = useState<any[]>([]);
-  const [payments, setPayments] = useState<any[]>([]);
-  const [analytics, setAnalytics] = useState<any>(null);
-  const { showToast } = useToastContext();
+  const [viewMode, setViewMode] = useState('dashboard');
 
+  // Set default period when periods load
   useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    try {
-      const [invoicesData, paymentsData, analyticsData] = await Promise.all([
-        accountingService.getInvoices(),
-        accountingService.getPayments(),
-        accountingService.getFinancialSummary()
-      ]);
-      setInvoices(invoicesData);
-      setPayments(paymentsData);
-      setAnalytics(analyticsData);
-    } catch (error) {
-      console.error('Error loading accounting data:', error);
-      showToast({ title: 'Error loading data', type: 'error' });
+    if (periods.length > 0 && !selectedPeriod) {
+      const currentPeriod = periods.find(p => p.status === 'open') || periods[0];
+      setSelectedPeriod(currentPeriod.code);
     }
+  }, [periods, selectedPeriod]);
+
+  // Load financial data when period changes
+  useEffect(() => {
+    if (selectedPeriod && user?.org_id) {
+      loadFinancialData();
+    }
+  }, [selectedPeriod, user?.org_id]);
+
+  const loadFinancialData = async () => {
+    if (!user?.org_id || !selectedPeriod) return;
+    
+    try {
+      setLoading(true);
+      const data = await generateReport(user.org_id, 'all', selectedPeriod);
+      setFinancialData(data);
+      await generateAIInsights(data);
+    } catch (error) {
+      console.error('Failed to load financial data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generateAIInsights = async (data: any) => {
+    setAiLoading(true);
+    
+    // Simulate AI processing time
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    const insights = [];
+    
+    if (data?.profit_loss) {
+      const profitMargin = ((data.profit_loss.profit_cents / Math.max(data.profit_loss.revenue_cents, 1)) * 100).toFixed(1);
+      insights.push({
+        type: 'profitability',
+        title: 'Profit Margin Analysis',
+        message: `Current profit margin is ${profitMargin}%. ${parseFloat(profitMargin) > 15 ? 'Strong profitability!' : 'Consider cost optimization.'}`
+      });
+    }
+    
+    if (data?.aging) {
+      const overdueAR = data.aging.filter((a: any) => a.account_type === 'AR' && a.days_outstanding > 30);
+      if (overdueAR.length > 0) {
+        insights.push({
+          type: 'cash_flow',
+          title: 'Accounts Receivable Alert',
+          message: `${overdueAR.length} invoices are overdue by more than 30 days. Consider follow-up actions.`
+        });
+      }
+    }
+    
+    insights.push({
+      type: 'recommendation',
+      title: 'Tax Optimization',
+      message: 'Consider prepaying Q1 expenses to optimize current period tax liability.'
+    });
+    
+    setAiInsights(insights);
+    setAiLoading(false);
+  };
+
+  // Calculate stats from real data or use defaults
+  const stats = financialData ? {
+    totalRevenue: Math.round((financialData.profit_loss?.revenue_cents || 0) / 100),
+    totalExpenses: Math.round((financialData.profit_loss?.expense_cents || 0) / 100),
+    netProfit: Math.round((financialData.profit_loss?.profit_cents || 0) / 100),
+    cashFlow: Math.round((financialData.profit_loss?.profit_cents || 0) / 100 * 1.2),
+    accountsReceivable: Math.round((financialData.trial_balance?.find((t: any) => t.code === '1100')?.balance_cents || 0) / 100),
+    accountsPayable: Math.round(Math.abs((financialData.trial_balance?.find((t: any) => t.code === '2000')?.balance_cents || 0)) / 100),
+    currentRatio: 2.3,
+    grossMargin: 35.2
+  } : {
+    totalRevenue: 125000,
+    totalExpenses: 87500,
+    netProfit: 37500,
+    cashFlow: 45000,
+    accountsReceivable: 23000,
+    accountsPayable: 15500,
+    currentRatio: 2.3,
+    grossMargin: 35.2
   };
 
   const quickActions = [
     { 
-      icon: Receipt, 
-      label: 'New Invoice', 
-      gradient: 'bg-gradient-to-br from-purple-500 via-purple-600 to-indigo-700 hover:from-purple-600 hover:via-purple-700 hover:to-indigo-800',
-      action: async () => {
-        try {
-          const newInvoice = await accountingService.createInvoice({
-            number: `INV${Date.now()}`,
-            customer_name: 'New Customer',
-            amount: 0,
-            status: 'draft',
-            date: new Date().toISOString().split('T')[0]
-          });
-          setInvoices(prev => [newInvoice, ...prev]);
-          showToast({ title: 'Invoice created successfully', type: 'success' });
-        } catch (error) {
-          console.error('Error creating invoice:', error);
-          showToast({ title: 'Error creating invoice', type: 'error' });
-        }
-      }
+      title: 'Chart of Accounts',
+      description: 'Manage your account structure',
+      icon: BookOpen,
+      color: 'primary' as const,
+      path: '/accounting/chart'
     },
-    { 
-      icon: CreditCard, 
-      label: 'Record Payment', 
-      gradient: 'bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-700 hover:from-emerald-600 hover:via-emerald-700 hover:to-teal-800',
-      action: async () => {
-        try {
-          const newPayment = await accountingService.createPayment({
-            reference: `PAY${Date.now()}`,
-            amount: 0,
-            status: 'pending',
-            payment_method: 'bank_transfer'
-          });
-          setPayments(prev => [newPayment, ...prev]);
-          showToast({ title: 'Payment recorded successfully', type: 'success' });
-        } catch (error) {
-          console.error('Error recording payment:', error);
-          showToast({ title: 'Error recording payment', type: 'error' });
-        }
-      }
+    {
+      title: 'Journal Entries',
+      description: 'View and create journal entries',
+      icon: FileText,
+      color: 'secondary' as const,
+      path: '/accounting/journals'
     },
-    { 
-      icon: Calculator, 
-      label: 'Financial Reports', 
-      gradient: 'bg-gradient-to-br from-blue-500 via-blue-600 to-cyan-700 hover:from-blue-600 hover:via-blue-700 hover:to-cyan-800',
-      action: () => setActiveTab('reports')
+    {
+      title: 'Trial Balance',
+      description: 'Review account balances',
+      icon: BarChart3,
+      color: 'green' as const,
+      path: '/accounting/trial-balance'
     },
-    { 
-      icon: Bot, 
-      label: 'AI Analytics', 
-      gradient: 'bg-gradient-to-br from-orange-500 via-orange-600 to-red-600 hover:from-orange-600 hover:via-orange-700 hover:to-red-700',
-      action: () => setActiveTab('analytics')
+    {
+      title: 'Financial Statements',
+      description: 'P&L, Balance Sheet, Cash Flow',
+      icon: TrendingUp,
+      color: 'blue' as const,
+      path: '/accounting/financials'
     },
+    {
+      title: 'Manual Entry',
+      description: 'Create manual journal entries',
+      icon: Calculator,
+      color: 'purple' as const,
+      path: '/accounting/manual-entry'
+    },
+    {
+      title: 'Close Period',
+      description: 'Close accounting periods',
+      icon: Calendar,
+      color: 'orange' as const,
+      path: '/accounting/close-period'
+    }
   ];
 
-  const handleBulkAction = (action: string) => {
-    console.log(`Bulk action: ${action}`);
-  };
-
-  const handleAIAnalysis = async () => {
-    setAiLoading(true);
-    try {
-      // Simulate AI analysis
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      showToast({ title: 'AI analysis completed', type: 'success' });
-    } catch (error) {
-      showToast({ title: 'AI analysis failed', type: 'error' });
-    } finally {
-      setAiLoading(false);
+  const recentActivity = [
+    {
+      id: 1,
+      type: 'invoice',
+      description: 'Invoice #INV-2025-001 posted',
+      amount: 2500,
+      date: new Date().toISOString(),
+      status: 'completed'
+    },
+    {
+      id: 2,
+      type: 'payment',
+      description: 'Payment received from Customer ABC',
+      amount: 1800,
+      date: new Date(Date.now() - 86400000).toISOString(),
+      status: 'completed'
+    },
+    {
+      id: 3,
+      type: 'expense',
+      description: 'Office rent expense recorded',
+      amount: -1200,
+      date: new Date(Date.now() - 172800000).toISOString(),
+      status: 'completed'
     }
-  };
+  ];
 
   return (
-    <Container>
-      <div className="min-h-screen bg-[#0f172a] text-white relative overflow-hidden">
-        {/* Spline Background */}
-        <div className="fixed inset-0 z-0">
-          <Spline
-            scene="https://prod.spline.design/n0GFhlzrcT-MOycs/scene.splinecode"
-            className="w-full h-full"
-          />
-        </div>
-        
-        {/* Gradient Overlay */}
-        <div className="fixed inset-0 bg-gradient-to-b from-[#18182c]/50 to-[#18182c]/70 z-0"></div>
-        
-        {/* Content */}
-        <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
-          <div className="space-y-4 sm:space-y-6 animate-fade-in">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-white">Accounting</h1>
-            <p className="text-[#b0b0d0] mt-2">Manage invoices, payments, and financial reports</p>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Button variant="secondary" onClick={handleAIAnalysis} disabled={aiLoading}>
-              <Bot className="w-4 h-4 mr-2" />
-              {aiLoading ? 'Analyzing...' : 'AI Analysis'}
-            </Button>
-            <Button variant="primary">
-              <Plus className="w-4 h-4 mr-2" />
-              New Transaction
-            </Button>
-          </div>
-        </div>
+    <BrandBackground>
+      <BrandPageLayout
+        title="Accounting Dashboard"
+        subtitle="Complete financial management and reporting"
+                actions={
+          <div className="flex items-center space-x-3">
+            {/* Period Selector */}
+            <div className="w-48">
+              <BrandDropdown
+                options={periods.map(period => ({
+                  value: period.code,
+                  label: period.code,
+                  badge: period.status,
+                  description: `${new Date(period.start_date).toLocaleDateString()} - ${new Date(period.end_date).toLocaleDateString()}`
+                }))}
+                value={selectedPeriod}
+                onChange={setSelectedPeriod}
+                placeholder="Select Period"
+                disabled={periodsLoading}
+              />
+            </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {quickActions.map((action, index) => (
-            <QuickActionButton
-              key={index}
-              icon={action.icon}
-              label={action.label}
-              onClick={action.action}
-              gradient={action.gradient}
+            {/* View Mode Selector */}
+            <div className="w-40">
+              <BrandDropdown
+                options={[
+                  { value: 'dashboard', label: 'Dashboard' },
+                  { value: 'summary', label: 'Summary' },
+                  { value: 'detailed', label: 'Detailed' }
+                ]}
+                value={viewMode}
+                onChange={setViewMode}
+                placeholder="View Mode"
+              />
+            </div>
+
+            <BrandButton 
+              variant="secondary" 
+              onClick={() => setShowSettings(!showSettings)}
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              Settings
+            </BrandButton>
+            
+            <BrandButton 
+              variant="secondary"
+              onClick={loadFinancialData}
+              disabled={loading}
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              {loading ? 'Loading...' : 'Refresh'}
+            </BrandButton>
+            
+            <BrandButton 
+              variant="secondary"
+              onClick={() => {
+                const csvData = 'Period,Revenue,Expenses,Profit\n' + 
+                  `${selectedPeriod},${stats.totalRevenue},${stats.totalExpenses},${stats.netProfit}`;
+                const blob = new Blob([csvData], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `financial-summary-${selectedPeriod}.csv`;
+                a.click();
+              }}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Export
+            </BrandButton>
+            
+            <BrandButton variant="primary" onClick={() => navigate('/accounting/manual-entry')}>
+              <Calculator className="w-4 h-4 mr-2" />
+              New Entry
+            </BrandButton>
+          </div>
+        }
+      >
+        {/* Financial Overview Stats */}
+        <BrandStatsGrid className="mb-8">
+                      <BrandStatCard
+              title="Total Revenue"
+              value={`€${stats.totalRevenue.toLocaleString()}`}
+              icon={<TrendingUp className="w-8 h-8 text-green-400" />}
+              trend={loading ? undefined : "+12.5%"}
             />
-          ))}
-        </div>
+            <BrandStatCard
+              title="Total Expenses"
+              value={`€${stats.totalExpenses.toLocaleString()}`}
+              icon={<TrendingDown className="w-8 h-8 text-red-400" />}
+              trend={loading ? undefined : "+8.3%"}
+            />
+            <BrandStatCard
+              title="Net Profit"
+              value={`€${stats.netProfit.toLocaleString()}`}
+              icon={<BarChart3 className="w-8 h-8 text-blue-400" />}
+              trend={loading ? undefined : "+23.1%"}
+            />
+            <BrandStatCard
+              title="Cash Flow"
+              value={`€${stats.cashFlow.toLocaleString()}`}
+              icon={<DollarSign className="w-8 h-8 text-yellow-400" />}
+              trend={loading ? undefined : "+15.7%"}
+            />
+            <BrandStatCard
+              title="Accounts Receivable"
+              value={`€${stats.accountsReceivable.toLocaleString()}`}
+              icon={<FileText className="w-8 h-8 text-orange-400" />}
+            />
+            <BrandStatCard
+              title="Accounts Payable"
+              value={`€${stats.accountsPayable.toLocaleString()}`}
+              icon={<Calendar className="w-8 h-8 text-purple-400" />}
+            />
+        </BrandStatsGrid>
 
-        {/* Analytics Overview */}
-        {analytics && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card>
-              <div className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-[#b0b0d0] text-sm">Total Invoices</p>
-                    <p className="text-2xl font-bold text-white">{analytics.totalInvoices}</p>
-                  </div>
-                  <Receipt className="w-8 h-8 text-purple-400" />
-                </div>
-              </div>
-            </Card>
-            <Card>
-              <div className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-[#b0b0d0] text-sm">Total Revenue</p>
-                    <p className="text-2xl font-bold text-white">€{analytics.totalAmount?.toLocaleString()}</p>
-                  </div>
-                  <TrendingUp className="w-8 h-8 text-green-400" />
-                </div>
-              </div>
-            </Card>
-            <Card>
-              <div className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-[#b0b0d0] text-sm">Paid Amount</p>
-                    <p className="text-2xl font-bold text-white">€{analytics.paidAmount?.toLocaleString()}</p>
-                  </div>
-                  <CheckCircle className="w-8 h-8 text-blue-400" />
-                </div>
-              </div>
-            </Card>
-            <Card>
-              <div className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-[#b0b0d0] text-sm">Outstanding</p>
-                    <p className="text-2xl font-bold text-white">€{analytics.outstandingAmount?.toLocaleString()}</p>
-                  </div>
-                  <AlertCircle className="w-8 h-8 text-orange-400" />
-                </div>
-              </div>
-            </Card>
+                {/* AI Insights */}
+        <BrandCard borderGradient="accent" className="p-6 mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-semibold text-white flex items-center">
+              <Brain className="w-5 h-5 mr-2 text-purple-300" />
+              AI Financial Insights
+            </h3>
+            <BrandButton 
+              variant="secondary" 
+              onClick={() => generateAIInsights(financialData)}
+              disabled={aiLoading}
+              size="sm"
+            >
+              {aiLoading ? (
+                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Brain className="w-4 h-4 mr-2" />
+              )}
+              {aiLoading ? 'Analyzing...' : 'Generate Insights'}
+            </BrandButton>
           </div>
-        )}
-
-        {/* Tabs */}
-        <div className="bg-[#23233a]/60 backdrop-blur-sm rounded-lg border border-[#23233a]/50">
-          <div className="flex border-b border-[#23233a]/30">
-            {[
-              { key: 'overview', label: 'Overview', icon: BarChart3 },
-              { key: 'transactions', label: 'Transactions', icon: Activity },
-              { key: 'reports', label: 'Reports', icon: FileText },
-              { key: 'settings', label: 'Settings', icon: Settings },
-              { key: 'analytics', label: 'Analytics', icon: TrendingUp },
-              { key: 'branding', label: 'Branding', icon: Settings }
-            ].map(({ key, label, icon: Icon }) => (
-              <button
-                key={key}
-                onClick={() => setActiveTab(key as any)}
-                className={`flex items-center space-x-2 px-6 py-4 text-sm font-medium transition-colors ${
-                  activeTab === key
-                    ? 'text-white border-b-2 border-purple-500'
-                    : 'text-[#b0b0d0] hover:text-white'
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                <span>{label}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* Tab Content */}
-          <div className="p-6">
-            {activeTab === 'overview' && (
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Recent Invoices */}
-                  <Card>
-                    <div className="p-6">
-                      <h3 className="text-xl font-semibold text-white mb-4">Recent Invoices</h3>
-                      <div className="space-y-3">
-                        {invoices.slice(0, 5).map((invoice) => (
-                          <div key={invoice.id} className="flex items-center justify-between p-3 bg-[#23233a]/30 rounded-lg">
-                            <div>
-                              <p className="text-white font-medium">{invoice.number}</p>
-                              <p className="text-[#b0b0d0] text-sm">{invoice.customer_name}</p>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-white font-medium">€{invoice.amount}</p>
-                              <span className={`text-xs px-2 py-1 rounded ${
-                                invoice.status === 'paid' ? 'bg-green-500/20 text-green-400' :
-                                invoice.status === 'sent' ? 'bg-blue-500/20 text-blue-400' :
-                                'bg-orange-500/20 text-orange-400'
-                              }`}>
-                                {invoice.status}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+          
+          {aiLoading ? (
+            <div className="text-center py-8">
+              <RefreshCw className="w-8 h-8 animate-spin text-[#a259ff] mx-auto mb-4" />
+              <p className="text-[#b0b0d0]">AI is analyzing your financial data...</p>
+            </div>
+          ) : aiInsights.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {aiInsights.map((insight, index) => (
+                <div key={index} className="p-4 bg-white/5 rounded-lg border border-white/10">
+                  <div className="flex items-start space-x-3">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                      insight.type === 'profitability' ? 'bg-green-500/20' :
+                      insight.type === 'cash_flow' ? 'bg-yellow-500/20' :
+                      'bg-blue-500/20'
+                    }`}>
+                      {insight.type === 'profitability' ? 
+                        <TrendingUp className="w-4 h-4 text-green-400" /> :
+                        insight.type === 'cash_flow' ? 
+                        <AlertTriangle className="w-4 h-4 text-yellow-400" /> :
+                        <Target className="w-4 h-4 text-blue-400" />
+                      }
                     </div>
-                  </Card>
-
-                  {/* Recent Payments */}
-                  <Card>
-                    <div className="p-6">
-                      <h3 className="text-xl font-semibold text-white mb-4">Recent Payments</h3>
-                      <div className="space-y-3">
-                        {payments.slice(0, 5).map((payment) => (
-                          <div key={payment.id} className="flex items-center justify-between p-3 bg-[#23233a]/30 rounded-lg">
-                            <div>
-                              <p className="text-white font-medium">{payment.reference}</p>
-                              <p className="text-[#b0b0d0] text-sm">{payment.payment_method}</p>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-white font-medium">€{payment.amount}</p>
-                              <span className={`text-xs px-2 py-1 rounded ${
-                                payment.status === 'completed' ? 'bg-green-500/20 text-green-400' :
-                                'bg-orange-500/20 text-orange-400'
-                              }`}>
-                                {payment.status}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                    <div className="flex-1">
+                      <h4 className="text-sm font-medium text-white mb-1">{insight.title}</h4>
+                      <p className="text-xs text-[#b0b0d0]">{insight.message}</p>
                     </div>
-                  </Card>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'transactions' && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-semibold text-white">All Transactions</h3>
-                  <div className="flex items-center space-x-2">
-                    <Button variant="secondary" size="sm">
-                      <Filter className="w-4 h-4 mr-2" />
-                      Filter
-                    </Button>
-                    <Button variant="secondary" size="sm">
-                      <Download className="w-4 h-4 mr-2" />
-                      Export
-                    </Button>
                   </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Brain className="w-12 h-12 text-[#a259ff] mx-auto mb-4" />
+              <p className="text-[#b0b0d0]">Click "Generate Insights" to get AI-powered financial analysis</p>
+            </div>
+          )}
+        </BrandCard>
+
+        {/* Beautiful Quick Actions Bar */}
+        <BrandCard borderGradient="accent" className="p-4 mb-8">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-white flex items-center">
+              <Zap className="w-5 h-5 mr-2 text-purple-400" />
+              Quick Actions
+            </h3>
+            <div className="flex space-x-3">
+              {quickActions.map((action) => {
+                const IconComponent = action.icon;
+                return (
+                  <BrandButton
+                    key={action.path}
+                    variant="secondary"
+                    onClick={() => navigate(action.path)}
+                    className="h-12 px-4 flex items-center space-x-2 hover:scale-105 transition-transform"
+                  >
+                    <IconComponent className={`w-4 h-4 ${
+                      action.color === 'blue' ? 'text-blue-400' :
+                      action.color === 'green' ? 'text-green-400' :
+                      action.color === 'purple' ? 'text-purple-400' :
+                      action.color === 'orange' ? 'text-orange-400' :
+                      'text-gray-400'
+                    }`} />
+                    <span className="text-sm">{action.title}</span>
+                  </BrandButton>
+                );
+              })}
+            </div>
+          </div>
+        </BrandCard>
+
+        {/* Settings Modal */}
+        {showSettings && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <BrandCard borderGradient="primary" className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-semibold text-white flex items-center">
+                    <Settings className="w-5 h-5 mr-2" />
+                    Accounting Settings
+                  </h3>
+                  <button
+                    onClick={() => setShowSettings(false)}
+                    className="text-[#b0b0d0] hover:text-white"
+                  >
+                    ✕
+                  </button>
                 </div>
                 
-                <div className="bg-[#23233a]/30 rounded-lg p-6">
-                  <p className="text-[#b0b0d0] text-center">Transaction list will be implemented here</p>
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="text-lg font-medium text-white mb-4">General Settings</h4>
+                    <div className="space-y-4">
+                                            <div>
+                        <BrandDropdown
+                          label="Default Currency"
+                          options={[
+                            { value: 'EUR', label: 'EUR (€)', description: 'Euro' },
+                            { value: 'USD', label: 'USD ($)', description: 'US Dollar' },
+                            { value: 'GBP', label: 'GBP (£)', description: 'British Pound' }
+                          ]}
+                          value="EUR"
+                          onChange={() => {}}
+                        />
+                      </div>
+                      
+                      <div>
+                        <BrandDropdown
+                          label="Fiscal Year Start"
+                          options={[
+                            { value: '1', label: 'January', description: 'Calendar year' },
+                            { value: '4', label: 'April', description: 'UK tax year' },
+                            { value: '7', label: 'July', description: 'Australia/NZ' },
+                            { value: '10', label: 'October', description: 'Custom period' }
+                          ]}
+                          value="1"
+                          onChange={() => {}}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 className="text-lg font-medium text-white mb-4">Tax Settings</h4>
+                    <div className="space-y-4">
+                                                  <div>
+                        <BrandDropdown
+                          label="Country/Region"
+                          options={[
+                            { value: 'EE', label: 'Estonia', description: '20% VAT' },
+                            { value: 'DE', label: 'Germany', description: '19% VAT' },
+                            { value: 'FR', label: 'France', description: '20% VAT' },
+                            { value: 'US', label: 'United States', description: 'Sales tax varies' }
+                          ]}
+                          value="EE"
+                          onChange={() => {}}
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
+                          Default VAT Rate (%)
+                        </label>
+                        <BrandInput
+                          type="number"
+                          placeholder="20"
+                          value="20"
+                          onChange={() => {}}
+                        />
+                      </div>
                 </div>
+              </div>
+                  
+                  <div className="flex justify-end space-x-3 pt-4 border-t border-white/20">
+                    <BrandButton variant="secondary" onClick={() => setShowSettings(false)}>
+                      Cancel
+                    </BrandButton>
+                    <BrandButton variant="primary" onClick={() => setShowSettings(false)}>
+                      Save Settings
+                    </BrandButton>
+                  </div>
+                </div>
+              </div>
+            </BrandCard>
               </div>
             )}
 
-            {activeTab === 'reports' && (
-              <div className="space-y-6">
-                <h3 className="text-xl font-semibold text-white">Financial Reports</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  <Card>
-                    <div className="p-6 text-center">
-                      <BarChart className="w-12 h-12 text-blue-400 mx-auto mb-4" />
-                      <h4 className="text-white font-semibold mb-2">Revenue Report</h4>
-                      <p className="text-[#b0b0d0] text-sm">Monthly revenue analysis</p>
+        {/* Recent Activity & Financial Health */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Recent Activity */}
+          <BrandCard borderGradient="secondary" className="p-6">
+            <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
+              <FileText className="w-5 h-5 mr-2" />
+              Recent Activity
+            </h3>
+            <div className="space-y-4">
+              {recentActivity.map((activity) => (
+                <div key={activity.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                                <div className="flex items-center space-x-3">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                  activity.type === 'invoice' ? 'bg-blue-500/20' :
+                  activity.type === 'payment' ? 'bg-green-500/20' :
+                  'bg-orange-500/20'
+                }`}>
+                  {activity.type === 'invoice' ? <FileText className="w-4 h-4 text-blue-400" /> :
+                   activity.type === 'payment' ? <DollarSign className="w-4 h-4 text-green-400" /> :
+                   <TrendingDown className="w-4 h-4 text-orange-400" />}
                     </div>
-                  </Card>
-                  <Card>
-                    <div className="p-6 text-center">
-                      <PieChart className="w-12 h-12 text-green-400 mx-auto mb-4" />
-                      <h4 className="text-white font-semibold mb-2">Payment Analysis</h4>
-                      <p className="text-[#b0b0d0] text-sm">Payment method breakdown</p>
-                    </div>
-                  </Card>
-                  <Card>
-                    <div className="p-6 text-center">
-                      <LineChart className="w-12 h-12 text-purple-400 mx-auto mb-4" />
-                      <h4 className="text-white font-semibold mb-2">Cash Flow</h4>
-                      <p className="text-[#b0b0d0] text-sm">Cash flow projections</p>
-                    </div>
-                  </Card>
+                <div>
+                  <p className="text-white text-sm font-medium">{activity.description}</p>
+                  <p className="text-[#b0b0d0] text-xs">
+                    {new Date(activity.date).toLocaleDateString()}
+                  </p>
                 </div>
               </div>
-            )}
+                  <div className={`text-sm font-medium ${
+                    activity.amount > 0 ? 'text-green-400' : 'text-red-400'
+                  }`}>
+                    {activity.amount > 0 ? '+' : ''}€{Math.abs(activity.amount).toLocaleString()}
+                        </div>
+                      </div>
+              ))}
+                    </div>
+          </BrandCard>
 
-            {activeTab === 'settings' && (
-              <div className="space-y-6">
-                <h3 className="text-xl font-semibold text-white">Accounting Settings</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Card>
-                    <div className="p-6">
-                      <h4 className="text-white font-semibold mb-4">General Settings</h4>
+          {/* Financial Health */}
+          <BrandCard borderGradient="accent" className="p-6">
+            <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
+              <AlertTriangle className="w-5 h-5 mr-2" />
+              Financial Health
+            </h3>
                       <div className="space-y-4">
-                        <div>
-                          <label className="text-[#b0b0d0] text-sm">Default Currency</label>
-                          <select className="w-full mt-1 bg-[#23233a] border border-[#23233a]/50 rounded-lg px-3 py-2 text-white">
-                            <option>EUR</option>
-                            <option>USD</option>
-                            <option>GBP</option>
-                          </select>
+              <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center">
+                    <CheckCircle className="w-4 h-4 text-green-400" />
                         </div>
                         <div>
-                          <label className="text-[#b0b0d0] text-sm">Tax Rate (%)</label>
-                          <input type="number" className="w-full mt-1 bg-[#23233a] border border-[#23233a]/50 rounded-lg px-3 py-2 text-white" defaultValue="21" />
-                        </div>
-                      </div>
+                    <p className="text-white text-sm font-medium">Current Ratio</p>
+                    <p className="text-[#b0b0d0] text-xs">Assets vs Liabilities</p>
                     </div>
-                  </Card>
-                  <Card>
-                    <div className="p-6">
-                      <h4 className="text-white font-semibold mb-4">Invoice Settings</h4>
-                      <div className="space-y-4">
-                        <div>
-                          <label className="text-[#b0b0d0] text-sm">Invoice Number Prefix</label>
-                          <input type="text" className="w-full mt-1 bg-[#23233a] border border-[#23233a]/50 rounded-lg px-3 py-2 text-white" defaultValue="INV" />
-                        </div>
-                        <div>
-                          <label className="text-[#b0b0d0] text-sm">Payment Terms (days)</label>
-                          <input type="number" className="w-full mt-1 bg-[#23233a] border border-[#23233a]/50 rounded-lg px-3 py-2 text-white" defaultValue="30" />
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
                 </div>
+                <BrandBadge variant="success">{stats.currentRatio}</BrandBadge>
               </div>
-            )}
+              
+              <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center">
+                    <TrendingUp className="w-4 h-4 text-green-400" />
+                      </div>
+                  <div>
+                    <p className="text-white text-sm font-medium">Gross Margin</p>
+                    <p className="text-[#b0b0d0] text-xs">Revenue efficiency</p>
+                    </div>
+                </div>
+                <BrandBadge variant="success">{stats.grossMargin}%</BrandBadge>
+              </div>
 
-            {activeTab === 'analytics' && (
-              <div className="space-y-6">
-                <h3 className="text-xl font-semibold text-white">AI-Powered Analytics</h3>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <Card>
-                    <div className="p-6">
-                      <h4 className="text-white font-semibold mb-4">Revenue Trends</h4>
-                      <div className="h-64 bg-[#23233a]/30 rounded-lg flex items-center justify-center">
-                        <p className="text-[#b0b0d0]">Chart will be implemented here</p>
-                      </div>
+              <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                    <Shield className="w-4 h-4 text-blue-400" />
                     </div>
-                  </Card>
-                  <Card>
-                    <div className="p-6">
-                      <h4 className="text-white font-semibold mb-4">Payment Analysis</h4>
-                      <div className="h-64 bg-[#23233a]/30 rounded-lg flex items-center justify-center">
-                        <p className="text-[#b0b0d0]">Chart will be implemented here</p>
-                      </div>
+                  <div>
+                    <p className="text-white text-sm font-medium">Tax Compliance</p>
+                    <p className="text-[#b0b0d0] text-xs">VAT and tax filings</p>
                     </div>
-                  </Card>
                 </div>
+                <BrandBadge variant="info">Current</BrandBadge>
               </div>
-            )}
+          </div>
+          </BrandCard>
+        </div>
+      </BrandPageLayout>
+    </BrandBackground>
+  );
+};
 
-            {activeTab === 'branding' && (
-              <div className="space-y-6">
-                <h3 className="text-xl font-semibold text-white">Document Branding</h3>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <Card>
-                    <div className="p-6">
-                      <BrandDesigner userId={user?.id || ''} onChange={() => {}} />
-                    </div>
-                  </Card>
-                  <Card>
-                    <div className="p-6">
-                      <h4 className="text-white font-semibold mb-4">Brand Preview</h4>
-                      <div className="h-64 bg-[#23233a]/30 rounded-lg flex items-center justify-center">
-                        <p className="text-[#b0b0d0]">Brand preview will be shown here</p>
-                      </div>
-                    </div>
-                  </Card>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-          </div>
-        </div>
-      </div>
-    </Container>
+const Accounting: React.FC = () => {
+  const location = useLocation();
+  
+  // If we're at the root accounting path, show the dashboard
+  if (location.pathname === '/accounting') {
+    return <AccountingDashboard />;
+  }
+
+  return (
+    <Routes>
+      <Route path="/chart" element={<ChartOfAccounts />} />
+      <Route path="/journals" element={<Journals />} />
+      <Route path="/journals/:id" element={<JournalDetail />} />
+      <Route path="/trial-balance" element={<TrialBalance />} />
+      <Route path="/financials" element={<FinancialStatements />} />
+      <Route path="/close-period" element={<ClosePeriod />} />
+      <Route path="/manual-entry" element={<ManualJournalEntry />} />
+      <Route path="*" element={<Navigate to="/accounting" replace />} />
+    </Routes>
   );
 };
 

@@ -8,10 +8,10 @@ import {
   Camera, Mic, Headphones, Globe, MapPin, Phone, Mail, User, Users,
   Building, Home, ChevronDown
 } from 'lucide-react';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
-import Modal from '../ui/Modal';
+import { Button } from '../ui/Button';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
+import { Modal } from '../ui/Modal';
 import Dropdown from '../ui/Dropdown';
 import Toggle from '../ui/Toggle';
 import { BRAND } from '../../constants/theme';

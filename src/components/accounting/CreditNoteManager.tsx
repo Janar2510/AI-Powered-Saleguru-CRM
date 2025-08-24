@@ -3,9 +3,9 @@ import { createPortal } from 'react-dom';
 import { X, FileText, RotateCcw, DollarSign, AlertTriangle, CheckCircle, Plus, Eye, Edit, Download, Send, RefreshCw, CreditCard, ArrowLeftRight } from 'lucide-react';
 import { useModal } from '../../contexts/ModalContext';
 import { useToastContext } from '../../contexts/ToastContext';
-import Badge from '../ui/Badge';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
+import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
+import { Card } from '../ui/Card';
 
 interface CreditNote {
   id: string;

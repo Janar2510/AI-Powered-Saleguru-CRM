@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Check, Star, Bot } from 'lucide-react';
-import Badge from '../ui/Badge';
+import { Badge } from '../ui/Badge';
 import { useToastContext } from '../../contexts/ToastContext';
 import { supabase } from '../../services/supabase';
 

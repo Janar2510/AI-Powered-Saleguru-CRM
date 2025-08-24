@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Container from '../../components/layout/Container';
-import Card from '../../components/ui/Card';
-import Button from '../../components/ui/Button';
+import { Card } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
 import { WorkflowActions } from '../../components/workflows/WorkflowActions';
 import Spline from '@splinetool/react-spline';
 import { 

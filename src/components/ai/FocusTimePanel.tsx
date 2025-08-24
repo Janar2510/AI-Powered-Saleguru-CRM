@@ -39,7 +39,7 @@ import {
   Minus,
   RotateCcw
 } from 'lucide-react';
-import Card from '../ui/Card';
+import { Card } from '../ui/Card';
 import Dropdown from '../ui/Dropdown';
 import { FocusTimeSlot, FocusTimePreferences, FocusTimeAnalytics } from '../../types/ai';
 

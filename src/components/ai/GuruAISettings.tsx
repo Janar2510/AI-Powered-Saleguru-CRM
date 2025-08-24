@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Bot, Settings, Zap, AlertTriangle } from 'lucide-react';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
 import { useToastContext } from '../../contexts/ToastContext';
 
 interface GuruAISettingsProps {

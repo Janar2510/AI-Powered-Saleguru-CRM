@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { CheckCircle, Clock, Calendar, AlertTriangle, Target, Users, Edit, Trash2, Mail, Phone, ArrowRight, Bell, CheckSquare, User } from 'lucide-react';
 import { Task } from '../../types/task';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
 import { useToastContext } from '../../contexts/ToastContext';
 
 interface TaskListProps {

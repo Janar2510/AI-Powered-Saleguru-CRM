@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Container from '../components/layout/Container';
-import Card from '../components/ui/Card';
-import Button from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
 import Spline from '@splinetool/react-spline';
 import { eSignatureService } from '../services/eSignatureService';
 import { useToastContext } from '../contexts/ToastContext';

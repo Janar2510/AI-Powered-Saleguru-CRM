@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, User, Mail, Phone, Building, Globe, Linkedin } from 'lucide-react';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
+import { Card } from '../ui/Card';
+import { Button } from '../ui/Button';
 
 interface Lead {
   id: string;

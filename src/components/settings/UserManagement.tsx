@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { UserPlus, Trash2, Shield, User, Loader, RefreshCw, Eye } from 'lucide-react';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
+import { Button } from '../ui/Button';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
 import { supabase } from '../../services/supabase';
 import { useToastContext } from '../../contexts/ToastContext';
-import Modal from '../ui/Modal';
+import { Modal } from '../ui/Modal';
 
 // Define Role type
 const roles = [

@@ -55,10 +55,10 @@ import {
   Estimate, Proposal, Contract, Agreement, Partnership, Alliance, Merger,
   Acquisition, Investment, Funding, Capital, Venture
 } from 'lucide-react';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
-import Modal from '../ui/Modal';
+import { Button } from '../ui/Button';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
+import { Modal } from '../ui/Modal';
 import Dropdown from '../ui/Dropdown';
 import Toggle from '../ui/Toggle';
 import { useGuruContext } from '../../contexts/GuruContext';

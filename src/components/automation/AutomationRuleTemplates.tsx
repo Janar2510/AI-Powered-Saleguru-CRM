@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Search, Zap, Target, CheckSquare, Mail, Users, Star, Bot, Bell, DollarSign, Calendar, MessageSquare, Edit, Play } from 'lucide-react';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
 import { AutomationRuleTemplate } from '../../types/automation';
 import { useToastContext } from '../../contexts/ToastContext';
 

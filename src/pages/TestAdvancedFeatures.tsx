@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '../components/common/Card';
-import Button from '../components/ui/Button';
-import Badge from '../components/ui/Badge';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/Badge';
 import { SentimentAnalysisService } from '../services/sentimentAnalysisService';
 import { ChronoLeadScoringService } from '../services/chronoLeadScoringService';
 import { useToastContext } from '../contexts/ToastContext';

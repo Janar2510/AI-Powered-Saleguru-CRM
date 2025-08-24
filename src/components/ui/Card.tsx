@@ -1,61 +1,78 @@
 import React from 'react';
-import clsx from 'clsx';
+import { cn } from '../../lib/utils';
 
-interface CardProps {
-  children: React.ReactNode;
-  className?: string;
-  hover?: boolean;
-  padding?: 'none' | 'sm' | 'md' | 'lg';
-  variant?: 'default' | 'glass' | 'elevated';
-  as?: keyof JSX.IntrinsicElements;
-  loading?: boolean;
-  onClick?: React.MouseEventHandler;
-}
+const Card = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(
+      "rounded-lg border bg-card text-card-foreground shadow-sm",
+      className
+    )}
+    {...props}
+  />
+));
+Card.displayName = "Card";
 
-const Card: React.FC<CardProps> = ({ 
-  children, 
-  className, 
-  hover = false,
-  padding = 'md',
-  variant = 'glass',
-  as: Component = 'div',
-  loading = false,
-  onClick
-}) => {
-  const paddingClasses = {
-    none: '',
-    sm: 'p-3',
-    md: 'p-5', // Changed to 20px (p-5)
-    lg: 'p-6',
-  };
+const CardHeader = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("flex flex-col space-y-1.5 p-6", className)}
+    {...props}
+  />
+));
+CardHeader.displayName = "CardHeader";
 
-  const variantClasses = {
-    default: 'bg-secondary-800 border border-secondary-700',
-    glass: 'bg-[#23233a]/40 backdrop-blur-sm border border-[#23233a]/50 shadow-lg',
-    elevated: 'bg-secondary-800/60 backdrop-blur-md border border-secondary-700/80 shadow-xl'
-  };
+const CardTitle = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLHeadingElement>
+>(({ className, ...props }, ref) => (
+  <h3
+    ref={ref}
+    className={cn(
+      "text-2xl font-semibold leading-none tracking-tight",
+      className
+    )}
+    {...props}
+  />
+));
+CardTitle.displayName = "CardTitle";
 
-  return (
-    <Component
-      className={clsx(
-        variantClasses[variant],
-        paddingClasses[padding],
-        'rounded-xl',
-        hover && 'hover:shadow-card-hover hover:scale-[1.02] transition-all duration-200',
-        'animate-fade-in',
-        className
-      )}
-      onClick={onClick}
-    >
-      {loading ? (
-        <div className="flex items-center justify-center h-32 animate-pulse">
-          <div className="w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      ) : (
-        children
-      )}
-    </Component>
-  );
-};
+const CardDescription = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLParagraphElement>
+>(({ className, ...props }, ref) => (
+  <p
+    ref={ref}
+    className={cn("text-sm text-muted-foreground", className)}
+    {...props}
+  />
+));
+CardDescription.displayName = "CardDescription";
 
-export default Card;
+const CardContent = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
+));
+CardContent.displayName = "CardContent";
+
+const CardFooter = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("flex items-center p-6 pt-0", className)}
+    {...props}
+  />
+));
+CardFooter.displayName = "CardFooter";
+
+export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent };

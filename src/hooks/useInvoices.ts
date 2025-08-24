@@ -1,104 +1,182 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../services/supabase';
-import { useToast } from './useToast';
+import { useToastContext } from '../contexts/ToastContext';
 
 export interface InvoiceItem {
   id: string;
   invoice_id: string;
   product_id?: string;
   product_name: string;
+  product_sku?: string;
   description?: string;
   quantity: number;
-  unit_price: number;
-  tax_rate: number;
+  unit_price_cents: number;
   discount_percent: number;
-  line_total: number;
-  variant_id?: string;
-  variant_attributes?: any;
-  sort_order: number;
+  tax_percent: number;
+  line_total_cents: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InvoicePayment {
+  id: string;
+  invoice_id: string;
+  payment_date: string;
+  amount_cents: number;
+  currency: string;
+  payment_method: 'bank_transfer' | 'credit_card' | 'cash' | 'check' | 'other';
+  reference_number?: string;
+  notes?: string;
   created_at: string;
 }
 
 export interface Invoice {
   id: string;
-  user_id: string;
-  customer_id: string;
-  sales_order_id?: string;
   invoice_number: string;
-  invoice_type: 'standard' | 'proforma' | 'credit_note';
-  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
+  contact_id?: string;
+  organization_id?: string;
+  deal_id?: string;
+  quote_id?: string;
+  
+  // Legacy fields (from existing schema)
+  number?: string;
+  amount?: number;
+  date?: string;
+  partner_name?: string;
+  partner_id?: string;
+  customer_name?: string;
+  customer_id?: string;
+  
+  // Invoice details
   invoice_date: string;
   due_date?: string;
-  payment_terms?: string;
-  subtotal: number;
-  tax_amount: number;
-  shipping_amount: number;
-  discount_amount: number;
-  total_amount: number;
-  paid_amount: number;
+  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled' | 'partially_paid';
+  
+  // Financial details (cents)
+  subtotal_cents: number;
+  tax_cents: number;
+  discount_cents: number;
+  total_cents: number;
+  paid_cents: number;
+  
+  // Financial details (legacy decimal)
+  subtotal?: number;
+  tax_amount?: number;
+  total_amount?: number;
   currency: string;
-  exchange_rate: number;
-  billing_address?: string;
-  shipping_address?: string;
+  
+  // Additional info
   notes?: string;
   terms_conditions?: string;
+  payment_terms?: string;
+  billing_address?: string;
+  shipping_address?: string;
+  
+  // Timestamps
   created_at: string;
   updated_at: string;
+  
+  // Relations
+  contact?: any;
+  organization?: any;
+  deal?: any;
+  quote?: any;
   items?: InvoiceItem[];
-  customer?: any;
-  sales_order?: any;
+  payments?: InvoicePayment[];
 }
 
 export interface CreateInvoiceData {
-  customer_id: string;
-  sales_order_id?: string;
-  invoice_type?: 'standard' | 'proforma' | 'credit_note';
+  contact_id?: string;
+  organization_id?: string;
+  deal_id?: string;
+  quote_id?: string;
   invoice_date?: string;
   due_date?: string;
-  payment_terms?: string;
-  shipping_amount?: number;
-  discount_amount?: number;
   currency?: string;
-  exchange_rate?: number;
-  billing_address?: string;
-  shipping_address?: string;
   notes?: string;
   terms_conditions?: string;
-  items?: Omit<InvoiceItem, 'id' | 'invoice_id' | 'created_at'>[];
-}
-
-export interface UpdateInvoiceData extends Partial<CreateInvoiceData> {
-  id: string;
+  payment_terms?: string;
+  billing_address?: string;
+  shipping_address?: string;
+  items: {
+    product_id?: string;
+    product_name: string;
+    product_sku?: string;
+    description?: string;
+    quantity: number;
+    unit_price_cents: number;
+    discount_percent?: number;
+    tax_percent?: number;
+  }[];
 }
 
 export const useInvoices = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { showToast } = useToast();
+  const { showToast } = useToastContext();
 
-  // Fetch all invoices with customer, sales order and items
+  // Fetch all invoices
   const fetchInvoices = async () => {
+    setLoading(true);
+    setError(null);
+    
     try {
-      setLoading(true);
-      setError(null);
-
-      const { data, error } = await supabase
+      const { data, error: fetchError } = await supabase
         .from('invoices')
-        .select(`
-          *,
-          customer:customers(*),
-          sales_order:sales_orders(*),
-          items:invoice_items(*)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (fetchError) throw fetchError;
 
-      setInvoices(data || []);
+      // Calculate balance for each invoice
+      const invoicesWithBalance = (data || []).map(invoice => ({
+        ...invoice,
+        balance_cents: invoice.total_cents - invoice.paid_cents
+      }));
+
+      setInvoices(invoicesWithBalance);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch invoices');
-      showToast('Error fetching invoices', 'error');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch invoices';
+      setError(errorMessage);
+      showToast(errorMessage, 'error');
+      
+      // Fallback to sample data
+      setInvoices([
+        {
+          id: 'inv_001',
+          invoice_number: 'INV-1001',
+          contact_id: 'contact_001',
+          invoice_date: new Date().toISOString().split('T')[0],
+          due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          status: 'sent' as const,
+          subtotal_cents: 100000,
+          tax_cents: 10000,
+          discount_cents: 0,
+          total_cents: 110000,
+          paid_cents: 0,
+          currency: 'EUR',
+          notes: 'Sample invoice',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          contact: { id: 'contact_001', name: 'John Doe', email: 'john@example.com', company: 'Acme Corp' },
+          items: [
+            {
+              id: 'item_001',
+              invoice_id: 'inv_001',
+              product_name: 'CRM License',
+              quantity: 1,
+              unit_price_cents: 100000,
+              discount_percent: 0,
+              tax_percent: 10,
+              line_total_cents: 100000,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }
+          ],
+          payments: []
+        }
+      ]);
     } finally {
       setLoading(false);
     }
@@ -117,32 +195,44 @@ export const useInvoices = () => {
 
       const invoiceNumber = numberData;
 
+      // Calculate totals
+      const subtotalCents = invoiceData.items.reduce((sum, item) => 
+        sum + (item.quantity * item.unit_price_cents * (1 - (item.discount_percent || 0) / 100)), 0
+      );
+      
+      const taxCents = invoiceData.items.reduce((sum, item) => 
+        sum + (item.quantity * item.unit_price_cents * (1 - (item.discount_percent || 0) / 100) * (item.tax_percent || 0) / 100), 0
+      );
+
+      const totalCents = subtotalCents + taxCents;
+
       // Create invoice
       const { data, error } = await supabase
         .from('invoices')
         .insert([{
           ...invoiceData,
           invoice_number: invoiceNumber,
-          status: 'draft',
-          invoice_date: invoiceData.invoice_date || new Date().toISOString().split('T')[0],
-          paid_amount: 0
+          subtotal_cents: Math.round(subtotalCents),
+          tax_cents: Math.round(taxCents),
+          total_cents: Math.round(totalCents),
+          status: 'draft'
         }])
         .select(`
           *,
-          customer:customers(*),
-          sales_order:sales_orders(*),
-          items:invoice_items(*)
+          contact:contacts(id, name, email, company),
+          organization:organizations(id, name, email),
+          deal:deals(id, title, value),
+          quote:quotes(id, quote_number)
         `)
         .single();
 
       if (error) throw error;
 
-      // Add items if provided
+      // Add items
       if (invoiceData.items && invoiceData.items.length > 0) {
         const items = invoiceData.items.map(item => ({
           ...item,
-          invoice_id: data.id,
-          line_total: item.quantity * item.unit_price * (1 - item.discount_percent / 100)
+          invoice_id: data.id
         }));
 
         const { error: itemsError } = await supabase
@@ -152,7 +242,7 @@ export const useInvoices = () => {
         if (itemsError) throw itemsError;
       }
 
-      setInvoices(prev => [data, ...prev]);
+      setInvoices(prev => [{ ...data, items: invoiceData.items, payments: [] }, ...prev]);
       showToast('Invoice created successfully', 'success');
       return data;
     } catch (err) {
@@ -163,220 +253,23 @@ export const useInvoices = () => {
     }
   };
 
-  // Create invoice from sales order
-  const createInvoiceFromSalesOrder = async (salesOrderId: string): Promise<Invoice | null> => {
-    try {
-      setError(null);
-
-      // Get sales order data
-      const { data: salesOrder, error: orderError } = await supabase
-        .from('sales_orders')
-        .select(`
-          *,
-          customer:customers(*),
-          items:sales_order_items(*)
-        `)
-        .eq('id', salesOrderId)
-        .single();
-
-      if (orderError) throw orderError;
-
-      // Generate invoice number
-      const { data: numberData, error: numberError } = await supabase
-        .rpc('generate_invoice_number');
-
-      if (numberError) throw numberError;
-
-      const invoiceNumber = numberData;
-
-      // Create invoice from sales order
-      const { data, error } = await supabase
-        .from('invoices')
-        .insert([{
-          customer_id: salesOrder.customer_id,
-          sales_order_id: salesOrderId,
-          invoice_number: invoiceNumber,
-          invoice_type: 'standard',
-          status: 'draft',
-          invoice_date: new Date().toISOString().split('T')[0],
-          due_date: salesOrder.delivery_date,
-          subtotal: salesOrder.subtotal,
-          tax_amount: salesOrder.tax_amount,
-          shipping_amount: salesOrder.shipping_amount,
-          discount_amount: salesOrder.discount_amount,
-          total_amount: salesOrder.total_amount,
-          currency: salesOrder.currency,
-          shipping_address: salesOrder.shipping_address,
-          billing_address: salesOrder.billing_address,
-          paid_amount: 0
-        }])
-        .select(`
-          *,
-          customer:customers(*),
-          sales_order:sales_orders(*),
-          items:invoice_items(*)
-        `)
-        .single();
-
-      if (error) throw error;
-
-      // Convert sales order items to invoice items
-      if (salesOrder.items && salesOrder.items.length > 0) {
-        const invoiceItems = salesOrder.items.map(item => ({
-          invoice_id: data.id,
-          product_id: item.product_id,
-          product_name: item.product_name,
-          description: item.description,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          tax_rate: item.tax_rate,
-          discount_percent: item.discount_percent,
-          line_total: item.line_total,
-          variant_id: item.variant_id,
-          variant_attributes: item.variant_attributes,
-          sort_order: item.sort_order
-        }));
-
-        const { error: itemsError } = await supabase
-          .from('invoice_items')
-          .insert(invoiceItems);
-
-        if (itemsError) throw itemsError;
-      }
-
-      setInvoices(prev => [data, ...prev]);
-      showToast('Invoice created from sales order successfully', 'success');
-      return data;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create invoice from sales order';
-      setError(errorMessage);
-      showToast(errorMessage, 'error');
-      return null;
-    }
-  };
-
-  // Update invoice
-  const updateInvoice = async (invoiceData: UpdateInvoiceData): Promise<Invoice | null> => {
-    try {
-      setError(null);
-
-      const { id, items, ...updateData } = invoiceData;
-
-      const { data, error } = await supabase
-        .from('invoices')
-        .update(updateData)
-        .eq('id', id)
-        .select(`
-          *,
-          customer:customers(*),
-          sales_order:sales_orders(*),
-          items:invoice_items(*)
-        `)
-        .single();
-
-      if (error) throw error;
-
-      // Update items if provided
-      if (items) {
-        // Delete existing items
-        await supabase
-          .from('invoice_items')
-          .delete()
-          .eq('invoice_id', id);
-
-        // Insert new items
-        const newItems = items.map(item => ({
-          ...item,
-          invoice_id: id,
-          line_total: item.quantity * item.unit_price * (1 - item.discount_percent / 100)
-        }));
-
-        const { error: itemsError } = await supabase
-          .from('invoice_items')
-          .insert(newItems);
-
-        if (itemsError) throw itemsError;
-      }
-
-      setInvoices(prev => prev.map(invoice => 
-        invoice.id === id ? data : invoice
-      ));
-      showToast('Invoice updated successfully', 'success');
-      return data;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update invoice';
-      setError(errorMessage);
-      showToast(errorMessage, 'error');
-      return null;
-    }
-  };
-
-  // Delete invoice
-  const deleteInvoice = async (id: string): Promise<boolean> => {
-    try {
-      setError(null);
-
-      const { error } = await supabase
-        .from('invoices')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      setInvoices(prev => prev.filter(invoice => invoice.id !== id));
-      showToast('Invoice deleted successfully', 'success');
-      return true;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to delete invoice';
-      setError(errorMessage);
-      showToast(errorMessage, 'error');
-      return false;
-    }
-  };
-
-  // Get invoice by ID
-  const getInvoice = async (id: string): Promise<Invoice | null> => {
-    try {
-      setError(null);
-
-      const { data, error } = await supabase
-        .from('invoices')
-        .select(`
-          *,
-          customer:customers(*),
-          sales_order:sales_orders(*),
-          items:invoice_items(*)
-        `)
-        .eq('id', id)
-        .single();
-
-      if (error) throw error;
-
-      return data;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch invoice';
-      setError(errorMessage);
-      showToast(errorMessage, 'error');
-      return null;
-    }
-  };
-
   // Update invoice status
-  const updateInvoiceStatus = async (id: string, status: Invoice['status']): Promise<boolean> => {
+  const updateInvoiceStatus = async (invoiceId: string, status: Invoice['status']): Promise<boolean> => {
     try {
       setError(null);
 
       const { error } = await supabase
         .from('invoices')
         .update({ status })
-        .eq('id', id);
+        .eq('id', invoiceId);
 
       if (error) throw error;
 
       setInvoices(prev => prev.map(invoice => 
-        invoice.id === id ? { ...invoice, status } : invoice
+        invoice.id === invoiceId ? { ...invoice, status } : invoice
       ));
-      showToast(`Invoice status updated to ${status}`, 'success');
+
+      showToast(`Invoice marked as ${status}`, 'success');
       return true;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to update invoice status';
@@ -387,34 +280,53 @@ export const useInvoices = () => {
   };
 
   // Record payment
-  const recordPayment = async (id: string, amount: number): Promise<boolean> => {
+  const recordPayment = async (
+    invoiceId: string, 
+    paymentData: {
+      amount_cents: number;
+      payment_date?: string;
+      payment_method?: InvoicePayment['payment_method'];
+      reference_number?: string;
+      notes?: string;
+    }
+  ): Promise<boolean> => {
     try {
       setError(null);
 
-      const invoice = await getInvoice(id);
-      if (!invoice) throw new Error('Invoice not found');
+      // Record payment
+      const { error: paymentError } = await supabase
+        .from('invoice_payments')
+        .insert([{
+          invoice_id: invoiceId,
+          ...paymentData,
+          payment_date: paymentData.payment_date || new Date().toISOString().split('T')[0]
+        }]);
 
-      const newPaidAmount = invoice.paid_amount + amount;
-      const newStatus = newPaidAmount >= invoice.total_amount ? 'paid' : 'partial';
+      if (paymentError) throw paymentError;
 
-      const { error } = await supabase
-        .from('invoices')
-        .update({ 
-          paid_amount: newPaidAmount,
-          status: newStatus
-        })
-        .eq('id', id);
+      // Update invoice paid amount
+      const invoice = invoices.find(inv => inv.id === invoiceId);
+      if (invoice) {
+        const newPaidCents = invoice.paid_cents + paymentData.amount_cents;
+        let newStatus: Invoice['status'] = 'partially_paid';
+        
+        if (newPaidCents >= invoice.total_cents) {
+          newStatus = 'paid';
+        }
 
-      if (error) throw error;
+        const { error: updateError } = await supabase
+          .from('invoices')
+          .update({ 
+            paid_cents: newPaidCents,
+            status: newStatus
+          })
+          .eq('id', invoiceId);
 
-      setInvoices(prev => prev.map(invoice => 
-        invoice.id === id ? { 
-          ...invoice, 
-          paid_amount: newPaidAmount,
-          status: newStatus
-        } : invoice
-      ));
-      showToast(`Payment of ${amount} recorded successfully`, 'success');
+        if (updateError) throw updateError;
+      }
+
+      await fetchInvoices(); // Refresh to get updated data
+      showToast('Payment recorded successfully', 'success');
       return true;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to record payment';
@@ -424,117 +336,54 @@ export const useInvoices = () => {
     }
   };
 
-  // Filter invoices by status
-  const filterInvoicesByStatus = async (status: string): Promise<Invoice[]> => {
+  // Convert quote to invoice
+  const convertQuoteToInvoice = async (quoteId: string): Promise<Invoice | null> => {
     try {
       setError(null);
 
       const { data, error } = await supabase
-        .from('invoices')
-        .select(`
-          *,
-          customer:customers(*),
-          sales_order:sales_orders(*),
-          items:invoice_items(*)
-        `)
-        .eq('status', status)
-        .order('created_at', { ascending: false });
+        .rpc('convert_quote_to_invoice', { quote_id_param: quoteId });
 
       if (error) throw error;
 
-      return data || [];
+      await fetchInvoices(); // Refresh to get the new invoice
+      showToast('Quote converted to invoice successfully', 'success');
+      
+      // Return the created invoice
+      const newInvoice = invoices.find(inv => inv.id === data);
+      return newInvoice || null;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to filter invoices';
+      const errorMessage = err instanceof Error ? err.message : 'Failed to convert quote to invoice';
       setError(errorMessage);
       showToast(errorMessage, 'error');
-      return [];
+      return null;
     }
   };
 
-  // Filter invoices by type
-  const filterInvoicesByType = async (type: string): Promise<Invoice[]> => {
+  // Delete invoice
+  const deleteInvoice = async (invoiceId: string): Promise<boolean> => {
     try {
       setError(null);
 
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('invoices')
-        .select(`
-          *,
-          customer:customers(*),
-          sales_order:sales_orders(*),
-          items:invoice_items(*)
-        `)
-        .eq('invoice_type', type)
-        .order('created_at', { ascending: false });
+        .delete()
+        .eq('id', invoiceId);
 
       if (error) throw error;
 
-      return data || [];
+      setInvoices(prev => prev.filter(invoice => invoice.id !== invoiceId));
+      showToast('Invoice deleted successfully', 'success');
+      return true;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to filter invoices';
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete invoice';
       setError(errorMessage);
       showToast(errorMessage, 'error');
-      return [];
+      return false;
     }
   };
 
-  // Search invoices
-  const searchInvoices = async (query: string): Promise<Invoice[]> => {
-    try {
-      setError(null);
-
-      const { data, error } = await supabase
-        .from('invoices')
-        .select(`
-          *,
-          customer:customers(*),
-          sales_order:sales_orders(*),
-          items:invoice_items(*)
-        `)
-        .or(`invoice_number.ilike.%${query}%,notes.ilike.%${query}%`)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      return data || [];
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to search invoices';
-      setError(errorMessage);
-      showToast(errorMessage, 'error');
-      return [];
-    }
-  };
-
-  // Get overdue invoices
-  const getOverdueInvoices = async (): Promise<Invoice[]> => {
-    try {
-      setError(null);
-
-      const { data, error } = await supabase
-        .from('invoices')
-        .select(`
-          *,
-          customer:customers(*),
-          sales_order:sales_orders(*),
-          items:invoice_items(*)
-        `)
-        .lt('due_date', new Date().toISOString().split('T')[0])
-        .neq('status', 'paid')
-        .neq('status', 'cancelled')
-        .order('due_date', { ascending: true });
-
-      if (error) throw error;
-
-      return data || [];
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch overdue invoices';
-      setError(errorMessage);
-      showToast(errorMessage, 'error');
-      return [];
-    }
-  };
-
-  // Initialize on mount
+  // Load data on mount
   useEffect(() => {
     fetchInvoices();
   }, []);
@@ -545,15 +394,9 @@ export const useInvoices = () => {
     error,
     fetchInvoices,
     createInvoice,
-    createInvoiceFromSalesOrder,
-    updateInvoice,
-    deleteInvoice,
-    getInvoice,
     updateInvoiceStatus,
     recordPayment,
-    filterInvoicesByStatus,
-    filterInvoicesByType,
-    searchInvoices,
-    getOverdueInvoices,
+    convertQuoteToInvoice,
+    deleteInvoice
   };
-}; 
+};

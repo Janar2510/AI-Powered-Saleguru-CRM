@@ -1,8 +1,8 @@
 import React from 'react';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
 import { User, TrendingUp, TrendingDown, Bot, ArrowRight } from 'lucide-react';
-import Button from '../ui/Button';
+import { Button } from '../ui/Button';
 
 const mockLeads = [
   {

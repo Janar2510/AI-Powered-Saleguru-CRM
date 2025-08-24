@@ -21,9 +21,9 @@ import {
   Settings,
   RefreshCw
 } from 'lucide-react';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
-import Badge from '../ui/Badge';
+import { Card } from '../ui/Card';
+import { Button } from '../ui/Button';
+import { Badge } from '../ui/Badge';
 import { useToastContext } from '../../contexts/ToastContext';
 import { usePermissions } from '../../contexts/PermissionContext';
 import { supabase } from '../../services/supabase';

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Plus, Send, AtSign, User, Clock, Edit, Trash2 } from 'lucide-react';
-import Badge from '../ui/Badge';
+import { Badge } from '../ui/Badge';
 
 interface DealNote {
   id: string;

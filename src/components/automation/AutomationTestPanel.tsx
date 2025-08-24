@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Play, CheckCircle, XCircle, Clock, AlertTriangle, ArrowRight, RefreshCw, Zap } from 'lucide-react';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
 import { AutomationRule } from '../../types/automation';
 import { supabase } from '../../services/supabase';
 import { useToastContext } from '../../contexts/ToastContext';

@@ -3,7 +3,7 @@ import { X, Send, Minimize2, Sparkles, Bot, Zap, Lightbulb, Clock, Target, Check
 import clsx from 'clsx';
 import { useGuru } from '../../contexts/GuruContext';
 import { useToastContext } from '../../contexts/ToastContext';
-import Badge from '../ui/Badge';
+import { Badge } from '../ui/Badge';
 import GuruAISettings from './GuruAISettings';
 import BottleneckPanel from './BottleneckPanel';
 import { useTasks } from '../../hooks/useTasks';

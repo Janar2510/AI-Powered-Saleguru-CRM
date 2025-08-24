@@ -2,7 +2,7 @@ import React from 'react';
 import { useDrop } from 'react-dnd';
 import { Plus, DollarSign, TrendingUp, MoreHorizontal } from 'lucide-react';
 import { KanbanColumn, Deal } from '../../types/deals';
-import Card from '../ui/Card'; // Use canonical Card
+import { Card } from '../ui/Card'; // Use canonical Card
 import { DealCard } from './DealCard';
 
 interface StageColumnProps {

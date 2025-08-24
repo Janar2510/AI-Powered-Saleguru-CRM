@@ -90,8 +90,11 @@ const LoginPage: React.FC = () => {
 
       showToast({ title: 'Welcome back!', type: 'success' });
       
-      // Don't navigate here - let the auth state change handle it
-      // The AuthContext will automatically redirect based on onboarding status
+      // Navigate to dashboard after successful authentication
+      console.log('🚀 Attempting to navigate to dashboard...');
+      console.log('📍 Current location:', window.location.href);
+      navigate('/');
+      console.log('✅ Navigation command executed');
 
     } catch (error: any) {
       setFormError(error.message || 'Unexpected error. Please try again.');
@@ -180,6 +183,7 @@ const LoginPage: React.FC = () => {
                   onChange={handleInputChange}
                   className={authInputClass}
                   placeholder="Enter your email"
+                  autoComplete="email"
                 />
               </div>
               {errors.email && (
@@ -202,6 +206,7 @@ const LoginPage: React.FC = () => {
                   onChange={handleInputChange}
                   className={authInputClass + ' pr-12'}
                   placeholder="Enter your password"
+                  autoComplete="current-password"
                 />
                 <button
                   type="button"

@@ -124,10 +124,10 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       onClick={onClick}
       disabled={disabled}
       className={clsx(
-        'p-2 rounded-lg transition-colors',
+        'p-2 rounded-lg transition-all duration-200',
         isActive 
-          ? 'bg-primary-600/20 text-primary-400 hover:bg-primary-600/30' 
-          : 'text-secondary-400 hover:bg-secondary-700 hover:text-white',
+          ? 'bg-[#a259ff]/20 text-[#a259ff] hover:bg-[#a259ff]/30 shadow-sm' 
+          : 'text-[#b0b0d0] hover:bg-[#23233a]/60 hover:text-white',
         disabled && 'opacity-50 cursor-not-allowed'
       )}
     >
@@ -139,15 +139,15 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     <button
       type="button"
       onClick={onClick}
-      className="w-6 h-6 rounded-full border border-secondary-600 hover:scale-110 transition-transform"
+      className="w-6 h-6 rounded-full border border-[#23233a]/50 hover:scale-110 transition-transform shadow-sm"
       style={{ backgroundColor: color }}
     />
   );
 
   return (
-    <div className={clsx("border border-secondary-600 rounded-xl overflow-hidden bg-secondary-700", className)}>
+    <div className={clsx("border border-[#23233a]/50 rounded-xl overflow-hidden bg-[#23233a]/40 backdrop-blur-sm", className)}>
       {/* Toolbar */}
-      <div className="p-2 border-b border-secondary-600 bg-secondary-750 flex flex-wrap gap-1">
+      <div className="p-3 border-b border-[#23233a]/50 bg-[#23233a]/60 flex flex-wrap gap-2">
         <div className="flex items-center space-x-1 mr-2">
           <ToolbarButton
             onClick={() => editor.chain().focus().toggleBold().run()}
@@ -171,7 +171,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           </ToolbarButton>
         </div>
 
-        <div className="h-6 w-px bg-secondary-600 mx-1" />
+        <div className="h-6 w-px bg-[#23233a]/50 mx-1" />
 
         <div className="flex items-center space-x-1 mr-2">
           <ToolbarButton
@@ -196,7 +196,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           </ToolbarButton>
         </div>
 
-        <div className="h-6 w-px bg-secondary-600 mx-1" />
+        <div className="h-6 w-px bg-[#23233a]/50 mx-1" />
 
         <div className="flex items-center space-x-1 mr-2">
           <ToolbarButton
@@ -227,7 +227,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           </ToolbarButton>
         </div>
 
-        <div className="h-6 w-px bg-secondary-600 mx-1" />
+        <div className="h-6 w-px bg-[#23233a]/50 mx-1" />
 
         <div className="flex items-center space-x-1 mr-2">
           <ToolbarButton onClick={setLink} isActive={editor.isActive('link')}>
@@ -246,7 +246,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           </ToolbarButton>
         </div>
 
-        <div className="h-6 w-px bg-secondary-600 mx-1" />
+        <div className="h-6 w-px bg-[#23233a]/50 mx-1" />
 
         <div className="flex items-center space-x-1 mr-2">
           <ToolbarButton
@@ -271,7 +271,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           </ToolbarButton>
         </div>
 
-        <div className="h-6 w-px bg-secondary-600 mx-1" />
+        <div className="h-6 w-px bg-[#23233a]/50 mx-1" />
 
         <div className="flex items-center space-x-1">
           <ToolbarButton
@@ -289,7 +289,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           </ToolbarButton>
         </div>
 
-        <div className="h-6 w-px bg-secondary-600 mx-1" />
+        <div className="h-6 w-px bg-[#23233a]/50 mx-1" />
 
         <div className="flex items-center space-x-1">
           <div className="flex space-x-1">
@@ -306,10 +306,13 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
       {/* Editor Content */}
       <div 
-        className="p-4 prose prose-invert max-w-none focus:outline-none" 
+        className="p-6 prose prose-invert max-w-none focus:outline-none bg-[#23233a]/20" 
         style={{ minHeight }}
       >
-        <EditorContent editor={editor} />
+        <EditorContent 
+          editor={editor} 
+          className="text-white focus:outline-none [&_.ProseMirror]:outline-none [&_.ProseMirror]:border-none [&_.ProseMirror]:text-white [&_.ProseMirror]:min-h-[200px]"
+        />
       </div>
     </div>
   );

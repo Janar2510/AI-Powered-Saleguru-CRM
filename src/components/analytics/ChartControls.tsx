@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { BarChart, PieChart, LineChart, Target, Settings, ChevronDown } from 'lucide-react';
-import Badge from '../ui/Badge';
+import { Badge } from '../ui/Badge';
 
 interface ChartControlsProps {
   chartType: 'bar' | 'pie' | 'line' | 'funnel' | '3d';

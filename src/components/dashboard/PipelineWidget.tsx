@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Target, ArrowRight, Settings } from 'lucide-react';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
-import Button from '../ui/Button';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
 import Dropdown from '../ui/Dropdown';
 import { useNavigate } from 'react-router-dom';
 import * as d3 from 'd3';

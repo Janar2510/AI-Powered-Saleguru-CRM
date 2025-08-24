@@ -1,7 +1,7 @@
 import React from 'react';
 import { Bot, Zap, TrendingUp, Target, Users, Calendar, ChevronRight } from 'lucide-react';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
 import { useGuru } from '../../contexts/GuruContext';
 
 interface InsightsPanelProps {

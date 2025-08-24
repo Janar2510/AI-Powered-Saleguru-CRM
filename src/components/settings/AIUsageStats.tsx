@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Bot, BarChart, Calendar, Download, RefreshCw, Filter, Search, Clock, Zap, AlertTriangle } from 'lucide-react';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
 import { supabase } from '../../services/supabase';
 import { useToastContext } from '../../contexts/ToastContext';
 

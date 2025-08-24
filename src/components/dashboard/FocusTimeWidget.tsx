@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Clock, Brain, TrendingUp, Play, Settings } from 'lucide-react';
 import { FocusTimePanel } from '../ai/FocusTimePanel';
 import { FocusTimeSlot, FocusTimePreferences, FocusTimeAnalytics } from '../../types/ai';
-import Button from '../ui/Button';
+import { Button } from '../ui/Button';
 
 export const FocusTimeWidget: React.FC = () => {
   const [showPanel, setShowPanel] = useState(false);

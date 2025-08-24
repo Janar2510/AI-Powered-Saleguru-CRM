@@ -115,8 +115,8 @@ const GuruFloatingButton: React.FC = () => {
         {/* Logo */}
         <div className="relative">
           <img 
-            src="/saletoru-logo.png" 
-            alt="SaleToru Logo" 
+                    src="/saletoru-logo.png"
+        alt="SaleToru Logo" 
             className="w-8 h-8 rounded-lg"
           />
           {/* Online indicator */}

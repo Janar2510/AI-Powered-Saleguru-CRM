@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Drag & Drop Test</title>
+    <style>
+        .drag-item {
+            width: 200px;
+            height: 100px;
+            background: #3b82f6;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 10px;
+            cursor: grab;
+            border-radius: 8px;
+        }
+        .drag-item:active {
+            cursor: grabbing;
+        }
+        .drop-zone {
+            width: 250px;
+            height: 300px;
+            border: 4px dashed #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 10px;
+            background: #f9f9f9;
+        }
+        .drop-zone.drag-over {
+            border-color: #3b82f6;
+            background: #dbeafe;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Simple Drag & Drop Test</h1>
+    <div class="container">
+        <div>
+            <h3>Drag This:</h3>
+            <div class="drag-item" draggable="true" id="item1">
+                Drag Me!
+            </div>
+        </div>
+        
+        <div>
+            <h3>Drop Here:</h3>
+            <div class="drop-zone" id="zone1">
+                Drop Zone 1
+            </div>
+        </div>
+        
+        <div>
+            <h3>Or Here:</h3>
+            <div class="drop-zone" id="zone2">
+                Drop Zone 2
+            </div>
+        </div>
+    </div>
+    
+    <div id="log" style="margin: 20px; padding: 10px; border: 1px solid #ccc; height: 200px; overflow-y: auto;"></div>
+
+    <script>
+        const log = document.getElementById('log');
+        
+        function addLog(message) {
+            const div = document.createElement('div');
+            div.textContent = new Date().toLocaleTimeString() + ': ' + message;
+            log.appendChild(div);
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        // Drag item
+        const item = document.getElementById('item1');
+        
+        item.addEventListener('dragstart', (e) => {
+            addLog('🎯 Drag start detected');
+            e.dataTransfer.setData('text/plain', 'item1');
+            e.dataTransfer.effectAllowed = 'move';
+        });
+        
+        item.addEventListener('dragend', (e) => {
+            addLog('🎯 Drag end detected');
+        });
+        
+        // Drop zones
+        const zones = [document.getElementById('zone1'), document.getElementById('zone2')];
+        
+        zones.forEach((zone, index) => {
+            zone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                addLog(`🎯 Drag over zone ${index + 1}`);
+                zone.classList.add('drag-over');
+                e.dataTransfer.dropEffect = 'move';
+            });
+            
+            zone.addEventListener('dragleave', (e) => {
+                addLog(`🎯 Drag leave zone ${index + 1}`);
+                zone.classList.remove('drag-over');
+            });
+            
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                addLog(`🎯 DROP on zone ${index + 1}!`);
+                zone.classList.remove('drag-over');
+                zone.textContent = 'Item Dropped!';
+                zone.style.background = '#10b981';
+                zone.style.color = 'white';
+            });
+        });
+        
+        addLog('Test loaded - try dragging the blue box to either drop zone');
+    </script>
+</body>
+</html>

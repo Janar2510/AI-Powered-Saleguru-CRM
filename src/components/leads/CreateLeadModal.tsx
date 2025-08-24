@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Plus, User, Building, Mail, Phone, Globe, Tag, DollarSign } from 'lucide-react';
-import Badge from '../ui/Badge';
-import Button from '../ui/Button';
+import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
 import { supabase } from '../../services/supabase';
 import { useToastContext } from '../../contexts/ToastContext';
 import { useModal } from '../../contexts/ModalContext';

@@ -3,9 +3,9 @@ import { createPortal } from 'react-dom';
 import { X, Search, FileText, BarChart3, Settings, Plus, Eye, TrendingUp, Target, Users, Globe, Mail, Zap, CheckCircle, AlertCircle, Clock } from 'lucide-react';
 import { useModal } from '../../contexts/ModalContext';
 import { useToastContext } from '../../contexts/ToastContext';
-import Badge from '../ui/Badge';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
+import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
+import { Card } from '../ui/Card';
 
 interface SEOAnalysis {
   id: string;

@@ -5,8 +5,8 @@ import {
   Trash2, Star, Flag, Reply, ReplyAll, Forward, MoreHorizontal, Search
 } from 'lucide-react';
 import EnhancedEmailComposer from '../emails/EnhancedEmailComposer';
-import Button from '../ui/Button';
-import Badge from '../ui/Badge';
+import { Button } from '../ui/Button';
+import { Badge } from '../ui/Badge';
 import { useToastContext } from '../../contexts/ToastContext';
 
 interface DealEmail {

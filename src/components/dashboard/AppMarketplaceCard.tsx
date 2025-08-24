@@ -1,8 +1,8 @@
 import React from 'react';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
 import { ShoppingBag, Zap, Bot, Shield, ArrowRight } from 'lucide-react';
-import Button from '../ui/Button';
+import { Button } from '../ui/Button';
 import { useNavigate } from 'react-router-dom';
 
 const mockApps = [

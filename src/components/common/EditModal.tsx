@@ -19,8 +19,8 @@ import {
 } from 'lucide-react';
 import { useModal } from '../../contexts/ModalContext';
 import { useToastContext } from '../../contexts/ToastContext';
-import Button from '../ui/Button';
-import Badge from '../ui/Badge';
+import { Button } from '../ui/Button';
+import { Badge } from '../ui/Badge';
 
 interface EditModalProps {
   isOpen: boolean;

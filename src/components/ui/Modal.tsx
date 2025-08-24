@@ -32,18 +32,19 @@ const Modal: React.FC<ModalProps> = ({
 
   if (!open) return null;
 
+  // Unified modal width mapping (consistent across the app)
   const sizeClasses = {
-    sm: 'max-w-sm',
-    md: 'max-w-md',
-    lg: 'max-w-lg',
-    xl: 'max-w-xl',
-    '2xl': 'max-w-2xl',
-    '3xl': 'max-w-3xl',
-    '4xl': 'max-w-4xl',
+    sm: 'max-w-lg',
+    md: 'max-w-xl',
+    lg: 'max-w-2xl',
+    xl: 'max-w-3xl',
+    '2xl': 'max-w-4xl',
+    '3xl': 'max-w-4xl',
+    '4xl': 'max-w-5xl',
     '5xl': 'max-w-5xl',
     '6xl': 'max-w-6xl',
-    '7xl': 'max-w-7xl'
-  };
+    '7xl': 'max-w-6xl'
+  } as const;
 
   const modalContent = (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-lg flex items-center justify-center z-[9999999] !z-[9999999] p-4">
@@ -87,4 +88,4 @@ const Modal: React.FC<ModalProps> = ({
   return createPortal(modalContent, document.body);
 };
 
-export default Modal; 
+export { Modal }; 

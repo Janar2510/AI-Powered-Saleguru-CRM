@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Zap, Plus, Play, Pause, Edit, Trash2, ArrowRight } from 'lucide-react';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
-import Button from '../ui/Button';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
 
 interface AutomationRule {
   id: string;

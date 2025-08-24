@@ -7,9 +7,9 @@ import { restrictToWindowEdges } from '@dnd-kit/modifiers';
 import { DealsAPI } from '../../lib/deals-api';
 import { useToastContext } from '../../contexts/ToastContext';
 import { usePlan } from '../../contexts/PlanContext';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
-import Button from '../ui/Button';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
 
 interface KanbanDealBoardProps {
   onCreateDeal: () => void;

@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { X, Zap, Building, User, Mail, Phone, Globe, MapPin, Briefcase, Calendar, FileText, Users, DollarSign, Code, Award, BookOpen } from 'lucide-react';
 import { ContactEnrichmentData, CompanyEnrichmentData } from '../../services/enrichmentService';
-import Badge from '../ui/Badge';
+import { Badge } from '../ui/Badge';
 
 interface EnrichmentPreviewModalProps {
   isOpen: boolean;

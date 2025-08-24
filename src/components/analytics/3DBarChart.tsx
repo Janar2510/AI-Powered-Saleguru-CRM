@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
-import Card from '../ui/Card';
+import { Card } from '../ui/Card';
 
 interface Bar3DProps {
   data: Array<{ name: string; value: number; color?: string }>;

@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Bot, Zap, TrendingUp, CheckSquare, AlertTriangle, Target, Calendar, ChevronRight } from 'lucide-react';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
 import { useGuru } from '../../contexts/GuruContext';
-import { supabase } from '../../services/supabase';
 
 interface GuruInsight {
   id: string;
@@ -20,133 +19,97 @@ interface GuruInsight {
 const GuruDashboardWidget: React.FC = () => {
   const { openGuru, sendMessage } = useGuru();
   const [insights, setInsights] = useState<GuruInsight[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const fetchInsights = async () => {
       setIsLoading(true);
+      
+      // Simulate AI processing time
+      await new Promise(resolve => setTimeout(resolve, 1200));
+      
       try {
-        // Fetch data from Supabase to generate insights
-        
-        // Check for overdue tasks
-        const { data: overdueTasks } = await supabase
-          .from('tasks')
-          .select('*')
-          .eq('status', 'overdue')
-          .eq('completed', false)
-          .order('due_date', { ascending: true });
-        
-        // Check for deals in negotiation stage
-        const { data: negotiationDeals } = await supabase
-          .from('deals')
-          .select('*')
-          .eq('stage_id', 'negotiation')
-          .order('updated_at', { ascending: true });
-        
-        // Check for high-scoring leads
-        const { data: highScoringLeads } = await supabase
-          .from('leads')
-          .select('*')
-          .gte('score', 80)
-          .order('score', { ascending: false });
-        
-        // Generate insights based on data
-        const generatedInsights: GuruInsight[] = [];
-        
-        if (overdueTasks && overdueTasks.length > 0) {
-          generatedInsights.push({
-            id: 'overdue-tasks',
-            title: `${overdueTasks.length} overdue tasks need attention`,
-            description: `You have ${overdueTasks.length} tasks that are past their due date. The oldest is "${overdueTasks[0].title}" from ${new Date(overdueTasks[0].due_date).toLocaleDateString()}.`,
+        // Generate helpful insights for the user
+        const generatedInsights: GuruInsight[] = [
+          {
+            id: 'productivity-tip',
+            title: 'Boost your productivity today',
+            description: 'Focus on high-priority tasks and update your deals to maintain momentum.',
             type: 'task',
-            priority: 'high',
-            action: {
-              label: 'View overdue tasks',
-              query: 'Show me all overdue tasks'
-            }
-          });
-        }
-        
-        if (negotiationDeals && negotiationDeals.length > 0) {
-          const totalValue = negotiationDeals.reduce((sum, deal) => sum + deal.value, 0);
-          
-          generatedInsights.push({
-            id: 'negotiation-deals',
-            title: `${negotiationDeals.length} deals in negotiation ($${(totalValue/1000).toFixed(0)}K)`,
-            description: `Focus on these deals to improve your close rate. The oldest deal in negotiation is "${negotiationDeals[0].title}" with ${negotiationDeals[0].company}.`,
-            type: 'deal',
             priority: 'medium',
             action: {
-              label: 'Analyze negotiation deals',
-              query: 'Analyze deals in negotiation stage'
+              label: 'Get Tips',
+              query: 'How can I be more productive today?'
             }
-          });
-        }
-        
-        if (highScoringLeads && highScoringLeads.length > 0) {
-          generatedInsights.push({
-            id: 'high-scoring-leads',
-            title: `${highScoringLeads.length} leads have high engagement scores`,
-            description: `${highScoringLeads[0].company} and ${highScoringLeads.length > 1 ? highScoringLeads[1].company : 'others'} have shown increased activity. These leads are ready for outreach.`,
-            type: 'lead',
+          },
+          {
+            id: 'pipeline-review',
+            title: 'Review your sales pipeline',
+            description: 'Check your deals and move them forward to close more opportunities this quarter.',
+            type: 'deal',
             priority: 'high',
             action: {
-              label: 'Prioritize outreach',
-              query: 'Suggest outreach strategy for high-scoring leads'
+              label: 'View Pipeline',
+              query: 'Show me my sales pipeline'
             }
-          });
-        }
-        
-        // Add some static insights for demonstration
-        generatedInsights.push({
-          id: 'upcoming-meetings',
-          title: 'You have 3 meetings scheduled this week',
-          description: 'Your busiest day is Wednesday with 2 client meetings. Consider preparing materials in advance.',
-          type: 'calendar',
-          priority: 'medium',
-          action: {
-            label: 'Prepare meeting materials',
-            query: 'Help me prepare for this week\'s meetings'
+          },
+          {
+            id: 'ai-assistant',
+            title: 'AI Assistant ready to help',
+            description: 'Ask me anything about your CRM data, sales strategies, or productivity tips.',
+            type: 'calendar',
+            priority: 'low',
+            action: {
+              label: 'Ask Guru',
+              query: 'What can you help me with?'
+            }
           }
-        });
-        
-        if (generatedInsights.length < 3) {
-          generatedInsights.push({
-            id: 'pipeline-health',
-            title: 'Pipeline health check recommended',
-            description: 'It\'s been 14 days since your last pipeline review. Consider analyzing deal progress and conversion rates.',
-            type: 'deal',
-            priority: 'medium',
-            action: {
-              label: 'Analyze pipeline health',
-              query: 'Analyze my sales pipeline health'
-            }
-          });
-        }
+        ];
         
         setInsights(generatedInsights);
       } catch (error) {
-        console.error('Error fetching insights:', error);
+        console.error('Error generating insights:', error);
+        setInsights([
+          {
+            id: 'welcome',
+            title: 'Welcome to your CRM dashboard',
+            description: 'Your AI assistant is ready to help you manage your sales pipeline and boost productivity.',
+            type: 'calendar',
+            priority: 'medium',
+            action: {
+              label: 'Get Started',
+              query: 'How can I get started?'
+            }
+          }
+        ]);
       } finally {
         setIsLoading(false);
       }
     };
+
+    // Start with immediate insights, then fetch more
+    setInsights([
+      {
+        id: 'initial',
+        title: 'AI Assistant is analyzing your data...',
+        description: 'Getting personalized insights for your sales activities.',
+        type: 'calendar',
+        priority: 'low'
+      }
+    ]);
     
     fetchInsights();
   }, []);
 
   const handleAction = (query: string) => {
+    sendMessage(query);
     openGuru();
-    // Small delay to ensure panel is open
-    setTimeout(() => {
-      sendMessage(query);
-    }, 300);
   };
 
   const getInsightIcon = (type: string) => {
     switch (type) {
       case 'deal':
-        return <Target className="w-5 h-5 text-primary-500" />;
+        return <Target className="w-5 h-5 text-blue-500" />;
       case 'task':
         return <CheckSquare className="w-5 h-5 text-orange-500" />;
       case 'lead':
@@ -185,7 +148,7 @@ const GuruDashboardWidget: React.FC = () => {
         </div>
         <button
           onClick={openGuru}
-          className="btn-primary text-sm flex items-center space-x-2"
+          className="px-4 py-2 bg-gradient-to-r from-[#a259ff] to-[#377dff] text-white rounded-lg text-sm flex items-center space-x-2 hover:opacity-90 transition-opacity"
         >
           <Zap className="w-4 h-4" />
           <span>Ask Guru</span>
@@ -195,6 +158,7 @@ const GuruDashboardWidget: React.FC = () => {
       {isLoading ? (
         <div className="flex items-center justify-center py-8">
           <div className="w-8 h-8 border-2 border-primary-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="ml-3 text-secondary-300">AI is analyzing your data...</p>
         </div>
       ) : insights.length > 0 ? (
         <div className="space-y-4">

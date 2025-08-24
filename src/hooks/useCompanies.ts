@@ -15,15 +15,15 @@ export const useCompanies = (initialFilter?: CompanyFilter) => {
     setError(null);
     
     try {
-      // Check if companies table exists
-      const { error: tableCheckError } = await supabase
+      // Check if companies table exists and has data
+      const { data: existingCompanies, error: tableCheckError } = await supabase
         .from('companies')
-        .select('id')
-        .limit(1);
+        .select('*')
+        .limit(10);
       
-      // If table doesn't exist, create sample data
-      if (tableCheckError) {
-        console.log('Companies table may not exist yet, using sample data');
+      // If table doesn't exist or has no data, create sample data
+      if (tableCheckError || !existingCompanies || existingCompanies.length === 0) {
+        console.log('Companies table empty or error, creating sample data...');
         
         // Sample companies data
         const sampleCompanies: Company[] = [
@@ -86,7 +86,25 @@ export const useCompanies = (initialFilter?: CompanyFilter) => {
           }
         ];
         
-        setCompanies(sampleCompanies);
+        // Try to insert sample data into the database
+        try {
+          const { data: insertedCompanies, error: insertError } = await supabase
+            .from('companies')
+            .insert(sampleCompanies)
+            .select();
+          
+          if (insertError) {
+            console.log('Could not insert sample data, using local state:', insertError);
+            setCompanies(sampleCompanies);
+          } else {
+            console.log('Sample companies inserted successfully:', insertedCompanies);
+            setCompanies(insertedCompanies || sampleCompanies);
+          }
+        } catch (insertError) {
+          console.log('Insert failed, using local state:', insertError);
+          setCompanies(sampleCompanies);
+        }
+        
         setIsLoading(false);
         return;
       }

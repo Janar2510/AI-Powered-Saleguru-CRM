@@ -1,0 +1,122 @@
+# Cursor Rules for AI-Powered Saleguru CRM
+
+## Brand Design Guidelines
+
+### Automation Node Cards
+- Use shadcn Card component with `rounded-2xl` and `shadow-sm`
+- Place icon on left side of card content
+- Maintain consistent spacing and typography
+- Use glass-morphism effects for visual depth
+
+### Button Hierarchy
+- **Primary actions**: Use default Button styling
+- **Secondary actions**: Use outlined Button variant
+- **Loading states**: Show spinner with descriptive text
+- **Destructive actions**: Use destructive variant
+
+### Motion & Animations
+- Use Framer Motion for all animations
+- Fade-in pattern: `initial={{opacity:0}} animate={{opacity:1}}`
+- Apply to node drops and UI state changes
+- Keep animations subtle and performant
+
+### Spline 3D Integration
+- Keep Spline 3D ambient effects in header only
+- Use low alpha values to avoid distraction
+- Do NOT interfere with node editing workflows
+- Maintain brand consistency across all pages
+
+### Color Scheme
+- Primary: Blue gradients for main actions
+- Secondary: Purple gradients for AI features
+- Success: Green for positive actions
+- Warning: Yellow for caution states
+- Error: Red for error states
+- Glass-morphism: Semi-transparent backgrounds with blur effects
+
+### Component Patterns
+- BrandCard for all major content containers
+- BrandButton for all interactive elements
+- BrandBadge for status indicators
+- BrandPageLayout for consistent page structure
+- BrandBackground for unified visual foundation
+
+### Typography
+- Use consistent font weights and sizes
+- White text on dark backgrounds
+- Semi-transparent text for secondary information
+- Bold headings for clear hierarchy
+
+### Spacing & Layout
+- 20px margins for page content (max 60px)
+- Responsive grid layouts for card displays
+- Consistent padding within components
+- Proper visual hierarchy with whitespace
+
+## Automation-Specific Guidelines
+
+### Workflow Builder
+- ReactFlow integration with custom node styling
+- Visual distinction between node types (Action, Condition, Delay, Split)
+- Clear connection indicators for workflow flow
+- Intuitive drag-and-drop interface
+
+### Governance Controls
+- Clear visual indicators for approval status
+- Prominent governance buttons when appropriate
+- Audit trail visibility for transparency
+- Role-based UI element visibility
+
+### A/B Testing Visualization
+- Split nodes with distinctive visual treatment
+- Weight distribution indicators
+- Clear branch labeling for test variants
+- Results tracking integration
+
+## Security & Performance
+
+### Data Handling
+- All automation tables scoped by org_id
+- RLS policies enforced at database level
+- Server-side event emission prevents spoofing
+- Service key usage restricted to Edge Functions
+
+### Edge Function Best Practices
+- Only callable by scheduler (no client exposure)
+- Idempotent operations with retry safety
+- Proper error handling and logging
+- Rate limiting for automation generation
+
+### Rate Limits
+- Throttle automation-generate per organization
+- Implement last_generated_at tracking
+- Graceful degradation when limits exceeded
+- User feedback for rate limit status
+
+## Development Guidelines
+
+### File Organization
+- Components in appropriate subdirectories
+- Hooks in dedicated hooks directory
+- Utils for shared functionality
+- Types defined per feature area
+
+### Import Patterns
+- Named imports for UI components
+- Consistent import ordering
+- Proper dependency management
+- Lazy loading for route components
+
+### Error Handling
+- Comprehensive try-catch blocks
+- User-friendly error messages
+- Console logging for debugging
+- Graceful fallbacks for failures
+
+### Testing
+- Test critical automation flows
+- Verify governance controls
+- Validate A/B testing logic
+- Check RLS policy enforcement
+
+Remember: Maintain brand consistency, prioritize user experience, and ensure enterprise-grade security throughout all implementations.

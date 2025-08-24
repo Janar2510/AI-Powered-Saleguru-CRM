@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Edit, Trash2, Tag } from 'lucide-react';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
+import { Card } from '../ui/Card';
+import { Button } from '../ui/Button';
 
 const initialFields: { [key: string]: { id: string; name: string; type: string }[] } = {
   deals: [

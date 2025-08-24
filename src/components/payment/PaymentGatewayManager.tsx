@@ -21,9 +21,9 @@ import {
   Calendar
 } from 'lucide-react';
 import Container from '../layout/Container';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
-import Badge from '../ui/Badge';
+import { Card } from '../ui/Card';
+import { Button } from '../ui/Button';
+import { Badge } from '../ui/Badge';
 import { useToastContext } from '../../contexts/ToastContext';
 import { supabase } from '../../services/supabase';
 

@@ -12,9 +12,9 @@ import {
   ShieldAlert, ShieldX, Key, KeyRound, Fingerprint, UserCheck, UserX, UserPlus,
   UserMinus, UserCog, X
 } from 'lucide-react';
-import Card from '../components/ui/Card';
-import Badge from '../components/ui/Badge';
-import Button from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { Badge } from '../components/ui/Badge';
+import { Button } from '../components/ui/Button';
 import EmptyState from '../components/common/EmptyState';
 import LeadConversionModal from '../components/leads/LeadConversionModal';
 import BulkConversionModal from '../components/leads/BulkConversionModal';

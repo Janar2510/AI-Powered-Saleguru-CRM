@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Settings, Plus, GripVertical, Edit, Trash2, Target } from 'lucide-react';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
-import Button from '../ui/Button';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
@@ -10,7 +10,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { supabase } from '../../services/supabase';
 import { useEffect } from 'react';
 import { BRAND } from '../../constants/theme';
-import Modal from '../ui/Modal';
+import { Modal } from '../ui/Modal';
 
 interface PipelineStage {
   id: string;

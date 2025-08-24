@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import AnalyticsChart from '../analytics/AnalyticsChart';
 import Bar3DChart from '../analytics/3DBarChart';
 import { supabase } from '../../services/supabase';
-import Button from '../ui/Button';
+import { Button } from '../ui/Button';
 
 interface DashboardAnalyticsProps {
   className?: string;

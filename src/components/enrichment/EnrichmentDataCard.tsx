@@ -1,7 +1,7 @@
 import React from 'react';
 import { Zap, Clock, AlertTriangle, CheckCircle, ExternalLink } from 'lucide-react';
 import { EnrichmentStatus } from '../../services/enrichmentService';
-import Card from '../ui/Card';
+import { Card } from '../ui/Card';
 import EnrichmentButton from './EnrichmentButton';
 import EnrichmentStatusBadge from './EnrichmentStatusBadge';
 

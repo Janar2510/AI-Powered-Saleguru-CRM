@@ -56,7 +56,7 @@ import {
 } from 'lucide-react';
 import { Deal, PipelineStage, DealFilter } from '../../types/deals';
 import { DealsAPI } from '../../lib/deals-api';
-import Card from '../ui/Card';
+import { Card } from '../ui/Card';
 import { format } from 'date-fns';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import { DndProvider } from 'react-dnd';

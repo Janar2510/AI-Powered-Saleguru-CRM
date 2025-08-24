@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, ArrowRight, Users, Target, Calendar, DollarSign, CheckCircle, AlertTriangle } from 'lucide-react';
-import Badge from '../ui/Badge';
+import { Badge } from '../ui/Badge';
 import { supabase } from '../../services/supabase';
 import { useToastContext } from '../../contexts/ToastContext';
 import { useAuth } from '../../contexts/AuthContext';

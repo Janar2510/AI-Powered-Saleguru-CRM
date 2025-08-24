@@ -10,10 +10,10 @@ import {
   ArrowRight,
   Clock
 } from 'lucide-react';
-import Card from '../ui/Card';
+import { Card } from '../ui/Card';
 import { Bottleneck } from '../../types/ai';
 import { formatDistanceToNow } from 'date-fns';
-import Button from '../ui/Button';
+import { Button } from '../ui/Button';
 
 interface BottleneckPanelProps {
   bottlenecks: Bottleneck[];

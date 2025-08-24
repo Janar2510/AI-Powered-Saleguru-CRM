@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { X, AlertTriangle } from 'lucide-react';
 import { Company, CompanyFormData } from '../../types/company';
 import CompanyForm from './CompanyForm';
-import Button from '../ui/Button';
+import { Button } from '../ui/Button';
 import { useToastContext } from '../../contexts/ToastContext';
 import { useModal } from '../../contexts/ModalContext';
 

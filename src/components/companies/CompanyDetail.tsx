@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Building, Globe, Mail, Phone, MapPin, Calendar, Edit, Trash2, ArrowLeft, Linkedin, Twitter, Facebook, MessageSquare, Target, FileText, Plus, Bot, Check, X, Users, DollarSign, User, TrendingUp } from 'lucide-react';
 import { Company } from '../../types/company';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
-import Button from '../ui/Button';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
 import { useToastContext } from '../../contexts/ToastContext';
 import { useGuru } from '../../contexts/GuruContext';
 import CompanyEnrichmentSection from '../companies/CompanyEnrichmentSection';

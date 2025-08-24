@@ -1,7 +1,7 @@
 import React from 'react';
 import { Trash2, AlertTriangle, Shield } from 'lucide-react';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
+import { Card } from '../ui/Card';
+import { Button } from '../ui/Button';
 import { usePermissions } from '../../contexts/PermissionContext';
 import { useToastContext } from '../../contexts/ToastContext';
 

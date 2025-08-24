@@ -1,7 +1,7 @@
 import React from 'react';
 import { CheckCircle, AlertCircle, Clock, HelpCircle } from 'lucide-react';
 import { EnrichmentStatus } from '../../services/enrichmentService';
-import Badge from '../ui/Badge';
+import { Badge } from '../ui/Badge';
 
 interface EnrichmentStatusBadgeProps {
   status: EnrichmentStatus;

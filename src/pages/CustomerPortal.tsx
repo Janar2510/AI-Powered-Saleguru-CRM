@@ -52,8 +52,8 @@ import {
 } from 'lucide-react';
 import { useToastContext } from '../contexts/ToastContext';
 import { useGuru } from '../contexts/GuruContext';
-import Button from '../components/ui/Button';
-import Badge from '../components/ui/Badge';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/Badge';
 import { Card } from '../components/common/Card';
 import QuickActionButton from '../components/ui/QuickActionButton';
 import DetailViewModal from '../components/common/DetailViewModal';

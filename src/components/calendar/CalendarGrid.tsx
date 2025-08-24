@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, Plus, Clock, MapPin, Users, Target, CheckSquare, Calendar, MoreHorizontal } from 'lucide-react';
 import { CalendarEvent } from '../../types/calendar';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
-import Button from '../ui/Button';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
 import clsx from 'clsx';
 
 interface CalendarGridProps {

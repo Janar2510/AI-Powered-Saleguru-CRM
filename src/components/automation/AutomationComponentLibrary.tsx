@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Search, Zap, Filter, DollarSign, Users, Calendar, CheckSquare, Mail, MessageSquare, Bell, Clock, Tag, Target, FileText, Edit, Play, Database, Globe, Shield, Cpu, Brain, GitBranch, Timer, AlertTriangle, CheckCircle, XCircle, ArrowRight, ArrowLeft, RotateCcw, Settings, Activity, BarChart3, TrendingUp, TrendingDown, Smartphone, Monitor, Wifi, WifiOff, Cloud, Server, GitCommit, GitMerge, GitCompare, GitFork, Layers, Palette, Code, GitBranchPlus } from 'lucide-react';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
-import Button from '../ui/Button';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
 import { AutomationComponent } from '../../types/automation';
 
 interface AutomationComponentLibraryProps {

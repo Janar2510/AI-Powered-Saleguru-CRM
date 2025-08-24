@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
-import { X, Calendar, Clock, MapPin, Users, Edit, Trash2, Target, CheckSquare, User } from 'lucide-react';
+import React from 'react';
 import { CalendarEvent } from '../../types/calendar';
-import Badge from '../ui/Badge';
+import { Badge } from '../ui/Badge';
 
 interface EventDetailsModalProps {
   isOpen: boolean;

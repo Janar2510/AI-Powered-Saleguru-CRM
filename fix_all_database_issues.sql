@@ -1,4 +1,4 @@
--- Fix All Database Issues (2025-08-07)
+  -- Fix All Database Issues (2025-08-07)
 -- This script fixes all remaining database schema problems
 
 -- 1. Fix sales_orders table - add missing columns and fix constraints

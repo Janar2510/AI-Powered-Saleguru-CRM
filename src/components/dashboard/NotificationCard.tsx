@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
 import { Bell, AlertTriangle, User, Bot, CheckCircle, ArrowRight } from 'lucide-react';
-import Button from '../ui/Button';
+import { Button } from '../ui/Button';
 import { useNavigate } from 'react-router-dom';
 
 const mockNotifications = [

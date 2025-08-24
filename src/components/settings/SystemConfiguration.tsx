@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Shield, Users, Database, Download, Upload, AlertTriangle, Server } from 'lucide-react';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
-import Button from '../ui/Button';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
 
 interface SystemConfigurationProps {
   onChanges: (hasChanges: boolean) => void;

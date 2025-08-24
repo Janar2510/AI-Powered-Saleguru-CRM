@@ -1,8 +1,8 @@
 import React from 'react';
 import { X, Mail, Phone, Building, Globe, Linkedin, Calendar, User, Target, Star } from 'lucide-react';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
-import Button from '../ui/Button';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
 
 interface Lead {
   id: string;

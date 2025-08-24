@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, Check, Mail, Calendar, Cloud, Smartphone, Zap, Settings, ArrowRight, Sparkles } from 'lucide-react';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
-import Button from '../ui/Button';
-import Modal from '../ui/Modal';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
+import { Modal } from '../ui/Modal';
 
 interface IntegrationOnboardingWizardProps {
   isOpen: boolean;

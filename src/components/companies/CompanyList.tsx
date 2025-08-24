@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Building, Globe, Users, Edit, Trash2, Eye, DollarSign, Check, X, Zap, Target, Clock } from 'lucide-react';
 import { Company } from '../../types/company';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
-import Button from '../ui/Button';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
 import { useToastContext } from '../../contexts/ToastContext';
 import EnrichmentStatusBadge from '../enrichment/EnrichmentStatusBadge';
 

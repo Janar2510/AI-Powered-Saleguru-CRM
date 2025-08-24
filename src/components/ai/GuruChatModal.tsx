@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Send, Bot, Zap, Paperclip, Sparkles, Target, User, Calendar, CheckSquare } from 'lucide-react';
 import { useGuru } from '../../contexts/GuruContext';
-import Badge from '../ui/Badge';
+import { Badge } from '../ui/Badge';
 
 interface GuruChatModalProps {
   isOpen: boolean;
@@ -92,7 +92,7 @@ const GuruChatModal: React.FC<GuruChatModalProps> = ({
         return 'Task Helper';
       case 'general':
       default:
-        return 'SaleToruGuru';
+        return 'Saleguru Guru';
     }
   };
 
@@ -195,7 +195,7 @@ const GuruChatModal: React.FC<GuruChatModalProps> = ({
                 {message.type === 'guru' && (
                   <div className="flex items-center space-x-2 mb-2">
                     <Sparkles className="w-4 h-4 text-primary-400" />
-                    <span className="text-xs font-medium text-primary-400">SaleToruGuru</span>
+                    <span className="text-xs font-medium text-primary-400">Saleguru Guru</span>
                     {message.metadata?.confidence && (
                       <Badge variant="secondary" size="sm">
                         {message.metadata.confidence}% confident

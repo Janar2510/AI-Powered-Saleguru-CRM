@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { CreditCard, FileText, Building, CheckCircle } from 'lucide-react';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
 
 const Billing: React.FC = () => {
   const [company, setCompany] = useState({ name: 'SaleToru Inc.', address: 'Tallinn, Estonia', vat: 'EE123456789' });

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { User, Mail, Globe, Palette, Eye, EyeOff, Save } from 'lucide-react';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
-import Button from '../ui/Button';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
 
 interface AccountPreferencesProps {
   onChanges: (hasChanges: boolean) => void;

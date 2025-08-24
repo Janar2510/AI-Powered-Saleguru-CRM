@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, ArrowRight, DollarSign, Users, Calendar, Target, FolderPlus, Building, User, Mail, Bot, CheckCircle, AlertTriangle, FileText } from 'lucide-react';
-import Badge from '../ui/Badge';
+import { Badge } from '../ui/Badge';
 import GuruChatModal from '../ai/GuruChatModal';
 import { useToastContext } from '../../contexts/ToastContext';
 import { supabase } from '../../services/supabase';

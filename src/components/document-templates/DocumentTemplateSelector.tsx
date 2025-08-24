@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
+import { Button } from '../ui/Button';
+import { Card } from '../ui/Card';
 import Container from '../layout/Container';
 import Spline from '@splinetool/react-spline';
 import { useDocuments } from '../../hooks/useDocuments';

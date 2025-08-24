@@ -39,6 +39,13 @@ export interface CompanyEnrichmentData {
   technologies?: string[];
   competitors?: string[];
   source?: string;
+  logo_url?: string;
+  social_profiles?: {
+    linkedin?: string;
+    twitter?: string;
+    facebook?: string;
+    instagram?: string;
+  };
 }
 
 export type EnrichmentStatus = 'none' | 'pending' | 'completed' | 'failed';

@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { X, Upload, Download, FileText, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { useModal } from '../../contexts/ModalContext';
 import { useToastContext } from '../../contexts/ToastContext';
-import Button from '../ui/Button';
+import { Button } from '../ui/Button';
 
 interface ImportExportModalProps {
   isOpen: boolean;

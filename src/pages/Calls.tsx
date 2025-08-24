@@ -51,9 +51,9 @@ import CallHistory from '../components/calls/CallHistory';
 import CallInsightsWidget from '../components/calls/CallInsightsWidget';
 import { useToastContext } from '../contexts/ToastContext';
 import { useGuruContext } from '../contexts/GuruContext';
-import Card from '../components/ui/Card';
-import Badge from '../components/ui/Badge';
-import Button from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { Badge } from '../components/ui/Badge';
+import { Button } from '../components/ui/Button';
 import Dropdown from '../components/ui/Dropdown';
 import { CallTranscript, CallInsights } from '../types/call';
 

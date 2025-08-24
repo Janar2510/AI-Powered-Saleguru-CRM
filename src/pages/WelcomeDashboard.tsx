@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Users, Calendar, Target, Bot, Settings, Check, ChevronRight, FileText, Download, Upload, Zap, Sparkles, User, Video, Mail, Phone } from 'lucide-react';
-import Card from '../components/ui/Card';
-import Badge from '../components/ui/Badge';
+import { Card } from '../components/ui/Card';
+import { Badge } from '../components/ui/Badge';
 import { useGuru } from '../contexts/GuruContext';
 import { useToastContext } from '../contexts/ToastContext';
 import { useNavigate } from 'react-router-dom';
@@ -15,7 +15,7 @@ const WelcomeDashboard: React.FC = () => {
   
   const setupTasks = [
     { id: 'profile', title: 'Complete your profile', description: 'Add your photo and contact details', icon: User },
-    { id: 'import', title: 'Import your contacts', description: 'Bring your existing contacts into SaleToru', icon: Users },
+            { id: 'import', title: 'Import your contacts', description: 'Bring your existing contacts into SaleToru', icon: Users },
     { id: 'deal', title: 'Create your first deal', description: 'Start tracking a sales opportunity', icon: Target },
     { id: 'calendar', title: 'Connect your calendar', description: 'Sync with Google or Outlook calendar', icon: Calendar },
     { id: 'email', title: 'Set up email integration', description: 'Connect your email account', icon: Mail }
@@ -31,7 +31,7 @@ const WelcomeDashboard: React.FC = () => {
         showToast({
           type: 'info',
           title: 'Create Deal',
-          message: 'Opening deal creation form...'
+          description: 'Opening deal creation form...'
         });
         navigate('/deals');
       }
@@ -45,7 +45,7 @@ const WelcomeDashboard: React.FC = () => {
         showToast({
           type: 'info',
           title: 'Import Contacts',
-          message: 'Opening contact import wizard...'
+          description: 'Opening contact import wizard...'
         });
         navigate('/contacts');
       }
@@ -59,7 +59,7 @@ const WelcomeDashboard: React.FC = () => {
         showToast({
           type: 'info',
           title: 'Customize CRM',
-          message: 'Opening settings page...'
+          description: 'Opening settings page...'
         });
         navigate('/settings');
       }
@@ -67,9 +67,9 @@ const WelcomeDashboard: React.FC = () => {
   ];
   
   const guruTips = [
-    "Try asking SaleToruGuru to 'summarize my pipeline' for a quick overview",
-    "Use the AI assistant to draft follow-up emails based on your conversation history",
-    "Ask SaleToruGuru to 'prioritize my tasks' to focus on what matters most",
+            "Try asking SaleToruGuru to 'summarize my pipeline' for a quick overview",
+        "Use the AI assistant to draft follow-up emails based on your conversation history",
+        "Ask SaleToruGuru to 'prioritize my tasks' to focus on what matters most",
     "The AI can help you score leads based on engagement and buying signals",
     "Try 'Show me stuck deals' to identify opportunities that need attention"
   ];
@@ -83,7 +83,7 @@ const WelcomeDashboard: React.FC = () => {
       showToast({
         type: 'success',
         title: 'Task Completed',
-        message: 'Setup task marked as complete'
+        description: 'Setup task marked as complete'
       });
       
       // If all tasks are completed
@@ -91,7 +91,7 @@ const WelcomeDashboard: React.FC = () => {
         showToast({
           type: 'success',
           title: 'All Tasks Completed',
-          message: 'Great job! Your CRM is fully set up.'
+          description: 'Great job! Your CRM is fully set up.'
         });
       }
     }

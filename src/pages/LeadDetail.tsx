@@ -28,9 +28,9 @@ import {
 import { supabase } from '../services/supabase';
 import { useToastContext } from '../contexts/ToastContext';
 import { useGuru } from '../contexts/GuruContext';
-import Card from '../components/ui/Card';
-import Badge from '../components/ui/Badge';
-import Button from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { Badge } from '../components/ui/Badge';
+import { Button } from '../components/ui/Button';
 import { WorkflowActions } from '../components/workflows/WorkflowActions';
 import Spline from '@splinetool/react-spline';
 

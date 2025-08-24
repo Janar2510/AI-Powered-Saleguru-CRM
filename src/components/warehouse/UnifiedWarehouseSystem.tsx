@@ -3,9 +3,9 @@ import { createPortal } from 'react-dom';
 import { X, Package, Truck, ShoppingCart, BarChart3, Settings, Plus, Eye, Edit, Download, Send, RefreshCw, CheckCircle, Clock, AlertTriangle, Warehouse, Box, Palette, Tag, MapPin, Users } from 'lucide-react';
 import { useModal } from '../../contexts/ModalContext';
 import { useToastContext } from '../../contexts/ToastContext';
-import Badge from '../ui/Badge';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
+import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
+import { Card } from '../ui/Card';
 
 interface Product {
   id: string;

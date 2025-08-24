@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Save } from 'lucide-react';
-import Card from '../components/ui/Card';
-import Badge from '../components/ui/Badge';
+import { Card } from '../components/ui/Card';
+import { Badge } from '../components/ui/Badge';
 import SettingsSidebar from '../components/settings/SettingsSidebar';
 import { settingsSections, SettingsSectionId } from '../components/settings/settingsSections';
 import { useSubscription } from '../contexts/SubscriptionContext';
 import Spline from '@splinetool/react-spline';
-import Button from '../components/ui/Button';
+import { Button } from '../components/ui/Button';
 
 const Settings: React.FC = () => {
   const [activeSection, setActiveSection] = useState<SettingsSectionId>('account');

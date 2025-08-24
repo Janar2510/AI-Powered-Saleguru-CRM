@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link, Mail, Cloud, Calendar, Smartphone, CheckCircle, AlertCircle, Settings, Sparkles } from 'lucide-react';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
-import Button from '../ui/Button';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
 import IntegrationOnboardingWizard from './IntegrationOnboardingWizard';
 
 // 1. Update Integration type

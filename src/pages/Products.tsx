@@ -30,13 +30,19 @@ import {
   Upload,
   Download
 } from 'lucide-react';
-import Card from '../components/ui/Card';
-import Container from '../components/layout/Container';
-import Button from '../components/ui/Button';
-import Badge from '../components/ui/Badge';
-import Spline from '@splinetool/react-spline';
+import { 
+  BrandBackground,
+  BrandPageLayout,
+  BrandStatsGrid,
+  BrandStatCard,
+  BrandCard,
+  BrandButton,
+  BrandInput,
+  BrandBadge
+} from '../contexts/BrandDesignContext';
 import { supabase } from '../services/supabase';
 import { formatDistanceToNow } from 'date-fns';
+import EnhancedWarehouseManager from '../components/warehouse/EnhancedWarehouseManager';
 
 interface Product {
   id: string;
@@ -200,7 +206,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, onSave, i
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-[#23233a]/95 backdrop-blur-md rounded-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto border border-[#23233a]/50">
+      <BrandCard borderGradient="primary" className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-4 sm:p-6 border-b border-[#23233a]/30">
           <h2 className="text-lg sm:text-xl font-semibold text-white">
             {isNew ? 'Add New Product' : 'Edit Product'}
@@ -227,15 +233,13 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, onSave, i
               <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
                 Product Name *
               </label>
-              <input
+              <BrandInput
                 type="text"
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 bg-[#23233a]/50 border-2 rounded-lg text-white placeholder-[#b0b0d0] focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff] ${
-                  errors.name ? 'border-[#ef4444]' : 'border-white/20'
-                }`}
                 placeholder="Enter product name"
+                className={errors.name ? 'border-[#ef4444]' : ''}
               />
               {errors.name && <p className="text-[#ef4444] text-sm mt-1">{errors.name}</p>}
             </div>
@@ -244,15 +248,13 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, onSave, i
               <label className="block text-sm font-medium text-[#b0b0d0] mb-2">
                 SKU *
               </label>
-              <input
+              <BrandInput
                 type="text"
                 name="sku"
                 value={formData.sku}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 bg-[#23233a]/50 border-2 rounded-lg text-white placeholder-[#b0b0d0] focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff] ${
-                  errors.sku ? 'border-[#ef4444]' : 'border-white/20'
-                }`}
                 placeholder="Enter SKU"
+                className={errors.sku ? 'border-[#ef4444]' : ''}
               />
               {errors.sku && <p className="text-[#ef4444] text-sm mt-1">{errors.sku}</p>}
             </div>
@@ -555,36 +557,36 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, onSave, i
                     }
                   }}
                 />
-                <Button
+                <BrandButton
                   onClick={handleAddTag}
                   variant="secondary"
                   size="sm"
                 >
                   Add
-                </Button>
+                </BrandButton>
               </div>
             </div>
           </div>
           
           <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3 pt-4 border-t border-[#23233a]/30">
-            <Button
+            <BrandButton
               onClick={onClose}
               variant="secondary"
               size="lg"
             >
               Cancel
-            </Button>
-            <Button
+            </BrandButton>
+            <BrandButton
               type="submit"
-              variant="gradient"
+              variant="primary"
               size="lg"
-              icon={Save}
+
             >
               {isNew ? 'Create Product' : 'Update Product'}
-            </Button>
+            </BrandButton>
           </div>
         </form>
-      </div>
+      </BrandCard>
     </div>
   );
 };
@@ -677,7 +679,7 @@ const PurchaseOrderModal: React.FC<PurchaseOrderModalProps> = ({ purchaseOrder, 
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-[#23233a]/95 backdrop-blur-md rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-[#23233a]/50">
+      <BrandCard borderGradient="secondary" className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-4 sm:p-6 border-b border-[#23233a]/30">
           <h2 className="text-lg sm:text-xl font-semibold text-white">
             {isNew ? 'Create Purchase Order' : 'Edit Purchase Order'}
@@ -841,24 +843,24 @@ const PurchaseOrderModal: React.FC<PurchaseOrderModalProps> = ({ purchaseOrder, 
           </div>
           
           <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3 pt-4 border-t border-[#23233a]/30">
-            <Button
+            <BrandButton
               onClick={onClose}
               variant="secondary"
               size="lg"
             >
               Cancel
-            </Button>
-            <Button
+            </BrandButton>
+            <BrandButton
               type="submit"
-              variant="gradient"
+              variant="primary"
               size="lg"
-              icon={Save}
+
             >
               {isNew ? 'Create Order' : 'Update Order'}
-            </Button>
+            </BrandButton>
           </div>
         </form>
-      </div>
+      </BrandCard>
     </div>
   );
 };
@@ -882,7 +884,7 @@ const Products: React.FC = () => {
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [showInventoryModal, setShowInventoryModal] = useState(false);
   const [selectedPurchaseOrder, setSelectedPurchaseOrder] = useState<PurchaseOrder | null>(null);
-  const [activeTab, setActiveTab] = useState<'products' | 'purchases' | 'inventory' | 'analytics'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'purchases' | 'warehouse'>('products');
   
   // Bulk operations states
   const [showImportModal, setShowImportModal] = useState(false);
@@ -1392,7 +1394,7 @@ const Products: React.FC = () => {
     if (file && file.type === 'text/csv') {
       setImportFile(file);
     } else {
-      showToast({ title: 'Please select a valid CSV file', type: 'error' });
+      alert('Please select a valid CSV file');
     }
   };
 
@@ -1491,10 +1493,10 @@ const Products: React.FC = () => {
       setImportFile(null);
       setImportProgress(0);
       setShowImportModal(false);
-      showToast({ title: `Successfully imported ${newProducts.length} products`, type: 'success' });
+      alert(`Successfully imported ${newProducts.length} products`);
     } catch (error) {
       console.error('Import error:', error);
-      showToast({ title: 'Error importing products', type: 'error' });
+      alert('Error importing products');
     } finally {
       setIsImporting(false);
     }
@@ -1538,7 +1540,7 @@ const Products: React.FC = () => {
     document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
     
-    showToast({ title: `Exported ${products.length} products`, type: 'success' });
+    alert(`Exported ${products.length} products`);
   };
 
   // Advanced filtering logic
@@ -1556,71 +1558,56 @@ const Products: React.FC = () => {
     return matchesSearch && matchesCategory && matchesStatus && matchesPrice && matchesStock && matchesSupplier && matchesUnit;
   });
 
-  return (
-    <div className="relative z-10 min-h-screen">
-      {/* 3D Background - Same as Dashboard */}
-      <div className="fixed inset-0 z-0">
-        <Spline
-          scene="https://prod.spline.design/n0GFhlzrcT-MOycs/scene.splinecode"
-          className="w-full h-full"
+  // If warehouse tab is active, show the comprehensive warehouse system
+  if (activeTab === 'warehouse') {
+    return (
+      <BrandBackground>
+        <EnhancedWarehouseManager 
+          orgId="default-org-id"
+          selectedProduct={selectedProduct ? {
+            id: selectedProduct.id,
+            name: selectedProduct.name,
+            sku: selectedProduct.sku || '',
+            price: selectedProduct.price || 0
+          } : undefined}
+          onBackToProducts={() => setActiveTab('products')}
         />
-      </div>
-      
-      {/* Gradient Overlay - Same as Dashboard */}
-      <div className="fixed inset-0 bg-gradient-to-b from-[#18182c]/50 to-[#18182c]/70 z-0"></div>
-      
-      {/* Content */}
-      <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
-        <div className="space-y-6">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-white">Products & Warehouse</h1>
-              <p className="text-[#b0b0d0] mt-1">Manage your product catalog and warehouse operations</p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button
-                onClick={() => setShowImportModal(true)}
-                variant="secondary"
-                size="lg"
-                icon={Upload}
-              >
-                Import
-              </Button>
-              <Button
-                onClick={() => setShowExportModal(true)}
-                variant="secondary"
-                size="lg"
-                icon={Download}
-              >
-                Export
-              </Button>
-              <Button
-                onClick={() => setActiveTab('purchases')}
-                variant="secondary"
-                size="lg"
-                icon={ShoppingCart}
-              >
-                Purchase Orders
-              </Button>
-              <Button
-                onClick={() => setActiveTab('inventory')}
-                variant="secondary"
-                size="lg"
-                icon={Warehouse}
-              >
-                Inventory
-              </Button>
-              <Button
-                onClick={handleCreateProduct}
-                variant="gradient"
-                size="lg"
-                icon={Plus}
-              >
-                Add Product
-              </Button>
-            </div>
+      </BrandBackground>
+    );
+  }
+
+  return (
+    <BrandBackground>
+      <BrandPageLayout
+        title="Warehouse Products"
+        subtitle="Manage your product catalog and warehouse operations"
+        actions={
+          <div className="flex flex-col sm:flex-row gap-3">
+            <BrandButton
+              variant="secondary"
+              onClick={() => setShowImportModal(true)}
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              Import
+            </BrandButton>
+            <BrandButton
+              variant="secondary"
+              onClick={() => setShowExportModal(true)}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Export
+            </BrandButton>
+
+            <BrandButton
+              variant="primary"
+              onClick={handleCreateProduct}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Product
+            </BrandButton>
           </div>
+        }
+      >
 
           {/* Navigation Tabs */}
           <div className="flex space-x-1 border-b border-[#23233a]/30">
@@ -1644,25 +1631,16 @@ const Products: React.FC = () => {
             >
               Purchase Orders
             </button>
+
             <button
-              onClick={() => setActiveTab('inventory')}
+              onClick={() => setActiveTab('warehouse')}
               className={`px-4 py-2 font-medium transition-colors ${
-                activeTab === 'inventory'
+                activeTab === 'warehouse'
                   ? 'text-[#a259ff] border-b-2 border-[#a259ff]'
                   : 'text-[#b0b0d0] hover:text-white'
               }`}
             >
-              Inventory
-            </button>
-            <button
-              onClick={() => setActiveTab('analytics')}
-              className={`px-4 py-2 font-medium transition-colors ${
-                activeTab === 'analytics'
-                  ? 'text-[#a259ff] border-b-2 border-[#a259ff]'
-                  : 'text-[#b0b0d0] hover:text-white'
-              }`}
-            >
-              Analytics
+              Warehouse
             </button>
           </div>
 
@@ -1670,17 +1648,16 @@ const Products: React.FC = () => {
           {activeTab === 'products' && (
             <>
               {/* Search and Filters */}
-              <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 p-4">
+              <BrandCard borderGradient="primary" className="p-4">
                 <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full lg:w-auto">
                     <div className="relative flex-1 max-w-md">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#b0b0d0]" />
-                      <input
-                        type="text"
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#b0b0d0] z-10" />
+                      <BrandInput
                         placeholder="Search products..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 bg-[#23233a]/50 border-2 border-white/20 rounded-lg text-white placeholder-[#b0b0d0] focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff]"
+                        className="pl-10"
                       />
                     </div>
                     <div className="flex gap-2">
@@ -1710,14 +1687,13 @@ const Products: React.FC = () => {
                   </div>
 
                   <div className="flex items-center space-x-2">
-                    <Button
-                      onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                    <BrandButton
                       variant="secondary"
-                      size="sm"
-                      icon={Filter}
+                      onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
                     >
+                      <Filter className="w-4 h-4 mr-2" />
                       Advanced Filters
-                    </Button>
+                    </BrandButton>
                     <div className="flex space-x-1 bg-[#23233a]/50 border-2 border-white/20 rounded-lg p-1">
                       <button
                         onClick={() => setViewMode('list')}
@@ -1742,15 +1718,14 @@ const Products: React.FC = () => {
                     </div>
                     
                     {selectedProducts.size > 0 && (
-                      <Button
+                      <BrandButton
+                        variant="red"
                         onClick={handleBulkDelete}
-                        variant="secondary"
-                        size="sm"
-                        icon={Trash2}
                         className="text-red-400 hover:text-red-300"
                       >
+                        <Trash2 className="w-4 h-4 mr-2" />
                         Delete ({selectedProducts.size})
-                      </Button>
+                      </BrandButton>
                     )}
                   </div>
                 </div>
@@ -1834,22 +1809,21 @@ const Products: React.FC = () => {
                     </div>
                     
                     <div className="flex justify-end">
-                      <Button
+                      <BrandButton
+                        variant="secondary"
                         onClick={() => {
                           setPriceRange({ min: 0, max: 10000 });
                           setStockRange({ min: 0, max: 1000 });
                           setSupplierFilter('');
                           setUnitFilter('');
                         }}
-                        variant="secondary"
-                        size="sm"
                       >
                         Clear Filters
-                      </Button>
+                      </BrandButton>
                     </div>
                   </div>
                 )}
-              </div>
+              </BrandCard>
 
               {/* Products List */}
               {loading ? (
@@ -1864,7 +1838,7 @@ const Products: React.FC = () => {
                   {filteredProducts.map((product) => {
                     const stockStatus = getStockStatus(product);
                     return (
-                      <div key={product.id} className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50">
+                      <BrandCard key={product.id} borderGradient="secondary">
                         <div className="flex items-center justify-between p-4">
                           <div className="flex items-center space-x-4">
                             <input
@@ -1881,9 +1855,9 @@ const Products: React.FC = () => {
                             <div className="flex-1">
                               <div className="flex items-center space-x-2 mb-1">
                                 <h3 className="text-lg font-semibold text-white">{product.name}</h3>
-                                <Badge variant="secondary" size="sm" className={getStatusColor(product.status)}>
+                                <BrandBadge variant={product.status === 'active' ? 'success' : product.status === 'inactive' ? 'warning' : 'error'} size="sm">
                                   {product.status}
-                                </Badge>
+                                </BrandBadge>
                                 <div className={`flex items-center space-x-1 ${stockStatus.color}`}>
                                   {stockStatus.icon}
                                   <span className="text-sm">{stockStatus.status}</span>
@@ -1922,43 +1896,40 @@ const Products: React.FC = () => {
                           </div>
                           
                           <div className="flex items-center space-x-2">
-                            <Button
+                            <BrandButton
+                              variant="secondary"
                               onClick={() => handleCreatePurchaseOrder(product)}
-                              variant="secondary"
-                              size="sm"
-                              icon={ShoppingCart}
                             >
+                              <ShoppingCart className="w-4 h-4 mr-2" />
                               Purchase
-                            </Button>
-                            <Button
-                              onClick={() => handleEditProduct(product)}
+                            </BrandButton>
+                            <BrandButton
                               variant="secondary"
-                              size="sm"
-                              icon={Edit}
+                              onClick={() => handleEditProduct(product)}
                             >
+                              <Edit className="w-4 h-4 mr-2" />
                               Edit
-                            </Button>
-                            <Button
+                            </BrandButton>
+                            <BrandButton
+                              variant="red"
                               onClick={() => handleDeleteProduct(product.id)}
-                              variant="ghost"
-                              size="sm"
-                              icon={Trash2}
-                              className="text-red-400 hover:text-red-300"
-                            />
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </BrandButton>
                           </div>
                         </div>
-                      </div>
+                      </BrandCard>
                     );
                   })}
                 </div>
               ) : (
-                <div className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50 text-center py-8">
+                <BrandCard borderGradient="accent" className="text-center py-8">
                   <Package className="w-12 h-12 text-[#b0b0d0] mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-white mb-2">No products found</h3>
                   <p className="text-[#b0b0d0]">
                     {searchTerm ? 'Try adjusting your search criteria' : 'Add your first product to get started'}
                   </p>
-                </div>
+                </BrandCard>
               )}
             </>
           )}
@@ -1967,25 +1938,24 @@ const Products: React.FC = () => {
             <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-white">Purchase Orders</h2>
-                <Button
+                <BrandButton
+                  variant="primary"
                   onClick={() => setShowPurchaseModal(true)}
-                  variant="gradient"
-                  size="lg"
-                  icon={Plus}
                 >
+                  <Plus className="w-4 h-4 mr-2" />
                   New Purchase Order
-                </Button>
+                </BrandButton>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {purchaseOrders.map((po) => (
-                  <div key={po.id} className="bg-[#23233a]/40 backdrop-blur-sm rounded-xl border border-[#23233a]/50">
+                  <BrandCard key={po.id} borderGradient="secondary">
                     <div className="p-4 space-y-3">
                       <div className="flex items-center justify-between">
                         <h3 className="font-semibold text-white">{po.product_name}</h3>
-                        <Badge variant="secondary" size="sm" className={getPurchaseOrderStatusColor(po.status)}>
+                        <BrandBadge variant="secondary" size="sm" className={getPurchaseOrderStatusColor(po.status)}>
                           {po.status}
-                        </Badge>
+                        </BrandBadge>
                       </div>
                       
                       <div className="space-y-2 text-sm text-[#b0b0d0]">
@@ -2003,35 +1973,33 @@ const Products: React.FC = () => {
                       
                       <div className="flex space-x-2 pt-2">
                         {po.status === 'ordered' && (
-                          <Button
-                            onClick={() => handleReceivePurchaseOrder(po)}
+                          <BrandButton
                             variant="secondary"
-                            size="sm"
-                            icon={Truck}
+                            onClick={() => handleReceivePurchaseOrder(po)}
                           >
+                            <Truck className="w-4 h-4 mr-2" />
                             Receive
-                          </Button>
+                          </BrandButton>
                         )}
-                        <Button
+                        <BrandButton
+                          variant="secondary"
                           onClick={() => {
                             setSelectedPurchaseOrder(po);
                             setShowPurchaseModal(true);
                           }}
-                          variant="secondary"
-                          size="sm"
-                          icon={Edit}
                         >
+                          <Edit className="w-4 h-4 mr-2" />
                           Edit
-                        </Button>
+                        </BrandButton>
                       </div>
                     </div>
-                  </div>
+                  </BrandCard>
                 ))}
               </div>
             </div>
           )}
 
-          {activeTab === 'inventory' && (
+          {false && (
             <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-white">Inventory Transactions</h2>
@@ -2075,7 +2043,7 @@ const Products: React.FC = () => {
             </div>
           )}
 
-          {activeTab === 'analytics' && (
+          {false && (
             <div className="space-y-6">
               <h2 className="text-2xl font-bold text-white">Warehouse Analytics</h2>
               
@@ -2124,14 +2092,13 @@ const Products: React.FC = () => {
                               Current: {product.inventory_count || 0} | Min: {product.min_stock_level || 0}
                             </div>
                           </div>
-                          <Button
-                            onClick={() => handleCreatePurchaseOrder(product)}
+                          <BrandButton
                             variant="secondary"
-                            size="sm"
-                            icon={ShoppingCart}
+                            onClick={() => handleCreatePurchaseOrder(product)}
                           >
+                            <ShoppingCart className="w-4 h-4 mr-2" />
                             Reorder
-                          </Button>
+                          </BrandButton>
                         </div>
                       ))}
                     </div>
@@ -2140,6 +2107,8 @@ const Products: React.FC = () => {
               )}
             </div>
           )}
+
+
 
           {/* Modals */}
           {showProductModal && (
@@ -2186,14 +2155,14 @@ const Products: React.FC = () => {
                         <p className="text-sm text-[#b0b0d0] mb-3">
                           Download a sample CSV file to see the required format for importing products.
                         </p>
-                        <Button
+                        <BrandButton
                           onClick={generateSampleFile}
                           variant="secondary"
                           size="sm"
-                          icon={Download}
+
                         >
                           Download Sample
-                        </Button>
+                        </BrandButton>
                       </div>
                       
                       <div className="bg-[#23233a]/30 rounded-lg p-4">
@@ -2232,22 +2201,22 @@ const Products: React.FC = () => {
                   </div>
                   
                   <div className="flex justify-end space-x-3 pt-4 border-t border-[#23233a]/30">
-                    <Button
+                    <BrandButton
                       onClick={() => setShowImportModal(false)}
                       variant="secondary"
                       size="lg"
                     >
                       Cancel
-                    </Button>
-                    <Button
+                    </BrandButton>
+                    <BrandButton
                       onClick={handleBulkImport}
-                      variant="gradient"
+                      variant="primary"
                       size="lg"
-                      icon={Upload}
+
                       disabled={!importFile || isImporting}
                     >
                       {isImporting ? 'Importing...' : 'Import Products'}
-                    </Button>
+                    </BrandButton>
                   </div>
                 </div>
               </div>
@@ -2298,7 +2267,7 @@ const Products: React.FC = () => {
                         <p className="text-sm text-[#b0b0d0] mb-3">
                           Export only the currently filtered products ({filteredProducts.length} items).
                         </p>
-                        <Button
+                        <BrandButton
                           onClick={() => {
                             // Export filtered products logic
                             const csvContent = [
@@ -2337,45 +2306,44 @@ const Products: React.FC = () => {
                             window.URL.revokeObjectURL(url);
                             
                             setShowExportModal(false);
-                            showToast({ title: `Exported ${filteredProducts.length} filtered products`, type: 'success' });
+                            alert(`Exported ${filteredProducts.length} filtered products`);
                           }}
                           variant="secondary"
                           size="sm"
-                          icon={Download}
+
                         >
                           Export Filtered ({filteredProducts.length})
-                        </Button>
+                        </BrandButton>
                       </div>
                     </div>
                   </div>
                   
                   <div className="flex justify-end space-x-3 pt-4 border-t border-[#23233a]/30">
-                    <Button
+                    <BrandButton
                       onClick={() => setShowExportModal(false)}
                       variant="secondary"
                       size="lg"
                     >
                       Cancel
-                    </Button>
-                    <Button
+                    </BrandButton>
+                    <BrandButton
                       onClick={() => {
                         handleBulkExport();
                         setShowExportModal(false);
                       }}
-                      variant="gradient"
+                      variant="primary"
                       size="lg"
                       icon={Download}
                     >
                       Export All Products
-                    </Button>
+                    </BrandButton>
                   </div>
                 </div>
               </div>
             </div>
           )}
-        </div>
-      </div>
-    </div>
+      </BrandPageLayout>
+    </BrandBackground>
   );
 };
 

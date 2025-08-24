@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Play, Pause, Edit, Trash2, Copy, Eye, Calendar, Clock, Zap, Filter, CheckSquare, FileText, Mail, Target, Users, X, Check } from 'lucide-react';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
 import { AutomationRule } from '../../types/automation';
 import { useToastContext } from '../../contexts/ToastContext';
 import { supabase } from '../../services/supabase';

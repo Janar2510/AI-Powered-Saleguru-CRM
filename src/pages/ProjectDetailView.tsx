@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import Card from '../components/ui/Card';
-import Badge from '../components/ui/Badge';
-import Button from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { Badge } from '../components/ui/Badge';
+import { Button } from '../components/ui/Button';
 import TaskList from '../components/tasks/TaskList';
 import KanbanDealBoard from '../components/deals/KanbanDealBoard';
 import { useGuru } from '../contexts/GuruContext';

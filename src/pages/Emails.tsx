@@ -1,959 +1,633 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Search, 
-  Filter, 
   Plus, 
   Mail, 
-  Send, 
   Reply, 
   Forward, 
   Paperclip, 
   Star, 
   Archive, 
-  Trash2, 
-  Eye, 
-  Edit, 
-  MoreHorizontal, 
   Bot, 
-  Check, 
-  X,
-  Clock,
-  Users,
   Target,
-  AlertTriangle,
-  TrendingUp,
   Settings,
   RefreshCw,
   List,
-  Grid,
   MessageSquare,
-  ChevronUp,
-  ChevronDown
+  User,
+  Building,
+  ExternalLink,
+  ArrowRight,
+  Sparkles,
+  Inbox,
+  Flag
 } from 'lucide-react';
-import Spline from '@splinetool/react-spline';
 import Container from '../components/layout/Container';
-import Card from '../components/ui/Card';
-import Button from '../components/ui/Button';
-import Badge from '../components/ui/Badge';
 import EmptyState from '../components/common/EmptyState';
-import { useGuruContext } from '../contexts/GuruContext';
-import { useToastContext } from '../contexts/ToastContext';
-import { useEmailIntegration } from '../hooks/useEmailIntegration';
-import EnhancedEmailComposer from '../components/emails/EnhancedEmailComposer';
-import { supabase } from '../services/supabase';
-import { v4 as uuidv4 } from 'uuid';
+import OutlookEmailComposer from '../components/emails/OutlookEmailComposer';
+import ExternalEmailIntegration from '../components/emails/ExternalEmailIntegration';
+import { 
+  BrandPageLayout, 
+  BrandCard, 
+  BrandButton, 
+  BrandBadge, 
+  BrandInput
+} from '../contexts/BrandDesignContext';
 
 interface Email {
   id: string;
-  from: string;
-  to: string[];
+  sender: string;
   subject: string;
-  body: string;
-  html_body?: string;
-  timestamp: Date;
+  preview: string;
+  timestamp: string;
   isRead: boolean;
   isStarred: boolean;
+  priority: 'low' | 'normal' | 'high';
+  labels: string[];
   hasAttachments: boolean;
-  linkedDeal?: string;
-  linkedContact?: string;
-  priority: 'low' | 'medium' | 'high';
-  thread?: string;
-  tracking_id?: string;
-  status?: string;
-  category?: 'primary' | 'social' | 'promotions' | 'updates' | 'forums';
-  ai_insights?: string;
-  sentiment?: 'positive' | 'negative' | 'neutral';
-  action_required?: boolean;
-  follow_up_date?: Date;
-  tags?: string[];
+  threadId?: string;
+  contactId?: string;
+  dealId?: string;
+  organizationId?: string;
+  aiInsights?: {
+    sentiment: 'positive' | 'negative' | 'neutral';
+    category: string;
+    suggestedActions: string[];
+  };
+  relatedRecords?: {
+    type: 'contact' | 'deal' | 'organization';
+    id: string;
+    name: string;
+  }[];
 }
-
-// AI Email Insights Component
-interface AIEmailInsightsProps {
-  onInsightClick: (insight: any) => void;
-}
-
-const AIEmailInsights: React.FC<AIEmailInsightsProps> = ({ onInsightClick }) => {
-  const insights = [
-    {
-      id: 1,
-      type: 'sentiment',
-      title: 'Positive Customer Feedback',
-      description: 'Email from John Smith shows high satisfaction with our proposal',
-      icon: TrendingUp,
-      priority: 'high',
-      action: 'Follow Up',
-      color: '#43e7ad'
-    },
-    {
-      id: 2,
-      type: 'action',
-      title: 'Action Required',
-      description: 'Sarah Johnson needs contract terms discussion - schedule call',
-      icon: AlertTriangle,
-      priority: 'urgent',
-      action: 'Schedule Call',
-      color: '#ef4444'
-    },
-    {
-      id: 3,
-      type: 'opportunity',
-      title: 'Deal Opportunity',
-      description: 'Mike Wilson shows interest in expanding services',
-      icon: Target,
-      priority: 'medium',
-      action: 'Create Deal',
-      color: '#a259ff'
-    }
-  ];
-
-  return (
-    <Card className="bg-[#23233a]/40 backdrop-blur-sm border border-[#23233a]/50">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-2">
-          <Bot className="w-5 h-5 text-[#a259ff]" />
-          <h3 className="text-lg font-semibold text-white">AI Email Insights</h3>
-          <Badge variant="success" size="sm">Active</Badge>
-        </div>
-        <Button variant="secondary" size="sm" icon={Settings}>
-          Settings
-        </Button>
-      </div>
-      
-      <div className="space-y-3">
-        {insights.map((insight) => (
-          <div 
-            key={insight.id}
-            className="bg-[#23233a]/30 rounded-lg p-3 border border-[#23233a]/30 hover:border-[#a259ff]/30 transition-colors cursor-pointer"
-            onClick={() => onInsightClick(insight)}
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex items-start space-x-3">
-                <div 
-                  className="w-8 h-8 rounded-full flex items-center justify-center"
-                  style={{ backgroundColor: `${insight.color}20` }}
-                >
-                  <insight.icon className="w-4 h-4" style={{ color: insight.color }} />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-medium text-white text-sm">{insight.title}</h4>
-                  <p className="text-[#b0b0d0] text-xs mt-1">{insight.description}</p>
-                </div>
-              </div>
-              <Button 
-                variant="gradient" 
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onInsightClick(insight);
-                }}
-              >
-                {insight.action}
-              </Button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </Card>
-  );
-};
-
-// Email Statistics Component
-const EmailStats: React.FC = () => {
-  const stats = [
-    {
-      label: 'Total Emails',
-      value: '1,247',
-      icon: Mail,
-      color: 'text-[#a259ff]',
-      bgColor: 'bg-[#a259ff]/20'
-    },
-    {
-      label: 'Unread',
-      value: '23',
-      icon: Mail, // Changed from UnreadIcon to Mail as UnreadIcon is no longer imported
-      color: 'text-[#ef4444]',
-      bgColor: 'bg-[#ef4444]/20'
-    },
-    {
-      label: 'Starred',
-      value: '12',
-      icon: Star,
-      color: 'text-[#f59e0b]',
-      bgColor: 'bg-[#f59e0b]/20'
-    },
-    {
-      label: 'Drafts',
-      value: '5',
-      icon: Mail, // Changed from Draft to Mail as Draft is no longer imported
-      color: 'text-[#6b7280]',
-      bgColor: 'bg-[#6b7280]/20'
-    }
-  ];
-
-  return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      {stats.map((stat, index) => (
-        <Card key={index} className="bg-[#23233a]/40 backdrop-blur-sm border border-[#23233a]/50">
-          <div className="flex items-center space-x-3">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${stat.bgColor}`}>
-              <stat.icon className={`w-5 h-5 ${stat.color}`} />
-            </div>
-            <div>
-              <p className="text-[#b0b0d0] text-xs">{stat.label}</p>
-              <p className="text-white font-semibold text-lg">{stat.value}</p>
-            </div>
-          </div>
-        </Card>
-      ))}
-    </div>
-  );
-};
-
-// Email Categories Component
-interface EmailCategoriesProps {
-  activeCategory: string;
-  onCategoryChange: (category: string) => void;
-}
-
-const EmailCategories: React.FC<EmailCategoriesProps> = ({ activeCategory, onCategoryChange }) => {
-  const categories = [
-    { id: 'all', label: 'All Mail', icon: List, count: 1247, color: '#a259ff' }, // Changed from Inbox to List
-    { id: 'primary', label: 'Primary', icon: Mail, count: 892, color: '#43e7ad' },
-    { id: 'social', label: 'Social', icon: Users, count: 156, color: '#377dff' },
-    { id: 'promotions', label: 'Promotions', icon: TrendingUp, count: 89, color: '#f59e0b' },
-    { id: 'updates', label: 'Updates', icon: Mail, count: 67, color: '#6b7280' }, // Changed from Bell to Mail
-    { id: 'forums', label: 'Forums', icon: MessageSquare, count: 43, color: '#ef4444' }
-  ];
-
-  return (
-    <Card className="bg-[#23233a]/40 backdrop-blur-sm border border-[#23233a]/50">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-white">Categories</h3>
-        <Button variant="secondary" size="sm" icon={Settings}>
-          Manage
-        </Button>
-      </div>
-      
-      <div className="space-y-2">
-        {categories.map((category) => {
-          const Icon = category.icon;
-          const isActive = activeCategory === category.id;
-          return (
-            <button
-              key={category.id}
-              onClick={() => onCategoryChange(category.id)}
-              className={`w-full flex items-center justify-between p-3 rounded-lg transition-all duration-200 ${
-                isActive 
-                  ? 'bg-[#a259ff]/20 border border-[#a259ff]/30' 
-                  : 'bg-[#23233a]/30 border border-[#23233a]/30 hover:border-[#a259ff]/30'
-              }`}
-            >
-              <div className="flex items-center space-x-3">
-                <div 
-                  className="w-6 h-6 rounded-full flex items-center justify-center"
-                  style={{ backgroundColor: `${category.color}20` }}
-                >
-                  <Icon className="w-3 h-3" style={{ color: category.color }} />
-                </div>
-                <span className={`text-sm font-medium ${
-                  isActive ? 'text-white' : 'text-[#b0b0d0]'
-                }`}>
-                  {category.label}
-                </span>
-              </div>
-              <Badge variant="secondary" size="sm">{category.count}</Badge>
-            </button>
-          );
-        })}
-      </div>
-    </Card>
-  );
-};
 
 const Emails: React.FC = () => {
-  const { openGuru } = useGuruContext();
-  const { showToast } = useToastContext();
-  const { 
-    isComposerOpen, 
-    composerData, 
-    openEmailComposer, 
-    closeEmailComposer 
-  } = useEmailIntegration();
-  const [activeTab, setActiveTab] = useState<'inbox' | 'sent'>('inbox');
-  const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filter, setFilter] = useState('all');
-  const [replyData, setReplyData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // State management
   const [emails, setEmails] = useState<Email[]>([]);
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-  const [activeCategory, setActiveCategory] = useState('all');
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
-  const [sortBy, setSortBy] = useState<'date' | 'priority' | 'sender'>('date');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [filteredEmails, setFilteredEmails] = useState<Email[]>([]);
+  const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedFilter, setSelectedFilter] = useState('all');
+  const [selectedLabel] = useState('');
+  const [viewMode, setViewMode] = useState<'list' | 'conversation'>('list');
+  const [isComposerOpen, setIsComposerOpen] = useState(false);
 
-  // Fetch emails from Supabase
+  const [isIntegrationModalOpen, setIsIntegrationModalOpen] = useState(false);
+
+  // Load emails on component mount
   useEffect(() => {
-    const fetchEmails = async () => {
-      setIsLoading(true);
-      try {
-        // Fetch emails from Supabase
-        const { data, error } = await supabase
-          .from('emails')
-          .select('*')
-          .order('sent_at', { ascending: false });
-        
-        if (error) throw error;
-        
-        if (data && data.length > 0) {
-          const formattedEmails = data.map(email => ({
-            id: email.id,
-            from: email.created_by ? 'janar@example.com' : email.to,
-            to: [email.to],
-            subject: email.subject,
-            body: email.text_body || '',
-            html_body: email.html_body,
-            timestamp: new Date(email.sent_at || email.created_at),
-            isRead: email.status !== 'sent',
-            isStarred: false,
-            hasAttachments: email.has_attachments,
-            linkedDeal: email.deal_id,
-            linkedContact: email.contact_id,
-            priority: 'medium' as 'low' | 'medium' | 'high',
-            thread: email.id,
-            tracking_id: email.tracking_id,
-            status: email.status,
-            category: 'primary' as 'primary' | 'social' | 'promotions' | 'updates' | 'forums',
-            ai_insights: 'Positive sentiment detected',
-            sentiment: 'positive' as 'positive' | 'negative' | 'neutral',
-            action_required: false,
-            tags: ['proposal', 'follow-up']
-          }));
-          
-          setEmails(formattedEmails);
-        } else {
-          // Fallback to mock data
-          setEmails([
-            {
-              id: '1',
-              from: 'john.smith@techcorp.com',
-              to: ['janar@example.com'],
-              subject: 'Re: Enterprise Software Package Proposal',
-              body: 'Hi Janar,\n\nThank you for the detailed proposal. We\'ve reviewed it with our team and have a few questions about the implementation timeline...',
-              html_body: '<p>Hi Janar,</p><p>Thank you for the detailed proposal. We\'ve reviewed it with our team and have a few questions about the implementation timeline...</p>',
-              timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-              isRead: false,
-              isStarred: true,
-              hasAttachments: true,
-              linkedDeal: 'Enterprise Software Package',
-              linkedContact: 'John Smith',
-              priority: 'high',
-              thread: 'thread-1',
-              tracking_id: uuidv4(),
-              category: 'primary',
-              ai_insights: 'High priority - requires immediate response',
-              sentiment: 'positive',
-              action_required: true,
-              tags: ['proposal', 'enterprise', 'urgent']
-            },
-            {
-              id: '2',
-              from: 'sarah.johnson@startupxyz.com',
-              to: ['janar@example.com'],
-              subject: 'Demo Follow-up - Cloud Infrastructure',
-              body: 'Hi Janar,\n\nGreat demo yesterday! Our team was impressed with the cloud infrastructure solution. When can we schedule the next steps?',
-              html_body: '<p>Hi Janar,</p><p>Great demo yesterday! Our team was impressed with the cloud infrastructure solution. When can we schedule the next steps?</p>',
-              timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000),
-              isRead: true,
-              isStarred: false,
-              hasAttachments: false,
-              linkedDeal: 'Cloud Infrastructure',
-              linkedContact: 'Sarah Johnson',
-              priority: 'medium',
-              thread: 'thread-2',
-              tracking_id: uuidv4(),
-              category: 'primary',
-              ai_insights: 'Positive feedback - opportunity for follow-up',
-              sentiment: 'positive',
-              action_required: true,
-              tags: ['demo', 'follow-up', 'cloud']
-            },
-            {
-              id: '3',
-              from: 'mike.wilson@financecore.com',
-              to: ['janar@example.com'],
-              subject: 'Contract Terms Discussion',
-              body: 'Hello,\n\nI wanted to follow up on our conversation about the contract terms. Could we schedule a call this week?',
-              html_body: '<p>Hello,</p><p>I wanted to follow up on our conversation about the contract terms. Could we schedule a call this week?</p>',
-              timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
-              isRead: true,
-              isStarred: false,
-              hasAttachments: false,
-              linkedDeal: 'Financial Services',
-              linkedContact: 'Mike Wilson',
-              priority: 'low',
-              tracking_id: uuidv4(),
-              category: 'primary',
-              ai_insights: 'Neutral tone - standard follow-up',
-              sentiment: 'neutral',
-              action_required: false,
-              tags: ['contract', 'discussion']
-            }
-          ]);
-        }
-      } catch (err) {
-        console.error('Error fetching emails:', err);
-        
-        // Fallback to mock data
-        setEmails([
-          {
-            id: '1',
-            from: 'john.smith@techcorp.com',
-            to: ['janar@example.com'],
-            subject: 'Re: Enterprise Software Package Proposal',
-            body: 'Hi Janar,\n\nThank you for the detailed proposal. We\'ve reviewed it with our team and have a few questions about the implementation timeline...',
-            html_body: '<p>Hi Janar,</p><p>Thank you for the detailed proposal. We\'ve reviewed it with our team and have a few questions about the implementation timeline...</p>',
-            timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-            isRead: false,
-            isStarred: true,
-            hasAttachments: true,
-            linkedDeal: 'Enterprise Software Package',
-            linkedContact: 'John Smith',
-            priority: 'high',
-            thread: 'thread-1',
-            tracking_id: uuidv4(),
-            category: 'primary',
-            ai_insights: 'High priority - requires immediate response',
-            sentiment: 'positive',
-            action_required: true,
-            tags: ['proposal', 'enterprise', 'urgent']
-          },
-          {
-            id: '2',
-            from: 'sarah.johnson@startupxyz.com',
-            to: ['janar@example.com'],
-            subject: 'Demo Follow-up - Cloud Infrastructure',
-            body: 'Hi Janar,\n\nGreat demo yesterday! Our team was impressed with the cloud infrastructure solution. When can we schedule the next steps?',
-            html_body: '<p>Hi Janar,</p><p>Great demo yesterday! Our team was impressed with the cloud infrastructure solution. When can we schedule the next steps?</p>',
-            timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000),
-            isRead: true,
-            isStarred: false,
-            hasAttachments: false,
-            linkedDeal: 'Cloud Infrastructure',
-            linkedContact: 'Sarah Johnson',
-            priority: 'medium',
-            thread: 'thread-2',
-            tracking_id: uuidv4(),
-            category: 'primary',
-            ai_insights: 'Positive feedback - opportunity for follow-up',
-            sentiment: 'positive',
-            action_required: true,
-            tags: ['demo', 'follow-up', 'cloud']
-          },
-          {
-            id: '3',
-            from: 'mike.wilson@financecore.com',
-            to: ['janar@example.com'],
-            subject: 'Contract Terms Discussion',
-            body: 'Hello,\n\nI wanted to follow up on our conversation about the contract terms. Could we schedule a call this week?',
-            html_body: '<p>Hello,</p><p>I wanted to follow up on our conversation about the contract terms. Could we schedule a call this week?</p>',
-            timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
-            isRead: true,
-            isStarred: false,
-            hasAttachments: false,
-            linkedDeal: 'Financial Services',
-            linkedContact: 'Mike Wilson',
-            priority: 'low',
-            tracking_id: uuidv4(),
-            category: 'primary',
-            ai_insights: 'Neutral tone - standard follow-up',
-            sentiment: 'neutral',
-            action_required: false,
-            tags: ['contract', 'discussion']
-          }
-        ]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
     fetchEmails();
   }, []);
 
-  const filteredEmails = emails.filter(email => {
-    const matchesSearch = (email.subject?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-                         (email.from?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-                         (email.body?.toLowerCase() || '').includes(searchTerm.toLowerCase());
-    
-    const matchesCategory = activeCategory === 'all' || email.category === activeCategory;
-    
-    return matchesSearch && matchesCategory;
-  });
+    const fetchEmails = async () => {
+      setIsLoading(true);
+    // Simulated email data with brand-aligned structure
+    const mockEmails: Email[] = [
+            {
+              id: '1',
+        sender: 'john.smith@company.com',
+        subject: 'Proposal Discussion - Q4 Partnership',
+        preview: 'Hi there! I wanted to follow up on our discussion regarding the Q4 partnership proposal...',
+        timestamp: '2024-01-20T10:30:00Z',
+              isRead: false,
+              isStarred: true,
+        priority: 'high',
+        labels: ['important', 'proposal'],
+              hasAttachments: true,
+        threadId: 'thread_1',
+        contactId: 'contact_1',
+        dealId: 'deal_1',
+        aiInsights: {
+              sentiment: 'positive',
+          category: 'Sales Proposal',
+          suggestedActions: ['Schedule follow-up meeting', 'Send proposal document']
+        },
+        relatedRecords: [
+          { type: 'deal', id: 'deal_1', name: 'Q4 Partnership Deal' },
+          { type: 'contact', id: 'contact_1', name: 'John Smith' }
+        ]
+          },
+          {
+            id: '2',
+        sender: 'sarah.johnson@techcorp.com',
+        subject: 'Meeting Confirmation - Product Demo',
+        preview: 'Thanks for scheduling the product demo. I\'m excited to show you our latest features...',
+        timestamp: '2024-01-19T14:15:00Z',
+            isRead: true,
+            isStarred: false,
+        priority: 'normal',
+        labels: ['meeting', 'demo'],
+            hasAttachments: false,
+        threadId: 'thread_2',
+        contactId: 'contact_2',
+        aiInsights: {
+            sentiment: 'positive',
+          category: 'Meeting Coordination',
+          suggestedActions: ['Add to calendar', 'Prepare demo materials']
+        },
+        relatedRecords: [
+          { type: 'contact', id: 'contact_2', name: 'Sarah Johnson' }
+        ]
+      }
+    ];
 
-  const sortedEmails = [...filteredEmails].sort((a, b) => {
-    switch (sortBy) {
-      case 'date':
-        return sortOrder === 'asc' 
-          ? a.timestamp.getTime() - b.timestamp.getTime()
-          : b.timestamp.getTime() - a.timestamp.getTime();
-      case 'priority':
-        const priorityOrder = { high: 3, medium: 2, low: 1 };
-        return sortOrder === 'asc'
-          ? priorityOrder[a.priority] - priorityOrder[b.priority]
-          : priorityOrder[b.priority] - priorityOrder[a.priority];
-      case 'sender':
-        return sortOrder === 'asc'
-          ? a.from.localeCompare(b.from)
-          : b.from.localeCompare(a.from);
-      default:
-        return 0;
+    setTimeout(() => {
+      setEmails(mockEmails);
+      setFilteredEmails(mockEmails);
+      setIsLoading(false);
+    }, 1000);
+  };
+
+  // Filter and search functionality
+  useEffect(() => {
+    let filtered = emails;
+
+    if (searchTerm) {
+      filtered = filtered.filter(email => 
+        email.sender.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        email.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        email.preview.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
-  });
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'text-[#ef4444]';
-      case 'medium': return 'text-[#f59e0b]';
-      case 'low': return 'text-[#43e7ad]';
-      default: return 'text-[#b0b0d0]';
+    if (selectedFilter !== 'all') {
+      switch (selectedFilter) {
+        case 'unread':
+          filtered = filtered.filter(email => !email.isRead);
+          break;
+        case 'starred':
+          filtered = filtered.filter(email => email.isStarred);
+          break;
+        case 'important':
+          filtered = filtered.filter(email => email.priority === 'high');
+          break;
+        case 'attachments':
+          filtered = filtered.filter(email => email.hasAttachments);
+          break;
+      }
     }
-  };
 
-  const getSentimentColor = (sentiment: string) => {
-    switch (sentiment) {
-      case 'positive': return 'text-[#43e7ad]';
-      case 'negative': return 'text-[#ef4444]';
-      case 'neutral': return 'text-[#6b7280]';
-      default: return 'text-[#b0b0d0]';
+    if (selectedLabel) {
+      filtered = filtered.filter(email => email.labels.includes(selectedLabel));
     }
+
+    setFilteredEmails(filtered);
+  }, [emails, searchTerm, selectedFilter, selectedLabel]);
+
+  // Email actions
+  const markAsRead = (emailId: string) => {
+    setEmails(prev => prev.map(email => 
+      email.id === emailId ? { ...email, isRead: true } : email
+    ));
   };
 
-  const handleSendEmail = async (emailData: any) => {
-    try {
-      console.log('Sending email:', emailData);
-      
-      // Here you would typically send the email via your email service
-      // For now, we'll just show a success message
-      showToast({
-        title: 'Email Sent',
-        description: 'Email has been sent successfully',
-        type: 'success'
-      });
-      
-      // Refresh emails
-      // await fetchEmails();
-      
-      return true;
-    } catch (error) {
-      console.error('Error sending email:', error);
-      showToast({
-        title: 'Send Failed',
-        description: 'Failed to send email. Please try again.',
-        type: 'error'
-      });
-      return false;
-    }
-  };
-
-  const handleReply = (email: Email) => {
-    setReplyData({
-      to: email.from,
-      subject: `Re: ${email.subject}`,
-      body: `\n\n--- Original Message ---\nFrom: ${email.from}\nDate: ${email.timestamp.toLocaleString()}\n\n${email.body}`
-    });
-    openEmailComposer({
-      to: email.from,
-      subject: `Re: ${email.subject}`,
-      body: `\n\n--- Original Message ---\nFrom: ${email.from}\nDate: ${email.timestamp.toLocaleString()}\n\n${email.body}`
-    });
-  };
-
-  const handleForward = (email: Email) => {
-    setReplyData({
-      to: '',
-      subject: `Fwd: ${email.subject}`,
-      body: `\n\n--- Forwarded Message ---\nFrom: ${email.from}\nDate: ${email.timestamp.toLocaleString()}\n\n${email.body}`
-    });
-    openEmailComposer({
-      to: '',
-      subject: `Fwd: ${email.subject}`,
-      body: `\n\n--- Forwarded Message ---\nFrom: ${email.from}\nDate: ${email.timestamp.toLocaleString()}\n\n${email.body}`
-    });
-  };
-
-  const handleArchive = async (email: Email) => {
-    try {
-      // In a real app, this would archive the email
-      setEmails(prev => prev.filter(e => e.id !== email.id));
-      showToast({
-        type: 'success',
-        title: 'Email Archived',
-        description: 'Email has been archived'
-      });
-    } catch (error) {
-      console.error('Error archiving email:', error);
-      showToast({
-        type: 'error',
-        title: 'Error',
-        description: 'Failed to archive email'
-      });
-    }
-  };
-
-  const handleDelete = async (email: Email) => {
-    try {
-      // In a real app, this would delete the email
-      setEmails(prev => prev.filter(e => e.id !== email.id));
-      setDeleteConfirm(null);
-      showToast({
-        type: 'success',
-        title: 'Email Deleted',
-        description: 'Email has been deleted'
-      });
-    } catch (error) {
-      console.error('Error deleting email:', error);
-      showToast({
-        type: 'error',
-        title: 'Error',
-        description: 'Failed to delete email'
-      });
-    }
-  };
-
-  const toggleStar = async (emailId: string) => {
-    try {
+  const toggleStar = (emailId: string) => {
       setEmails(prev => prev.map(email => 
-        email.id === emailId 
-          ? { ...email, isStarred: !email.isStarred }
-          : email
-      ));
-      
-      showToast({
-        type: 'success',
-        title: 'Email Updated',
-        description: 'Email star status updated'
-      });
-    } catch (error) {
-      console.error('Error toggling star:', error);
-    }
+      email.id === emailId ? { ...email, isStarred: !email.isStarred } : email
+    ));
   };
 
-  const markAsRead = async (emailId: string) => {
-    try {
-      setEmails(prev => prev.map(email => 
-        email.id === emailId 
-          ? { ...email, isRead: !email.isRead }
-          : email
-      ));
-    } catch (error) {
-      console.error('Error marking as read:', error);
-    }
+  const archiveEmail = (emailId: string) => {
+    setEmails(prev => prev.filter(email => email.id !== emailId));
   };
 
-  const handleAIInsight = (insight: any) => {
-    showToast({
-      type: 'info',
-      title: 'AI Insight',
-      description: `Processing: ${insight.title}`
-    });
+
+
+  const openEmailComposer = () => {
+    setIsComposerOpen(true);
   };
 
+  // Enhanced Email List Item with brand design
   const EmailListItem = ({ email }: { email: Email }) => (
     <div 
-      className={`p-4 border-b border-[#23233a]/30 hover:bg-[#23233a]/20 transition-all duration-200 cursor-pointer ${
-        !email.isRead ? 'bg-[#a259ff]/10 border-l-4 border-l-[#a259ff]' : ''
-      }`}
+      className="cursor-pointer transition-all duration-300 hover:scale-[1.01]"
       onClick={() => {
         setSelectedEmail(email);
         if (!email.isRead) markAsRead(email.id);
       }}
     >
+      <BrandCard 
+        className="p-6"
+        borderGradient={!email.isRead ? 'primary' : 'secondary'}
+    >
       <div className="flex items-start space-x-4">
         {/* Email Status Icons */}
-        <div className="flex flex-col items-center space-y-1 pt-1">
+        <div className="flex flex-col items-center space-y-2 pt-1">
           <button
             onClick={(e) => {
               e.stopPropagation();
               toggleStar(email.id);
             }}
-            className={`p-1 rounded-full transition-colors ${
-              email.isStarred ? 'text-[#f59e0b]' : 'text-[#b0b0d0] hover:text-[#f59e0b]'
+            className={`p-2 rounded-full transition-all duration-300 ${
+              email.isStarred 
+                ? 'text-yellow-400 hover:text-yellow-300' 
+                : 'text-white/40 hover:text-yellow-400'
             }`}
           >
-            <Star className="w-4 h-4" fill={email.isStarred ? 'currentColor' : 'none'} />
+            <Star className={`w-4 h-4 ${email.isStarred ? 'fill-current' : ''}`} />
           </button>
-          {!email.isRead && (
-            <div className="w-2 h-2 bg-[#a259ff] rounded-full"></div>
+          
+          {email.priority === 'high' && (
+            <Flag className="w-4 h-4 text-red-400" />
+          )}
+          
+          {email.hasAttachments && (
+            <Paperclip className="w-4 h-4 text-white/60" />
           )}
         </div>
 
         {/* Email Content */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center space-x-2">
-              <span className={`font-medium text-sm ${
-                !email.isRead ? 'text-white' : 'text-[#b0b0d0]'
-              }`}>
-                {email.from}
-              </span>
-              {email.priority === 'high' && (
-                <Badge variant="danger" size="sm">High</Badge>
-              )}
-              {email.action_required && (
-                <Badge variant="warning" size="sm">Action Required</Badge>
-              )}
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-3">
+              {/* Sender Avatar */}
+              <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center text-white font-semibold text-sm">
+                {email.sender.charAt(0).toUpperCase()}
+              </div>
+              
+              <div className="flex flex-col">
+                <span className={`font-medium ${!email.isRead ? 'text-white' : 'text-white/80'}`}>
+                  {email.sender}
+                </span>
+                <span className="text-sm text-white/60">
+                  {new Date(email.timestamp).toLocaleTimeString([], { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                  })}
+                </span>
+              </div>
             </div>
-            <div className="flex items-center space-x-2 text-xs text-[#b0b0d0]">
-              <span>{email.timestamp.toLocaleTimeString()}</span>
-              {email.hasAttachments && (
-                <Paperclip className="w-3 h-3" />
+
+            {/* Email Labels */}
+            <div className="flex items-center space-x-2">
+              {email.labels.map((label) => (
+                <BrandBadge key={label} variant="info" size="sm">
+                  {label}
+                </BrandBadge>
+              ))}
+              
+              {email.aiInsights && (
+                <BrandBadge variant="purple" size="sm">
+                  <Bot className="w-3 h-3 mr-1" />
+                  AI
+                </BrandBadge>
               )}
             </div>
           </div>
           
-          <h3 className={`font-medium text-sm mb-1 ${
-            !email.isRead ? 'text-white' : 'text-[#b0b0d0]'
-          }`}>
+          {/* Subject */}
+          <h3 className={`text-base font-semibold mb-2 ${!email.isRead ? 'text-white' : 'text-white/90'}`}>
             {email.subject}
           </h3>
           
-          <p className="text-xs text-[#b0b0d0] line-clamp-2 mb-2">
-            {email.body.substring(0, 150)}...
+          {/* Preview */}
+          <p className="text-sm text-white/70 line-clamp-2 mb-3">
+            {email.preview}
           </p>
 
-          {/* AI Insights and Tags */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              {email.ai_insights && (
-                <div className="flex items-center space-x-1">
-                  <Bot className="w-3 h-3 text-[#a259ff]" />
-                  <span className="text-xs text-[#a259ff]">AI: {email.ai_insights}</span>
+          {/* Related Records */}
+          {email.relatedRecords && email.relatedRecords.length > 0 && (
+            <div className="flex items-center space-x-3 text-xs">
+              {email.relatedRecords.map((record) => (
+                <div key={record.id} className="flex items-center space-x-1 text-white/60">
+                  {record.type === 'contact' && <User className="w-3 h-3" />}
+                  {record.type === 'deal' && <Target className="w-3 h-3" />}
+                  {record.type === 'organization' && <Building className="w-3 h-3" />}
+                  <span>{record.name}</span>
                 </div>
-              )}
-              {email.sentiment && (
-                <div className={`flex items-center space-x-1 ${getSentimentColor(email.sentiment)}`}>
-                  <TrendingUp className="w-3 h-3" />
-                  <span className="text-xs capitalize">{email.sentiment}</span>
-                </div>
-              )}
-            </div>
-            
-            <div className="flex items-center space-x-1">
-              {email.tags?.slice(0, 2).map((tag, index) => (
-                <Badge key={index} variant="secondary" size="sm">
-                  {tag}
-                </Badge>
               ))}
-              {email.tags && email.tags.length > 2 && (
-                <Badge variant="secondary" size="sm">
-                  +{email.tags.length - 2}
-                </Badge>
-              )}
             </div>
-          </div>
+          )}
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col space-y-1">
-          <Button
-            variant="secondary"
+        <div className="flex items-center space-x-2">
+          <BrandButton
+            variant="ghost"
             size="sm"
-            icon={Reply}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleReply(email);
+            onClick={() => {
+              openEmailComposer();
             }}
-          />
-          <Button
-            variant="secondary"
+          >
+            <Reply className="w-4 h-4" />
+          </BrandButton>
+          
+          <BrandButton
+            variant="ghost"
             size="sm"
-            icon={Forward}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleForward(email);
+            onClick={() => {
+              archiveEmail(email.id);
             }}
-          />
-          <Button
-            variant="secondary"
-            size="sm"
-            icon={Archive}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleArchive(email);
-            }}
-          />
+          >
+            <Archive className="w-4 h-4" />
+          </BrandButton>
         </div>
       </div>
+      </BrandCard>
     </div>
+  );
+
+  const sortedEmails = filteredEmails.sort((a, b) => 
+    new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
   );
 
   return (
     <Container>
-      {/* 3D Background */}
-      <div className="fixed inset-0 -z-10">
-        <Spline scene="https://prod.spline.design/n0GFhlzrcT-MOycs/scene.splinecode" />
-      </div>
-
-      <div className="space-y-6 animate-fade-in">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-white">Smart Email</h1>
-            <p className="text-[#b0b0d0] mt-1">AI-powered email management with smart insights</p>
-          </div>
-          <div className="flex space-x-3">
-            <Button 
+      <BrandPageLayout
+        title="Email Management"
+        subtitle="Manage all your email communications in one place"
+        logoGradient={true}
+        actions={
+          <div className="flex items-center space-x-4">
+            <BrandButton
               variant="secondary"
-              icon={Bot}
-              onClick={openGuru}
+              onClick={() => setIsIntegrationModalOpen(true)}
             >
-              Ask Guru
-            </Button>
-            <Button 
-              variant="gradient"
-              icon={Plus}
-              onClick={() => openEmailComposer({})}
+              <Settings className="w-4 h-4 mr-2" />
+              Integrations
+            </BrandButton>
+            
+            <BrandButton
+              variant="primary"
+              onClick={() => openEmailComposer()}
             >
-              Compose
-            </Button>
+              <Plus className="w-4 h-4 mr-2" />
+              Compose Email
+            </BrandButton>
+          </div>
+        }
+      >
+        <div className="space-y-6">
+          {/* Email Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <BrandCard className="p-6" borderGradient="blue">
+              <div className="flex items-center">
+                <div className="p-3 rounded-xl bg-blue-500/20">
+                  <Inbox className="w-6 h-6 text-blue-400" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm text-white/80">Total Emails</p>
+                  <p className="text-2xl font-bold text-white">{emails.length}</p>
           </div>
         </div>
+            </BrandCard>
 
-        {/* Email Statistics */}
-        <EmailStats />
+            <BrandCard className="p-6" borderGradient="red">
+              <div className="flex items-center">
+                <div className="p-3 rounded-xl bg-red-500/20">
+                  <Mail className="w-6 h-6 text-red-400" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm text-white/80">Unread</p>
+                  <p className="text-2xl font-bold text-white">
+                    {emails.filter(e => !e.isRead).length}
+                  </p>
+                </div>
+              </div>
+            </BrandCard>
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-          {/* Left Sidebar */}
-          <div className="xl:col-span-1 space-y-6">
-            {/* AI Email Insights */}
-            <AIEmailInsights onInsightClick={handleAIInsight} />
+            <BrandCard className="p-6" borderGradient="yellow">
+              <div className="flex items-center">
+                <div className="p-3 rounded-xl bg-yellow-500/20">
+                  <Star className="w-6 h-6 text-yellow-400" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm text-white/80">Starred</p>
+                  <p className="text-2xl font-bold text-white">
+                    {emails.filter(e => e.isStarred).length}
+                  </p>
+                </div>
+              </div>
+            </BrandCard>
 
-            {/* Email Categories */}
-            <EmailCategories 
-              activeCategory={activeCategory}
-              onCategoryChange={setActiveCategory}
-            />
+            <BrandCard className="p-6" borderGradient="green">
+              <div className="flex items-center">
+                <div className="p-3 rounded-xl bg-green-500/20">
+                  <Bot className="w-6 h-6 text-green-400" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm text-white/80">AI Insights</p>
+                  <p className="text-2xl font-bold text-white">
+                    {emails.filter(e => e.aiInsights).length}
+                  </p>
+                </div>
+              </div>
+            </BrandCard>
           </div>
 
-          {/* Main Email Area */}
-          <div className="xl:col-span-3">
-            {/* Email Controls */}
-            <Card className="bg-[#23233a]/40 backdrop-blur-sm border border-[#23233a]/50 mb-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
+          {/* Search and Filters */}
+          <BrandCard className="p-6">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0 lg:space-x-6">
                   {/* Search */}
+              <div className="flex-1">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#b0b0d0]" />
-                    <input
-                      type="text"
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white/60 w-5 h-5" />
+                  <BrandInput
                       placeholder="Search emails..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 pr-4 py-2 bg-[#23233a]/50 border border-[#23233a]/30 rounded-lg text-white placeholder-[#b0b0d0] focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff] transition-all duration-200"
+                    className="pl-12"
                     />
+                </div>
                   </div>
 
-                  {/* Filter */}
+              {/* Filters */}
+              <div className="flex items-center space-x-4">
                   <select
-                    value={filter}
-                    onChange={(e) => setFilter(e.target.value)}
-                    className="px-3 py-2 bg-[#23233a]/50 border border-[#23233a]/30 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff] transition-all duration-200"
+                  value={selectedFilter}
+                  onChange={(e) => setSelectedFilter(e.target.value)}
+                  className="px-4 py-2 bg-black/20 border-2 border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                   >
                     <option value="all">All Emails</option>
                     <option value="unread">Unread</option>
                     <option value="starred">Starred</option>
-                    <option value="high-priority">High Priority</option>
-                    <option value="with-attachments">With Attachments</option>
+                  <option value="important">Important</option>
+                  <option value="attachments">With Attachments</option>
                   </select>
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  {/* Sort */}
-                  <div className="flex items-center space-x-2">
-                    <select
-                      value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value as any)}
-                      className="px-3 py-2 bg-[#23233a]/50 border border-[#23233a]/30 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#a259ff] focus:border-[#a259ff] transition-all duration-200"
-                    >
-                      <option value="date">Date</option>
-                      <option value="priority">Priority</option>
-                      <option value="sender">Sender</option>
-                    </select>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                    >
-                      {sortOrder === 'asc' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                    </Button>
-                  </div>
 
-                  {/* View Mode */}
-                  <div className="flex items-center space-x-1 bg-[#23233a]/50 rounded-lg p-1">
-                    <Button 
-                      variant={viewMode === 'list' ? 'gradient' : 'secondary'} 
+                <BrandButton
+                  variant={viewMode === 'list' ? 'primary' : 'secondary'}
                       size="sm"
                       onClick={() => setViewMode('list')}
                     >
                       <List className="w-4 h-4" />
-                    </Button>
-                    <Button 
-                      variant={viewMode === 'grid' ? 'gradient' : 'secondary'} 
+                </BrandButton>
+                
+                <BrandButton
+                  variant={viewMode === 'conversation' ? 'primary' : 'secondary'}
                       size="sm"
-                      onClick={() => setViewMode('grid')}
-                    >
-                      <Grid className="w-4 h-4" />
-                    </Button>
-                  </div>
+                  onClick={() => setViewMode('conversation')}
+                >
+                  <MessageSquare className="w-4 h-4" />
+                </BrandButton>
 
-                  <Button variant="secondary" size="sm">
+                <BrandButton
+                  variant="secondary"
+                  size="sm"
+                  onClick={fetchEmails}
+                >
                     <RefreshCw className="w-4 h-4" />
-                    Refresh
-                  </Button>
-                </div>
+                </BrandButton>
               </div>
-            </Card>
+            </div>
+          </BrandCard>
 
             {/* Email List */}
             {isLoading ? (
-              <Card className="bg-[#23233a]/40 backdrop-blur-sm border border-[#23233a]/50">
-                <div className="flex items-center justify-center h-64">
-                  <div className="w-10 h-10 border-4 border-[#a259ff] border-t-transparent rounded-full animate-spin"></div>
+            <BrandCard className="p-12">
+              <div className="flex items-center justify-center">
+                <div className="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                <span className="ml-3 text-white/80">Loading emails...</span>
                 </div>
-              </Card>
+            </BrandCard>
             ) : sortedEmails.length === 0 ? (
-              <Card className="bg-[#23233a]/40 backdrop-blur-sm border border-[#23233a]/50">
+            <BrandCard className="p-12">
                 <EmptyState
                   icon={Mail}
                   title="No emails found"
                   description="Try adjusting your search or filters"
                   actionLabel="Compose Email"
-                  onAction={() => openEmailComposer({})}
+                onAction={() => openEmailComposer()}
                 />
-              </Card>
+            </BrandCard>
             ) : (
-              <Card className="bg-[#23233a]/40 backdrop-blur-sm border border-[#23233a]/50">
-                <div className="divide-y divide-[#23233a]/30">
+            <div className="space-y-4">
                   {sortedEmails.map((email) => (
                     <EmailListItem key={email.id} email={email} />
                   ))}
                 </div>
-              </Card>
             )}
-          </div>
         </div>
-      </div>
+      </BrandPageLayout>
 
       {/* Email Composer Modal */}
       {isComposerOpen && (
-        <EnhancedEmailComposer
+        <OutlookEmailComposer
           isOpen={isComposerOpen}
-          onClose={closeEmailComposer}
-          onSend={handleSendEmail}
-          initialData={composerData}
+          onClose={() => setIsComposerOpen(false)}
+          onSend={async (emailData) => {
+            // Handle email send logic here
+            console.log('Sending email:', emailData);
+            setIsComposerOpen(false);
+            return true;
+          }}
         />
+      )}
+
+      {/* External Email Integration Modal */}
+      <ExternalEmailIntegration
+        isOpen={isIntegrationModalOpen}
+        onClose={() => setIsIntegrationModalOpen(false)}
+      />
+
+      {/* Email Detail Modal */}
+      {selectedEmail && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <BrandCard className="w-full max-w-4xl h-[90vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b-2 border-white/10">
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center text-white font-semibold">
+                  {selectedEmail.sender.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white">{selectedEmail.subject}</h2>
+                  <p className="text-white/70">{selectedEmail.sender}</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-3">
+                <BrandButton variant="green" size="sm">
+                  <Reply className="w-4 h-4 mr-2" />
+                  Reply
+                </BrandButton>
+                <BrandButton variant="blue" size="sm">
+                  <Forward className="w-4 h-4 mr-2" />
+                  Forward
+                </BrandButton>
+                <BrandButton
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setSelectedEmail(null)}
+                >
+                  ×
+                </BrandButton>
+              </div>
+            </div>
+
+            {/* Email Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="prose prose-invert max-w-none">
+                <p className="text-white/90 text-base leading-relaxed whitespace-pre-wrap">
+                  {selectedEmail.preview}
+                  
+                  {"\n\n"}This is the full email content. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                  
+                  {"\n\n"}Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+                  
+                  {"\n\n"}Best regards,{"\n"}{selectedEmail.sender.split('@')[0]}
+                </p>
+              </div>
+
+              {/* AI Insights */}
+              {selectedEmail.aiInsights && (
+                <BrandCard className="mt-6 p-4" borderGradient="purple">
+                  <div className="flex items-center mb-3">
+                    <Bot className="w-5 h-5 text-purple-400 mr-2" />
+                    <span className="font-semibold text-white">AI Insights</span>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-3">
+                      <BrandBadge variant="info" size="sm">
+                        {selectedEmail.aiInsights.sentiment}
+                      </BrandBadge>
+                      <BrandBadge variant="secondary" size="sm">
+                        {selectedEmail.aiInsights.category}
+                      </BrandBadge>
+                    </div>
+                    <div>
+                      <p className="text-sm text-white/80 mb-2">Suggested Actions:</p>
+                      <div className="space-y-1">
+                        {selectedEmail.aiInsights.suggestedActions.map((action, index) => (
+                          <BrandButton key={index} variant="secondary" size="sm" className="mr-2 mb-2">
+                            <Sparkles className="w-3 h-3 mr-1" />
+                            {action}
+                          </BrandButton>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </BrandCard>
+              )}
+
+              {/* Related Records */}
+              {selectedEmail.relatedRecords && selectedEmail.relatedRecords.length > 0 && (
+                <BrandCard className="mt-6 p-4" borderGradient="green">
+                  <div className="flex items-center mb-3">
+                    <ExternalLink className="w-5 h-5 text-green-400 mr-2" />
+                    <span className="font-semibold text-white">Related Records</span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {selectedEmail.relatedRecords.map((record) => (
+                      <div key={record.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          {record.type === 'contact' && <User className="w-4 h-4 text-blue-400" />}
+                          {record.type === 'deal' && <Target className="w-4 h-4 text-green-400" />}
+                          {record.type === 'organization' && <Building className="w-4 h-4 text-purple-400" />}
+                          <span className="text-white/90">{record.name}</span>
+                        </div>
+                        <BrandButton variant="ghost" size="sm">
+                          <ArrowRight className="w-4 h-4" />
+                        </BrandButton>
+                      </div>
+                    ))}
+                  </div>
+                </BrandCard>
+              )}
+            </div>
+          </BrandCard>
+        </div>
       )}
     </Container>
   );

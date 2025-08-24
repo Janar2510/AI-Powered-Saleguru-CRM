@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Plus, FolderPlus, Users, Calendar, DollarSign, Target, AlertCircle, Bot, Save } from 'lucide-react';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
-import Button from '../ui/Button';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
 import { supabase } from '../../services/supabase';
 import { useToastContext } from '../../contexts/ToastContext';
 import { useAuth } from '../../contexts/AuthContext';

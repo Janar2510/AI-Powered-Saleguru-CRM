@@ -4,7 +4,7 @@ import { ChevronRight, ChevronLeft, Check, X, Users, Calendar, Target, Bot, Sett
 import { useToastContext } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
 import { AuthCard, authInputClass, authButtonClass, AUTH_GRADIENT, AUTH_CARD_BG } from '../components/ui/AuthTheme';
-import Badge from '../components/ui/Badge';
+import { Badge } from '../components/ui/Badge';
 import Spline from '@splinetool/react-spline';
 import { supabase } from '../services/supabase';
 

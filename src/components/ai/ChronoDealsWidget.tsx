@@ -14,8 +14,8 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { Card } from '../common/Card';
-import Badge from '../ui/Badge';
-import Button from '../ui/Button';
+import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
 import { useToastContext } from '../../contexts/ToastContext';
 import { ChronoLeadScoringService, ChronoLeadScore, TemporalContext } from '../../services/chronoLeadScoringService';
 

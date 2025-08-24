@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Zap, ToggleRight, ToggleLeft } from 'lucide-react';
-import Card from '../ui/Card';
+import { Card } from '../ui/Card';
 import Toggle from '../ui/Toggle';
 
 const modules = [

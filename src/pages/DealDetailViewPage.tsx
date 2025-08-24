@@ -18,9 +18,9 @@ import {
 } from 'lucide-react';
 import Spline from '@splinetool/react-spline';
 import Container from '../components/layout/Container';
-import Card from '../components/ui/Card';
-import Badge from '../components/ui/Badge';
-import Button from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { Badge } from '../components/ui/Badge';
+import { Button } from '../components/ui/Button';
 import { useToastContext } from '../contexts/ToastContext';
 import { DealsAPI } from '../lib/deals-api';
 import DealEmotionTimeline from '../components/deals/DealEmotionTimeline';

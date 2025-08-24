@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Building, Globe, Mail, Phone, Tag, Linkedin, Twitter, Facebook, MapPin, Bot, Zap } from 'lucide-react';
 import { Company, CompanyFormData } from '../../types/company';
-import Badge from '../ui/Badge';
-import Button from '../ui/Button';
+import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
 import { useToastContext } from '../../contexts/ToastContext';
 import { useGuru } from '../../contexts/GuruContext';
 import EnrichmentButton from '../enrichment/EnrichmentButton';

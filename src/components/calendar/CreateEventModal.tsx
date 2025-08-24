@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { X, Plus, Calendar, Clock, User, Target, AlertCircle, Tag, CheckSquare, Phone, Mail, Bell, ArrowRight, Edit, MapPin } from 'lucide-react';
 import { CalendarEventFormData } from '../../types/calendar';
 import { supabase } from '../../services/supabase';
-import Badge from '../ui/Badge';
+import { Badge } from '../ui/Badge';
 import { useToastContext } from '../../contexts/ToastContext';
 import { useModal } from '../../contexts/ModalContext';
 

@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { BarChart, PieChart, LineChart, Target, RefreshCw, Settings, ChevronDown } from 'lucide-react';
 import * as d3 from 'd3';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
 import { useResizeObserver } from '../../hooks/useResizeObserver';
 import { BRAND } from '../../constants/theme';
 import ChartLegend from './ChartLegend';

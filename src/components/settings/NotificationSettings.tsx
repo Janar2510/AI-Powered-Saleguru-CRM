@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Bell, Mail, Smartphone, Clock, AlertTriangle, Zap, Settings, Globe } from 'lucide-react';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
-import Button from '../ui/Button';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
 import Dropdown from '../ui/Dropdown';
 import Toggle from '../ui/Toggle';
 

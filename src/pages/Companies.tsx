@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Filter, Grid, List, Building, Bot, Download, Upload, AlertTriangle, Kanban } from 'lucide-react';
-import Spline from '@splinetool/react-spline';
+
 import Container from '../components/layout/Container';
-import Card from '../components/ui/Card';
-import Badge from '../components/ui/Badge';
-import Button from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { Badge } from '../components/ui/Badge';
+import { Button } from '../components/ui/Button';
 import Dropdown from '../components/ui/Dropdown';
 import EmptyState from '../components/common/EmptyState';
 import CompanyList from '../components/companies/CompanyList';
@@ -142,10 +142,8 @@ const Companies: React.FC = () => {
 
   return (
     <Container>
-      {/* Spline 3D Background */}
-      <div className="fixed inset-0 -z-10">
-        <Spline scene="https://prod.spline.design/n0GFhlzrcT-MOycs/scene.splinecode" />
-      </div>
+      {/* Solid background (Spline removed for stability) */}
+      <div className="fixed inset-0 -z-10 bg-black" />
 
       <div className="space-y-6 animate-fade-in">
         {/* Header */}

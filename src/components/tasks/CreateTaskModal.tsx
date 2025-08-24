@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Plus, Calendar, Clock, User, Target, AlertCircle, Tag, CheckSquare, Phone, Mail, Bell, ArrowRight, Edit, Users } from 'lucide-react';
-import { TaskFormData } from '../../types/task';
+import { Task, TaskFormData } from '../../types/task';
 import { supabase } from '../../services/supabase';
-import Badge from '../ui/Badge';
-import Button from '../ui/Button';
+import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
 import { useToastContext } from '../../contexts/ToastContext';
 import { useModal } from '../../contexts/ModalContext';
 

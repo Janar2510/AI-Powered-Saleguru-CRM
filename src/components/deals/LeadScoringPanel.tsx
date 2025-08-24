@@ -22,7 +22,7 @@ import {
   Star,
   AlertCircle
 } from 'lucide-react';
-import Card from '../ui/Card';
+import { Card } from '../ui/Card';
 import { Deal } from '../../types/deals';
 import { DealScoreBadge } from './DealScoreBadge';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';

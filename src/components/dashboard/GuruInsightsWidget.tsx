@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Bot, Zap, TrendingUp, CheckSquare, AlertTriangle, Target, Calendar, ChevronRight, ArrowRight } from 'lucide-react';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
 import { useGuru } from '../../contexts/GuruContext';
 import { supabase } from '../../services/supabase';
-import Button from '../ui/Button';
+import { Button } from '../ui/Button';
 import { useNavigate } from 'react-router-dom';
 import BottleneckPanel from '../ai/BottleneckPanel';
 import { Bottleneck } from '../../types/ai';

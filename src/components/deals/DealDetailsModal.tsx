@@ -1,8 +1,8 @@
 // All deal detail view card functions (edit, save, delete, update, etc.) are implemented and connected.
 import React, { useState } from 'react';
 import { X, Calendar, Clock, MapPin, Users, Edit, Trash2, Target, CheckSquare, User, Bot, MessageSquare, Mail, FolderOpen, DollarSign, TrendingUp, Check, Save, ArrowRight, Phone, Globe, Tag, Building, Activity, FileText, Cloud, Repeat, Briefcase, SlidersHorizontal } from 'lucide-react';
-import Badge from '../ui/Badge';
-import Card from '../ui/Card';
+import { Badge } from '../ui/Badge';
+import { Card } from '../ui/Card';
 import { useToastContext } from '../../contexts/ToastContext';
 import { useGuru } from '../../contexts/GuruContext';
 import { supabase } from '../../services/supabase';

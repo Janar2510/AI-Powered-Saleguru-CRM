@@ -3,8 +3,8 @@ import { Zap, User, Mail, Phone, Briefcase, MapPin, Award, FileText } from 'luci
 import { useContactEnrichment } from '../../hooks/useContactEnrichment';
 import { useEnrichmentStatus } from '../../hooks/useEnrichmentStatus';
 import { ContactEnrichmentData } from '../../services/enrichmentService';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
 import EnrichmentButton from '../enrichment/EnrichmentButton';
 import EnrichmentStatusBadge from '../enrichment/EnrichmentStatusBadge';
 import EnrichmentPreviewModal from '../enrichment/EnrichmentPreviewModal';

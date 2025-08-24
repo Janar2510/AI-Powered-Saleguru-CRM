@@ -49,7 +49,7 @@ import {
 import { Deal, DealNote, DealActivity, DealEmail } from '../../types/deals';
 import { DealsAPI } from '../../lib/deals-api';
 import { Card } from '../common/Card';
-import Badge from '../ui/Badge';
+import { Badge } from '../ui/Badge';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useToastContext } from '../../contexts/ToastContext';

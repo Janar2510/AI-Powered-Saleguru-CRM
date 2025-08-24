@@ -1,8 +1,8 @@
 import React from 'react';
 import { Calendar, CheckSquare, Filter, Plus, Bot, Clock, Users, Target, Zap, Settings, Eye, EyeOff, AlertTriangle, Bell } from 'lucide-react';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
-import Button from '../ui/Button';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
 import { CalendarFilter } from '../../types/calendar';
 import { Task } from '../../types/task';
 import { useGuru } from '../../contexts/GuruContext';

@@ -3,8 +3,8 @@ import { Zap, Building, Globe, Users, MapPin, DollarSign, Calendar, Code } from 
 import { useCompanyEnrichment } from '../../hooks/useCompanyEnrichment';
 import { useEnrichmentStatus } from '../../hooks/useEnrichmentStatus';
 import { CompanyEnrichmentData } from '../../services/enrichmentService';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
 import EnrichmentButton from '../enrichment/EnrichmentButton';
 import EnrichmentStatusBadge from '../enrichment/EnrichmentStatusBadge';
 import EnrichmentPreviewModal from '../enrichment/EnrichmentPreviewModal';

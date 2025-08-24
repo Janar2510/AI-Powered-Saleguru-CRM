@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import Card from '../components/ui/Card';
-import Badge from '../components/ui/Badge';
-import Button from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { Badge } from '../components/ui/Badge';
+import { Button } from '../components/ui/Button';
 import { supabase } from '../services/supabase';
 import { Plus, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';

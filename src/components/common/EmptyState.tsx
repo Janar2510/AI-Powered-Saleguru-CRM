@@ -1,7 +1,7 @@
 import React from 'react';
+import { Button } from '../ui/Button';
 import { Bot, Plus } from 'lucide-react';
 import { useGuru } from '../../contexts/GuruContext';
-import Button from '../ui/Button';
 
 interface EmptyStateProps {
   icon: React.ComponentType<{ className?: string }>;

@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { X, AlertTriangle } from 'lucide-react';
 import { Contact, ContactFormData } from '../../types/contact';
 import ContactForm from './ContactForm';
-import Button from '../ui/Button';
+import { Button } from '../ui/Button';
 import { useToastContext } from '../../contexts/ToastContext';
 import { useModal } from '../../contexts/ModalContext';
 
