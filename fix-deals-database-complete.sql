@@ -284,3 +284,4 @@ SELECT
     COUNT(CASE WHEN stage = 'lost' THEN 1 END) as lost_deals
 FROM public.deals 
 WHERE org_id = 'temp-org';
+

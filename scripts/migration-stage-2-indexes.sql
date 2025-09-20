@@ -93,3 +93,4 @@ END $$;
 -- Success message
 SELECT 'Stage 2 Complete: Indexes, sequences, and triggers created successfully!' as message;
 
+

@@ -509,3 +509,4 @@ GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO authenticated;
 -- Success message
 SELECT 'Warehouse & Inventory Management System created successfully!' as message;
 
+

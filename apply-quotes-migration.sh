@@ -57,3 +57,4 @@ fi
 
 echo ""
 echo "🎉 Quotes system setup complete!"
+

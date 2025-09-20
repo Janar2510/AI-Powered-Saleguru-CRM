@@ -202,3 +202,4 @@ ON CONFLICT DO NOTHING;
 
 -- Success message
 SELECT 'Sales Orders system setup completed successfully!' as status;
+

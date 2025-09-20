@@ -218,3 +218,4 @@ SUPABASE_URL=http://localhost:54322
 
 Your complete double-entry accounting system is now ready! 🧮
 
+

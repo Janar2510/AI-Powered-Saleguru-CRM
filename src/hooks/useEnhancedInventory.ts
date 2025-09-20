@@ -863,3 +863,4 @@ export default {
   useGenerateAIRecommendations,
 };
 
+

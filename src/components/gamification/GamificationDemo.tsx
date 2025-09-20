@@ -162,3 +162,4 @@ const handleDealClose = async (deal) => {
 
 export default GamificationDemo;
 
+

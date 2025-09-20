@@ -114,3 +114,4 @@ SELECT 'profiles' as table_name, email, first_name, last_name, role
 FROM public.profiles 
 WHERE email = 'demo@saleguru.com';
 
+

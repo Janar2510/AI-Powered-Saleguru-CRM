@@ -119,3 +119,4 @@ CREATE TABLE IF NOT EXISTS deal_invoices (
 -- Success message
 SELECT 'Stage 1 Complete: All tables created successfully!' as message;
 
+

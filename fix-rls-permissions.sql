@@ -46,3 +46,4 @@ WHERE org_id = 'temp-org'
 LIMIT 1;
 
 SELECT 'RLS permissions fixed successfully!' as status;
+

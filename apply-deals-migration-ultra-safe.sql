@@ -239,3 +239,4 @@ END $$;
 
 -- Success message
 SELECT 'Ultra-safe deals migration completed successfully! 🚀' as status;
+

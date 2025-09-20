@@ -38,3 +38,4 @@ BEGIN
         RAISE NOTICE 'sales_orders table does not exist - run the migration first!';
     END IF;
 END $$;
+

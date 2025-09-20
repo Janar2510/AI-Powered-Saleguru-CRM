@@ -206,3 +206,4 @@ SELECT
   'Tables Created: deal_activities, deal_files, deal_changelog, deal_quotes, deal_quote_items' as tables_created,
   'You can now use the Deal Detail hooks in your React app!' as next_step;
 
+

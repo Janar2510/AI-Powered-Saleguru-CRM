@@ -127,3 +127,4 @@ SELECT
 FROM public.user_profiles 
 WHERE email = 'demo@saleguru.com';
 
+

@@ -97,3 +97,4 @@ If the migration fails, you can create tables manually using the Supabase Dashbo
 
 This approach is safer but takes longer.
 
+

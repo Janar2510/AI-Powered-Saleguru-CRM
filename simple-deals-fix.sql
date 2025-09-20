@@ -90,3 +90,4 @@ WHERE NOT EXISTS (SELECT 1 FROM public.deals WHERE title = 'Sample Deal 5');
 
 -- Show success
 SELECT 'Success! Deals table is ready' as status, COUNT(*) as total_deals FROM public.deals WHERE org_id = 'temp-org';
+

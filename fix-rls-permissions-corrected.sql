@@ -47,3 +47,4 @@ AND id = (SELECT id FROM public.deals WHERE org_id = 'temp-org' ORDER BY created
 
 -- Final confirmation
 SELECT 'RLS permissions fixed successfully!' as status;
+

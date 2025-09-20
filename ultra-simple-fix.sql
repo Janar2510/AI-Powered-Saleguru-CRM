@@ -47,3 +47,4 @@ INSERT INTO public.deals (title, value, stage, status, priority, org_id) VALUES
 
 -- Verify success
 SELECT 'Database fixed successfully!' as message, COUNT(*) as deals_count FROM public.deals WHERE org_id = 'temp-org';
+

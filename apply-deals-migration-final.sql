@@ -227,3 +227,4 @@ END $$;
 
 -- Success message
 SELECT 'Final deals migration completed successfully!' as status;
+

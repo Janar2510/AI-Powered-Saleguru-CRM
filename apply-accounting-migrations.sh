@@ -152,3 +152,4 @@ fi
 echo -e "${GREEN}✨ Migration process completed!${NC}"
 echo -e "${BLUE}🧮 Your accounting system is now ready to use!${NC}"
 
+

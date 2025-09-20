@@ -33,3 +33,4 @@ FROM public.deals
 WHERE org_id = 'temp-org';
 
 SELECT 'Success! RLS disabled and permissions granted.' as status;
+

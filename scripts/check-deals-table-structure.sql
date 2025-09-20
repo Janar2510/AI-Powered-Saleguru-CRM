@@ -15,3 +15,4 @@ SELECT
   COUNT(*) as existing_rows
 FROM deals;
 
+

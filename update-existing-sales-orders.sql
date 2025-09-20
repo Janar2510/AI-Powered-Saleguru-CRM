@@ -63,3 +63,4 @@ ORDER BY ordinal_position;
 
 -- Success message
 SELECT 'Sales Orders table updated successfully!' as status;
+

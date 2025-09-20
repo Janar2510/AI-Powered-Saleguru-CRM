@@ -147,3 +147,4 @@ ON CONFLICT DO NOTHING;
 
 -- Success message
 SELECT 'Invoices system setup completed successfully!' as status;
+

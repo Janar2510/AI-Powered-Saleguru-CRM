@@ -217,3 +217,4 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- Success message
 SELECT 'Stage 3 Complete: RPC functions created successfully!' as message;
 
+

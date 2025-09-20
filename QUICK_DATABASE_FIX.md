@@ -49,3 +49,4 @@ If you can't access Supabase Studio, the app will automatically:
 ---
 
 **This should resolve the status column error immediately!** 🚀
+

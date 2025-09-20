@@ -166,3 +166,4 @@ END $$;
 
 -- Success message
 SELECT 'Safe deals migration completed successfully!' as status;
+

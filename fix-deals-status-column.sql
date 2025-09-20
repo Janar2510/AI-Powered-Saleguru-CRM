@@ -197,3 +197,4 @@ SELECT
     COUNT(CASE WHEN stage = 'won' THEN 1 END) as won_deals
 FROM public.deals 
 WHERE org_id = 'temp-org';
+

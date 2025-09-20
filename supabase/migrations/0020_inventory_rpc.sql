@@ -120,3 +120,4 @@ end $$;
 -- Expose as RPC
 grant execute on function reserve_stock(text,uuid,jsonb) to anon, authenticated, service_role;
 grant execute on function ship_stock(text,uuid,uuid,jsonb) to anon, authenticated, service_role;
+

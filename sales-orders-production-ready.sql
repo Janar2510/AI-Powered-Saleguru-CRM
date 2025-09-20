@@ -255,3 +255,4 @@ ON CONFLICT DO NOTHING;
 
 -- Success message
 SELECT 'Sales Orders system setup completed successfully with production-ready features!' as status;
+

@@ -314,3 +314,4 @@ END $$;
 
 -- Success message
 SELECT 'Subscriptions system setup completed successfully!' as status;
+

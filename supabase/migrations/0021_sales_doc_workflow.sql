@@ -60,3 +60,4 @@ end $$;
 grant execute on function quote_to_proforma(uuid) to authenticated, service_role;
 grant execute on function proforma_to_sales_order(uuid) to authenticated, service_role;
 grant execute on function sales_order_to_invoice(uuid) to authenticated, service_role;
+

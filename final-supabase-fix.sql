@@ -56,3 +56,4 @@ ALTER TABLE public.deals ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "development_policy" ON public.deals FOR ALL USING (true) WITH CHECK (true);
 
 SELECT 'Database backend is now fully functional!' as final_status;
+

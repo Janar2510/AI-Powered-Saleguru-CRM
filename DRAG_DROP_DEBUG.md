@@ -123,3 +123,4 @@ When dragging a deal, you should see these logs in the browser console:
 
 **Last Updated**: 2025-01-21  
 **Version**: v8.0 Enhanced Drag & Drop System
+

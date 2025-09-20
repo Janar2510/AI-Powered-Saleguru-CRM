@@ -601,3 +601,4 @@ const PortalWarranty: React.FC = () => {
 };
 
 export default PortalWarranty;
+

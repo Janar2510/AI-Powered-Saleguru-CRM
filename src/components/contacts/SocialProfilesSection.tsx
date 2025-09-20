@@ -638,3 +638,4 @@ const SocialProfilesSection: React.FC<SocialProfilesSectionProps> = ({
 
 export default SocialProfilesSection;
 
+

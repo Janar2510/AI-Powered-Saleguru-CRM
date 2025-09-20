@@ -325,3 +325,4 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
     </motion.div>
   );
 };
+

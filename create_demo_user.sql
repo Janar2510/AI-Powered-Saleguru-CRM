@@ -80,3 +80,4 @@ SELECT 'User created successfully!' as message, email, first_name, last_name
 FROM public.user_profiles 
 WHERE email = 'demo@saleguru.com';
 
+

@@ -61,3 +61,4 @@ FROM information_schema.tables
 WHERE table_name LIKE 'deal_%' 
   AND table_schema = 'public';
 
+

@@ -90,3 +90,4 @@ FROM deal_quotes
 ORDER BY created_at DESC
 LIMIT 2;
 
+

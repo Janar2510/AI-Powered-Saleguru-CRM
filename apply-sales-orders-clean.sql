@@ -245,3 +245,4 @@ echo "   • All necessary indexes and triggers"
 echo "   • Sample data for testing"
 echo ""
 echo "✨ No more org_id errors!"
+
