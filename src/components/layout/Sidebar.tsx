@@ -28,6 +28,7 @@ import {
   Calculator,
   ShoppingCart,
   ExternalLink,
+  Home,
 } from 'lucide-react';
 
 // Simple persisted collapse hook
@@ -71,6 +72,7 @@ const sections: Section[] = [
     title: 'Core',
     key: 'core',
     items: [
+      { to: '/home', label: 'Home', icon: Home },
       { to: '/', label: 'Dashboard', icon: LayoutDashboard },
       { to: '/deals', label: 'Deals', icon: KanbanSquare },
       { to: '/leads', label: 'Leads', icon: Sparkles },

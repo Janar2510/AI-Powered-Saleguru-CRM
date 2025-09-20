@@ -4,6 +4,7 @@ import Sidebar from '../components/layout/Sidebar';
 import { ProtectedRoute } from '../components/layout/ProtectedRoute';
 
 // Lazy imports
+const Home = React.lazy(() => import('../pages/Home'));
 const Dashboard = React.lazy(() => import('../pages/Dashboard'));
 const Deals = React.lazy(() => import('../pages/Deals'));
 const DealsEnhanced = React.lazy(() => import('../pages/DealsEnhanced'));
@@ -90,6 +91,7 @@ export default function AppRoutes() {
       
       {/* Protected routes */}
       <Route element={<ProtectedRoute />}>
+        <Route path="/home" element={<AppLayout><Home /></AppLayout>} />
         <Route path="/" element={<AppLayout><Dashboard /></AppLayout>} />
         <Route path="/deals" element={<AppLayout><DealsEnhanced /></AppLayout>} />
         <Route path="/deals/:id" element={<AppLayout><DealDetailComprehensive /></AppLayout>} />

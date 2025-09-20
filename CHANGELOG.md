@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added - Home Page Integration (v9.13)
+
+- **Home Page Integration**: Integrated SaleToru Landing Page into CRM
+  - **Landing Page Clone**: Successfully cloned Janar2510/Saletoru-Landing-page repository
+  - **Home Page Component**: Created comprehensive Home page with landing page content
+  - **Sidebar Navigation**: Added Home page to Core section of sidebar navigation
+  - **Route Integration**: Added /home route to AppRoutes.tsx with proper lazy loading
+  - **Brand Design Integration**: Full integration with BrandDesignContext and design system
+  - **Spline 3D Integration**: Interactive 3D background with error handling
+  - **Features Section**: AI-powered analytics, smart lead scoring, workflow automation
+  - **Testimonials Section**: Customer testimonials with ratings and company information
+  - **CTA Sections**: Call-to-action buttons for free trial and demo scheduling
+  - **Responsive Design**: Fully responsive layout for all device sizes
+  - **Performance Optimized**: Lazy loading and efficient component structure
+
 ### Added - Comprehensive Marketplace System (v9.0)
 
 ### 🏪 **Complete Marketplace Infrastructure**
